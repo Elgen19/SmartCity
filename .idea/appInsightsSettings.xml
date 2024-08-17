@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.elgenium.smartcity" />
+                  <option name="mobileSdkAppId" value="1:580262476589:android:059c252bad199fce0f71a4" />
+                  <option name="projectId" value="smartcity-6d63f" />
+                  <option name="projectNumber" value="580262476589" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

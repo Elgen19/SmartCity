@@ -13,6 +13,15 @@
         android:theme="@style/Theme.SmartCity"
         tools:targetApi="31">
         <activity
+            android:name=".RegistrationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".SignInActivity"
+            android:exported="false" />
+        <activity
+            android:name=".OnboardingScreenActivity"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>

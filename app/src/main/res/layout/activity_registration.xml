@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="@color/primary_color"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Title Section -->
+    <LinearLayout
+        android:id="@+id/titleSection"
+        android:layout_width="match_parent"
+        android:background="@drawable/background2"
+        android:layout_height="200dp"
+        android:orientation="vertical"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="32dp">
+
+        <!-- Title TextView -->
+        <TextView
+            android:id="@+id/signupTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:text="Register"
+            android:layout_marginTop="40dp"
+            android:textColor="@color/brand_color"
+            android:textSize="40sp"
+            android:textStyle="bold" />
+
+        <!-- Subtitle TextView -->
+        <TextView
+            android:id="@+id/signupSubtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:text="Create an acount to start exploring this \nbeautiful city"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+    <!-- Registration Section -->
+    <LinearLayout
+        android:id="@+id/inputSection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:layout_below="@id/titleSection"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="16dp">
+
+        <!-- Email Input -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:hintAnimationEnabled="true"
+            app:boxStrokeColor="@color/brand_color"
+            app:hintTextColor="@color/brand_color"
+            app:helperTextTextColor="@color/brand_color"
+            app:cursorColor="@color/secondary_color"
+            android:layout_marginBottom="16dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/emailEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/gray"
+                android:hint="@string/email"
+                android:inputType="textEmailAddress"
+                tools:ignore="TextContrastCheck,VisualLintTextFieldSize" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Full name Input -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:hintAnimationEnabled="true"
+            app:boxStrokeColor="@color/brand_color"
+            app:hintTextColor="@color/brand_color"
+            app:helperTextTextColor="@color/brand_color"
+            app:cursorColor="@color/secondary_color"
+            android:layout_marginBottom="16dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/fullnameEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/gray"
+                android:hint="Full Name"
+                android:inputType="text"
+                tools:ignore="TextContrastCheck,VisualLintTextFieldSize" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Phone Number Input -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:hintAnimationEnabled="true"
+            app:boxStrokeColor="@color/brand_color"
+            app:hintTextColor="@color/brand_color"
+            app:helperTextTextColor="@color/brand_color"
+            app:cursorColor="@color/secondary_color">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/phoneNumberEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/gray"
+                android:hint="Phone Number"
+                android:inputType="number"
+                tools:ignore="TextContrastCheck,VisualLintTextFieldSize" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Password Input -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            app:hintAnimationEnabled="true"
+            app:boxStrokeColor="@color/brand_color"
+            app:hintTextColor="@color/brand_color"
+            app:helperTextTextColor="@color/brand_color"
+            app:passwordToggleTint="@color/neutral_color"
+            app:cursorColor="@color/secondary_color"
+            app:passwordToggleEnabled="true">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/passwordEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/gray"
+                android:hint="@string/password"
+                android:inputType="textPassword"
+                tools:ignore="TextContrastCheck,VisualLintTextFieldSize" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Confirm Password Input -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            app:hintAnimationEnabled="true"
+            app:boxStrokeColor="@color/brand_color"
+            app:hintTextColor="@color/brand_color"
+            app:helperTextTextColor="@color/brand_color"
+            app:passwordToggleTint="@color/neutral_color"
+            app:cursorColor="@color/secondary_color"
+            app:passwordToggleEnabled="true">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/confirmPasswordEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Confirm Password"
+                android:inputType="textPassword"
+                android:textColor="@color/gray"
+                tools:ignore="TextContrastCheck,VisualLintTextFieldSize" />
+        </com.google.android.material.textfield.TextInputLayout>
+    </LinearLayout>
+
+    <!-- Login Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/registerButton"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_below="@id/inputSection"
+        android:layout_above="@id/signinButtonSection"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:text="Register"
+        android:textColor="@color/primary_color"
+        android:textAllCaps="false"
+        app:cornerRadius="8dp"
+        app:backgroundTint="@color/secondary_color"
+        app:rippleColor="@color/brand_color"
+        tools:ignore="VisualLintButtonSize" />
+
+
+
+
+    <!-- SIGN IN LAYOUT -->
+    <LinearLayout
+        android:id="@+id/signinButtonSection"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="16dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/already_have_an_account"
+            android:textColor="@color/gray" />
+
+        <TextView
+            android:id="@+id/signInTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="@string/sign_in"
+            android:textColor="@color/brand_color"
+            android:background="@drawable/textview_ripple"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            tools:ignore="TextContrastCheck" />
+
+    </LinearLayout>
+
+
+</RelativeLayout>
