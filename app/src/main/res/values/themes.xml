@@ -3,6 +3,8 @@
     <style name="Base.Theme.SmartCity" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="android:statusBarColor">@color/secondary_color</item>
+
     </style>
 
     <style name="Theme.SmartCity" parent="Base.Theme.SmartCity" />
