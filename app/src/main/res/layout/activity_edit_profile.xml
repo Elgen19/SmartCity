@@ -1,0 +1,201 @@
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp"
+    android:background="@drawable/backdraft2">
+
+    <!-- Back Button -->
+    <ImageButton
+        android:id="@+id/backButton"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/baseline_arrow_back_24"
+        android:contentDescription="@string/back"
+        app:tint="@color/neutral_color" />
+
+    <!-- Title TextView -->
+    <TextView
+        android:id="@+id/titleTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_alignTop="@id/backButton"
+        android:layout_marginStart="8dp"
+        android:text="@string/edit_profile"
+        android:textStyle="bold"
+        android:textColor="@color/primary_color"
+        android:textSize="32sp" />
+
+    <!-- Profile Picture -->
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/profileImageView"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_below="@id/titleTextView"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="64dp"
+        android:src="@drawable/male" />
+
+    <!-- Personal Information Title -->
+    <TextView
+        android:id="@+id/personalInfoTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/profileImageView"
+        android:layout_marginTop="24dp"
+        android:text="@string/personal_information"
+        android:textColor="@color/brand_color"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        tools:ignore="TextContrastCheck" />
+
+    <!-- Card for Personal Information -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/personalInfoCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/personalInfoTitle"
+        android:layout_marginTop="16dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Email Row -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:id="@+id/emailLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:text="@string/email"
+                    android:layout_centerVertical="true"
+                    android:textColor="@android:color/black"
+                    android:textSize="16sp"
+                    tools:ignore="RelativeOverlap" />
+
+                <EditText
+                    android:id="@+id/emailValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_toStartOf="@+id/emailInfoButton"
+                    android:enabled="false"
+                    android:importantForAutofill="no"
+                    android:inputType="textEmailAddress"
+                    android:text="@string/john_doe_example_com"
+                    android:textColor="@color/dark_gray"
+                    android:textSize="16sp"
+                    tools:ignore="LabelFor,RelativeOverlap,TouchTargetSizeCheck,TextContrastCheck" />
+
+                <ImageButton
+                    android:id="@+id/emailInfoButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/baseline_info_24"
+                    tools:ignore="TouchTargetSizeCheck" />
+
+            </RelativeLayout>
+
+            <!-- Full Name Row -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:id="@+id/fullNameLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:importantForAutofill="no"
+                    android:text="@string/full_name"
+                    android:textColor="@android:color/black"
+                    android:textSize="16sp"
+                    tools:ignore="RelativeOverlap" />
+
+                <EditText
+                    android:id="@+id/fullNameValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:enabled="false"
+                    android:focusable="true"
+                    android:importantForAutofill="no"
+                    android:inputType="text"
+                    android:focusableInTouchMode="true"
+                    android:text="@string/john_doe"
+                    android:textColor="@color/dark_gray"
+                    android:textSize="16sp"
+                    tools:ignore="LabelFor,RelativeOverlap,TouchTargetSizeCheck" />
+            </RelativeLayout>
+
+            <!-- Phone Number Row -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:id="@+id/phoneLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:importantForAutofill="no"
+                    android:text="@string/phone_number"
+                    android:layout_centerVertical="true"
+                    android:textColor="@android:color/black"
+                    android:textSize="16sp" />
+
+                <EditText
+                    android:id="@+id/phoneValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:enabled="false"
+                    android:focusable="true"
+                    android:focusableInTouchMode="true"
+                    android:importantForAutofill="no"
+                    android:inputType="phone"
+                    android:text="@string/_1234567890"
+                    android:textColor="@color/dark_gray"
+                    android:textSize="16sp"
+                    tools:ignore="LabelFor,RelativeOverlap,TouchTargetSizeCheck" />
+            </RelativeLayout>
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Save Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/editButton"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_alignParentBottom="true"
+        android:text="@string/edit"
+        android:textColor="@color/primary_color"
+        android:backgroundTint="@color/secondary_color"
+        app:cornerRadius="8dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        tools:ignore="VisualLintButtonSize" />
+
+</RelativeLayout>
