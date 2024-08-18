@@ -9,5 +9,6 @@
     <color name="neutral_color">#E2E2E2</color>
     <color name="red">#701313</color>
     <color name="green">#49B153</color>
+    <color name="dark_gray">#AAAAAA</color>
 
 </resources>

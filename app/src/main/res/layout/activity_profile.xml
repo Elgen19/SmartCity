@@ -1,10 +1,94 @@
-<?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/backdraft2"
     android:padding="16dp">
+
+    <!-- Back Button ImageButton -->
+    <ImageButton
+        android:id="@+id/backButton"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/baseline_arrow_back_24"
+        android:contentDescription="@string/back"
+        app:tint="@color/neutral_color" />
+
+    <!-- Title TextView -->
+    <TextView
+        android:id="@+id/titleTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/profile"
+        android:textStyle="bold"
+        android:textColor="@color/brand_color"
+        android:textSize="32sp"
+        android:layout_centerHorizontal="true"
+        android:layout_alignTop="@id/backButton"
+        android:layout_marginStart="8dp"
+        android:layout_centerVertical="true" />
+
+    <!-- Card for Profile Settings -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/profileCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/titleTextView"
+        android:layout_marginTop="56dp"
+        android:layout_marginBottom="16dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:padding="16dp">
+
+            <!-- Profile Icon -->
+            <ImageView
+                android:id="@+id/profileIcon"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:contentDescription="@string/todo"
+                android:src="@drawable/person" />
+
+            <!-- TextView for Edit Profile Settings -->
+            <TextView
+                android:id="@+id/editProfileText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toEndOf="@id/profileIcon"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="16dp"
+                android:text="@string/edit_profile_settings"
+                android:textColor="@color/gray"
+                android:textSize="18sp"
+                tools:ignore="RelativeOverlap" />
+
+            <!-- Arrow Icon (>) -->
+            <ImageView
+                android:id="@+id/arrowIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:contentDescription="@string/todo"
+                android:src="@drawable/go"
+                app:tint="@android:color/darker_gray"
+                tools:ignore="ImageContrastCheck" />
+        </RelativeLayout>
+
+    </androidx.cardview.widget.CardView>
 
     <!-- Logout Button -->
     <com.google.android.material.button.MaterialButton
@@ -12,11 +96,10 @@
         android:layout_width="match_parent"
         android:layout_height="56dp"
         android:layout_alignParentBottom="true"
-        android:text="Logout"
+        android:backgroundTint="@color/red"
+        android:text="@string/logout"
         android:textColor="@color/primary_color"
-        android:backgroundTint="@android:color/holo_red_dark"
         app:cornerRadius="8dp"
-        app:iconTint="@android:color/white"
-        app:iconPadding="8dp" />
+        tools:ignore="VisualLintButtonSize" />
 
 </RelativeLayout>

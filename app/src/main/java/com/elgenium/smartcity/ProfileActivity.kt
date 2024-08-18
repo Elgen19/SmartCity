@@ -30,6 +30,10 @@ class ProfileActivity : AppCompatActivity() {
         binding.logoutButton.setOnClickListener {
             signOut()
         }
+
+        binding.profileCard.setOnClickListener{
+            startActivity(Intent(this, EditProfileActivity::class.java))
+        }
     }
 
     private fun signOut() {

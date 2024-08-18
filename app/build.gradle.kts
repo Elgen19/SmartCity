@@ -65,5 +65,6 @@ dependencies {
     implementation (libs.firebase.auth)
     implementation (libs.firebase.database.ktx)
     implementation (libs.play.services.auth)
+    implementation (libs.circleimageview)
 
 }
