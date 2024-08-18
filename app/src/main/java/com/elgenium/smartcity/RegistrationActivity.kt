@@ -68,8 +68,24 @@ class RegistrationActivity : AppCompatActivity() {
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
-                    val userId = auth.currentUser?.uid ?: ""
+                    val user = auth.currentUser
+                    val userId = user?.uid ?: ""
                     saveUserToDatabase(userId, fullName, email, phoneNumber)
+                    user?.sendEmailVerification()?.addOnCompleteListener { verificationTask ->
+                        if (verificationTask.isSuccessful) {
+                            Toast.makeText(this, "Registration successful! Please check your email for verification.", Toast.LENGTH_LONG).show()
+                            // Redirect to the sign-in screen
+                            val intent = Intent(this, SignInActivity::class.java)
+                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                            startActivity(intent)
+                            finish() // Close the registration activity
+                        } else {
+                            Toast.makeText(this, "Failed to send verification email.", Toast.LENGTH_SHORT).show()
+                            enableInputs()
+                            binding.registerButton.isEnabled = true
+                            binding.registerButton.text = getString(R.string.register)
+                        }
+                    }
                 } else {
                     Toast.makeText(this, "Registration failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
                     // Re-enable inputs and button
@@ -114,18 +130,13 @@ class RegistrationActivity : AppCompatActivity() {
         database.child(userId).setValue(userMap)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
-                    Toast.makeText(this, "Registration successful!", Toast.LENGTH_SHORT).show()
-                    // Start SignInActivity
-                    val intent = Intent(this, SignInActivity::class.java)
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    startActivity(intent)
-                    finish() // Close the registration activity
+                    // Successfully saved user data
                 } else {
                     Toast.makeText(this, "Failed to save user data: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+                    enableInputs()
                     binding.registerButton.isEnabled = true
                     binding.registerButton.text = getString(R.string.register)
                 }
             }
     }
-
 }
