@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
@@ -8,7 +10,13 @@ android {
     namespace = "com.elgenium.smartcity"
     compileSdk = 34
 
+    val properties = Properties().apply {
+        load(project.rootProject.file("local.properties").inputStream())
+    }
+    val clientID = properties.getProperty("DEFAULT_CLIENT_ID") ?: ""
+
     defaultConfig {
+        buildConfigField("String", "DEFAULT_CLIENT_ID", clientID)
         applicationId = "com.elgenium.smartcity"
         minSdk = 24
         targetSdk = 34
@@ -36,6 +44,7 @@ android {
     }
 
     buildFeatures{
+        buildConfig = true
         viewBinding = true
     }
 }
@@ -55,5 +64,6 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation (libs.firebase.auth)
     implementation (libs.firebase.database.ktx)
+    implementation (libs.play.services.auth)
 
 }

@@ -4,7 +4,7 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2024-08-16T03:37:40.154206300Z">
+        <DropdownSelection timestamp="2024-08-17T13:50:53.958796300Z">
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\Elgen Prestosa\.android\avd\Medium_Phone_API_28.avd" />
