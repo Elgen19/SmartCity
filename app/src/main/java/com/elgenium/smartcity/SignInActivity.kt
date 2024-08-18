@@ -144,15 +144,21 @@ class SignInActivity : AppCompatActivity() {
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
-                    Toast.makeText(this, "Sign in successful!", Toast.LENGTH_SHORT).show()
-                    // Redirect to the main activity or dashboard
-                    val intent = Intent(this, ProfileActivity::class.java)
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    startActivity(intent)
+                    val user = auth.currentUser
+                    if (user != null && user.isEmailVerified) {
+                        // Proceed to the main part of the app
+                        val intent = Intent(this, ProfileActivity::class.java)
+                        startActivity(intent)
+                        finish()
+                    } else {
+                        // Email not verified, show a message and offer to resend the verification email
+                        Toast.makeText(this, "Please verify your email address before signing in.", Toast.LENGTH_LONG).show()
+                        user?.sendEmailVerification()
+                        binding.loginButton.isEnabled = true
+                        binding.loginButton.text = getString(R.string.login)
+                    }
                 } else {
-                    Toast.makeText(this, "Sign in failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
-                    binding.loginButton.isEnabled = true
-                    binding.loginButton.text = getString(R.string.login)
+                    Toast.makeText(this, "Authentication failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
                 }
             }
     }
