@@ -84,11 +84,17 @@ class SignInActivity : AppCompatActivity() {
             signInUser(email, password)
         }
 
+        binding.forgotPasswordTextView.setOnClickListener {
+           startActivity(Intent(this, ForgotPasswordActivity::class.java))
+            finish()
+        }
+
         binding.registerTextView.setOnClickListener {
             val intent = Intent(this, RegistrationActivity::class.java)
             startActivity(intent)
         }
     }
+
 
     private fun signInWithGoogle() {
         val signInIntent = googleSignInClient.signInIntent
@@ -159,6 +165,8 @@ class SignInActivity : AppCompatActivity() {
                     }
                 } else {
                     Toast.makeText(this, "Authentication failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+                    binding.loginButton.isEnabled = true
+                    binding.loginButton.text = getString(R.string.login)
                 }
             }
     }
