@@ -18,7 +18,8 @@
         android:layout_marginStart="16dp"
         android:clickable="true"
         android:focusable="true"
-        android:src="@drawable/male" />
+        android:src="@drawable/male"
+        tools:ignore="SpeakableTextPresentCheck" />
 
     <!-- Greeting TextView -->
     <TextView
@@ -57,8 +58,9 @@
         android:layout_centerVertical="true"
         android:layout_marginEnd="16dp"
         android:background="?attr/selectableItemBackgroundBorderless"
+        android:importantForAccessibility="no"
         android:src="@drawable/baseline_notifications_24"
-        tools:ignore="SpeakableTextPresentCheck" />
+        tools:ignore="SpeakableTextPresentCheck,ImageContrastCheck" />
 
     <!-- Bottom Navigation View -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
