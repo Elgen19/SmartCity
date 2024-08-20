@@ -47,13 +47,11 @@ class SignInActivity : AppCompatActivity() {
                         // Get user information
                         val email = account.email
                         val fullName = account.displayName
-                        // Phone number is not directly available; it requires additional scope or manual entry.
-                        // However, if you request additional scopes, you might get the phone number.
-                        // Example code to retrieve additional scopes:
-                        // .requestScopes(Scope("https://www.googleapis.com/auth/user.phonenumbers"))
+                        val photoUrl = account.photoUrl?.toString() // Get profile photo URL
+                        // If photoUrl is null, use default image
 
                         // Store user information in Firebase Realtime Database
-                        storeUserInfo(email, fullName)
+                        storeUserInfo(email, fullName, photoUrl)
                     }
                 } catch (e: ApiException) {
                     Toast.makeText(this, "Google sign-in failed: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -85,7 +83,7 @@ class SignInActivity : AppCompatActivity() {
         }
 
         binding.forgotPasswordTextView.setOnClickListener {
-           startActivity(Intent(this, ForgotPasswordActivity::class.java))
+            startActivity(Intent(this, ForgotPasswordActivity::class.java))
             finish()
         }
 
@@ -113,14 +111,14 @@ class SignInActivity : AppCompatActivity() {
                         database.child(user.uid).get().addOnCompleteListener { dataTask ->
                             if (!dataTask.isSuccessful || !dataTask.result.exists()) {
                                 // User data does not exist, store it
-                                storeUserInfo(user.email, user.displayName)
+                                storeUserInfo(user.email, user.displayName, user.photoUrl?.toString())
                             }
                         }
                     }
 
                     Toast.makeText(this, "Sign in successful!", Toast.LENGTH_SHORT).show()
                     // Redirect to the main activity or dashboard
-                    val intent = Intent(this, ProfileActivity::class.java)
+                    val intent = Intent(this, DashboardActivity::class.java)
                     intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                     startActivity(intent)
                 } else {
@@ -129,12 +127,17 @@ class SignInActivity : AppCompatActivity() {
             }
     }
 
-    private fun storeUserInfo(email: String?, fullName: String?) {
+    private fun storeUserInfo(email: String?, fullName: String?, photoUrl: String?) {
         val userId = auth.currentUser?.uid ?: return
+
+        // Get the high-resolution profile photo URL
+        val highResPhotoUrl = photoUrl?.let { getHighResPhotoUrl(it) } ?: "android.resource://com.elgenium.smartcity/drawable/male"
+
         val userInfo = mapOf(
             "email" to email,
             "fullName" to fullName,
-            "phoneNumber" to "Not Available", // Placeholder; phone number needs additional scope or input
+            "phoneNumber" to "Not Available",
+            "profilePicUrl" to highResPhotoUrl
         )
         database.child(userId).setValue(userInfo).addOnCompleteListener { task ->
             if (task.isSuccessful) {
@@ -145,6 +148,10 @@ class SignInActivity : AppCompatActivity() {
         }
     }
 
+    private fun getHighResPhotoUrl(photoUrl: String): String {
+        // Append a 'sz' parameter to request a higher resolution image
+        return "$photoUrl?sz=400" // Change 400 to the desired size in pixels
+    }
 
 
     private fun signInUser(email: String, password: String) {
@@ -154,7 +161,7 @@ class SignInActivity : AppCompatActivity() {
                     val user = auth.currentUser
                     if (user != null && user.isEmailVerified) {
                         // Proceed to the main part of the app
-                        val intent = Intent(this, ProfileActivity::class.java)
+                        val intent = Intent(this, DashboardActivity::class.java)
                         startActivity(intent)
                         finish()
                     } else {
