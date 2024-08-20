@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.elgenium.smartcity.databinding.ActivityProfileBinding
 import com.elgenium.smartcity.googlesignin.GoogleSignInClientProvider
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -31,9 +32,11 @@ class ProfileActivity : AppCompatActivity() {
             signOut()
         }
 
-        binding.profileCard.setOnClickListener{
+        binding.profileCard.setOnClickListener {
+            binding.profileCard.setCardBackgroundColor(ContextCompat.getColor(this, R.color.neutral_color))
             startActivity(Intent(this, EditProfileActivity::class.java))
         }
+
     }
 
     private fun signOut() {

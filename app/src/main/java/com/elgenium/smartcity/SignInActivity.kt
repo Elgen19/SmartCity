@@ -134,7 +134,7 @@ class SignInActivity : AppCompatActivity() {
         val userInfo = mapOf(
             "email" to email,
             "fullName" to fullName,
-            "phoneNumber" to "Not Available" // Placeholder; phone number needs additional scope or input
+            "phoneNumber" to "Not Available", // Placeholder; phone number needs additional scope or input
         )
         database.child(userId).setValue(userInfo).addOnCompleteListener { task ->
             if (task.isSuccessful) {
@@ -144,6 +144,7 @@ class SignInActivity : AppCompatActivity() {
             }
         }
     }
+
 
 
     private fun signInUser(email: String, password: String) {

@@ -88,7 +88,6 @@ class RegistrationActivity : AppCompatActivity() {
                     }
                 } else {
                     Toast.makeText(this, "Registration failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
-                    // Re-enable inputs and button
                     enableInputs()
                     binding.registerButton.isEnabled = true
                     binding.registerButton.text = getString(R.string.register)
@@ -121,10 +120,14 @@ class RegistrationActivity : AppCompatActivity() {
     }
 
     private fun saveUserToDatabase(userId: String, fullName: String, email: String, phoneNumber: String) {
+        // Assuming the default image is named "male" in the drawable folder
+        val profilePicUrl = "android.resource://${packageName}/drawable/male"
+
         val userMap = mapOf(
             "fullName" to fullName,
             "email" to email,
-            "phoneNumber" to phoneNumber
+            "phoneNumber" to phoneNumber,
+            "profilePicUrl" to profilePicUrl // Save profile picture URL to the database
         )
 
         database.child(userId).setValue(userMap)
