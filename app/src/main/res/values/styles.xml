@@ -1,0 +1,7 @@
+<!-- res/values/styles.xml -->
+<resources>
+    <style name="CustomBottomNavStyle" parent="Widget.MaterialComponents.BottomNavigationView">
+        <!-- Apply the custom drawable as the active indicator -->
+        <item name="itemActiveIndicatorStyle">@drawable/custom_active_indicator</item>
+    </style>
+</resources>

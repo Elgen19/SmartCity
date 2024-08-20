@@ -35,5 +35,6 @@
     <string name="_1234567890">+1234567890</string>
     <string name="edit_profile">Edit Profile</string>
     <string name="phone_number">Phone Number</string>
+    <string name="good_morning">Good Morning,</string>
 
 </resources>
