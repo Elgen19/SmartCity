@@ -40,6 +40,8 @@
         android:layout_below="@id/titleTextView"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="64dp"
+        android:clickable="true"
+        android:focusable="true"
         android:src="@drawable/male" />
 
     <!-- Personal Information Title -->
@@ -61,6 +63,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/personalInfoTitle"
+        android:backgroundTint="@color/white"
         android:layout_marginTop="16dp"
         app:cardCornerRadius="8dp"
         app:cardElevation="4dp">
@@ -196,6 +199,7 @@
         app:cornerRadius="8dp"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="16dp"
+        app:rippleColor="@color/brand_color"
         tools:ignore="VisualLintButtonSize" />
 
 </RelativeLayout>

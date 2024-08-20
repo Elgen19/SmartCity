@@ -1,12 +1,12 @@
 package com.elgenium.smartcity
 
-import android.content.Intent
+
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.elgenium.smartcity.databinding.ActivityOnboardingScreenBinding
 import com.elgenium.smartcity.onboarding_adapter.OnboardingAdapter
 import com.elgenium.smartcity.onboarding_model.OnboardingItem
-import com.google.android.material.tabs.TabLayoutMediator
+
 
 class OnboardingScreenActivity : AppCompatActivity() {
 

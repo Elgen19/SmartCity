@@ -12,6 +12,7 @@ import com.elgenium.smartcity.R
 import com.elgenium.smartcity.SignInActivity
 import com.elgenium.smartcity.databinding.ItemOnboardingBinding
 import com.elgenium.smartcity.onboarding_model.OnboardingItem
+import com.elgenium.smartcity.sharedpreferences.PreferencesManager
 
 class OnboardingAdapter(
     private val onboardingItems: List<OnboardingItem>,
@@ -41,13 +42,13 @@ class OnboardingAdapter(
             if (position + 1 < onboardingItems.size) {
                 viewPager.currentItem = position + 1
             } else {
-                navigateToMainActivity()
+                navigateToSignIn()
             }
         }
 
         // Handle Skip button click
         holder.binding.skipButton.setOnClickListener {
-                navigateToMainActivity()
+                navigateToSignIn()
         }
 
         // Update the text of the Next button when on the last page
@@ -78,7 +79,10 @@ class OnboardingAdapter(
         }
     }
 
-    private fun navigateToMainActivity() {
+    private fun navigateToSignIn() {
+        // Set the flag that onboarding is completed
+        PreferencesManager.setOnboardingCompleted(context, true)
+
         val intent = Intent(context, SignInActivity::class.java)
         context.startActivity(intent)
         if (context is OnboardingScreenActivity) {

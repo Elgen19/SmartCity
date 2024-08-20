@@ -1,10 +1,19 @@
 package com.elgenium.smartcity
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import com.bumptech.glide.Glide
 import com.elgenium.smartcity.databinding.ActivityEditProfileBinding
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
@@ -12,13 +21,19 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
 
 class EditProfileActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityEditProfileBinding
     private lateinit var databaseReference: DatabaseReference
     private lateinit var auth: FirebaseAuth
+    private lateinit var storageReference: StorageReference
     private var isEditable: Boolean = false
+    private var imageUri: Uri? = null
+    private val READ_EXTERNAL_STORAGE_PERMISSION = 101
+    private lateinit var imagePickerLauncher: ActivityResultLauncher<String>
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,6 +43,15 @@ class EditProfileActivity : AppCompatActivity() {
 
         auth = FirebaseAuth.getInstance()
         databaseReference = FirebaseDatabase.getInstance().getReference("Users")
+        storageReference = FirebaseStorage.getInstance().getReference("ProfilePictures")
+
+        // Initialize the ActivityResultLauncher for picking images
+        imagePickerLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            uri?.let {
+                imageUri = it
+                binding.profileImageView.setImageURI(imageUri)
+            }
+        }
 
         loadUserData()
 
@@ -42,6 +66,7 @@ class EditProfileActivity : AppCompatActivity() {
                 if (validateFields()) {
                     saveUserData()
                 }
+                imageUri?.let { uploadImageToFirebase() } // Upload image if selected
             } else {
                 // Toggle edit mode
                 toggleEditFields()
@@ -52,7 +77,11 @@ class EditProfileActivity : AppCompatActivity() {
             Toast.makeText(this, "The email address cannot be edited.", Toast.LENGTH_SHORT).show()
         }
 
-
+        binding.profileImageView.setOnClickListener {
+            if (isEditable) {
+                requestStoragePermission()
+            }
+        }
     }
 
     private fun loadUserData() {
@@ -65,20 +94,28 @@ class EditProfileActivity : AppCompatActivity() {
                         val fullName = snapshot.child("fullName").getValue(String::class.java)
                         val email = snapshot.child("email").getValue(String::class.java)
                         val phone = snapshot.child("phoneNumber").getValue(String::class.java)
+                        val profilePicURL = snapshot.child("profilePicUrl").getValue(String::class.java)
 
                         binding.fullNameValue.setText(fullName)
                         binding.emailValue.setText(email)
                         binding.phoneValue.setText(phone)
+
+                        // Use Glide to load the image from the URL
+                        Glide.with(this@EditProfileActivity)
+                            .load(profilePicURL)
+                            .placeholder(R.drawable.female) // Optional placeholder image
+                            .error(R.drawable.error_image) // Optional error image
+                            .into(binding.profileImageView)
                     }
                 }
 
                 override fun onCancelled(error: DatabaseError) {
                     // Handle possible errors
+                    Toast.makeText(this@EditProfileActivity, "Failed to load user data.", Toast.LENGTH_SHORT).show()
                 }
             })
         }
     }
-
 
     private fun toggleEditFields() {
         isEditable = !isEditable
@@ -103,13 +140,11 @@ class EditProfileActivity : AppCompatActivity() {
         val phone = binding.phoneValue.text.toString().trim()
 
         if (fullName.isEmpty() || email.isEmpty() || phone.isEmpty()) {
-            // Show error or toast message
             showToast("Please fill in all required fields.")
             return false
         }
 
         if (phone != "Not Available" && !isValidPhoneNumber(phone)) {
-            // Show error or toast message
             showToast("Please enter a valid phone number or write Not Available.")
             return false
         }
@@ -118,7 +153,6 @@ class EditProfileActivity : AppCompatActivity() {
     }
 
     private fun isValidPhoneNumber(phone: String): Boolean {
-        // Check if phone number starts with "09" and is 11 digits long
         return phone.matches("^09\\d{9}$".toRegex())
     }
 
@@ -144,6 +178,69 @@ class EditProfileActivity : AppCompatActivity() {
                 toggleEditFields() // Switch back to non-edit mode
             } else {
                 showToast("Failed to update profile.")
+            }
+        }
+    }
+
+    private fun openImagePicker() {
+        imagePickerLauncher.launch("image/*")
+    }
+
+    private fun requestStoragePermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            // Use new permissions for Android 11 and above
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES)
+                != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                    arrayOf(Manifest.permission.READ_MEDIA_IMAGES),
+                    READ_EXTERNAL_STORAGE_PERMISSION)
+            } else {
+                openImagePicker()
+            }
+        } else {
+            // Use legacy permission for Android 10 and below
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
+                    READ_EXTERNAL_STORAGE_PERMISSION)
+            } else {
+                openImagePicker()
+            }
+        }
+
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == READ_EXTERNAL_STORAGE_PERMISSION) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                openImagePicker()
+            } else {
+                showToast("Permission Denied")
+            }
+        }
+    }
+
+
+
+    private fun uploadImageToFirebase() {
+        imageUri?.let { uri ->
+            val userId = auth.currentUser?.uid ?: return
+            val fileRef = storageReference.child("$userId.jpg")
+
+            fileRef.putFile(uri).addOnSuccessListener {
+                fileRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                    // Save the download URL to the database
+                    databaseReference.child(userId).child("profilePicUrl").setValue(downloadUri.toString())
+                    showToast("Profile picture updated.")
+                }
+            }.addOnFailureListener {
+                showToast("Failed to upload image.")
             }
         }
     }
