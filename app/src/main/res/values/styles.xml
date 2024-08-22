@@ -1,16 +1,6 @@
 <!-- res/values/styles.xml -->
 <resources>
-    <!-- Custom style for the pill-shaped active indicator -->
-    <style name="CustomBottomNavStyle" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
-        <!-- Set the desired color for the active indicator -->
-        <item name="indicatorColor">@color/primary_color</item>
-        <!-- Customize the shape if necessary (rounded corners for pill shape) -->
-        <item name="shapeAppearanceOverlay">@style/CustomIndicatorShape</item>
-    </style>
-
-    <!-- Customize the shape for the active indicator -->
-    <style name="CustomIndicatorShape" parent="">
-        <item name="cornerFamily">rounded</item>
-        <item name="cornerSize">50%</item> <!-- This will create a pill shape -->
+    <style name="App.Custom.Indicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@color/primary_color</item>
     </style>
 </resources>
