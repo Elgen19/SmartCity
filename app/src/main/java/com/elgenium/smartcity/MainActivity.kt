@@ -19,13 +19,10 @@ class MainActivity : AppCompatActivity() {
         // Initialize Firebase Auth
         auth = FirebaseAuth.getInstance()
 
-        // Delay for 3 seconds, then start the appropriate activity
+        // Delay for 2 seconds, then start the appropriate activity
         Handler(Looper.getMainLooper()).postDelayed({
-            if (auth.currentUser != null) {
-                // User is already logged in
-                navigateToDashboard()
-            } else {
-                // Check if onboarding has been completed
+            if (auth.currentUser == null) {
+                // User is not logged in
                 if (PreferencesManager.isOnboardingCompleted(this)) {
                     // Navigate to sign-in screen if onboarding is completed
                     navigateToSignIn()
@@ -33,12 +30,15 @@ class MainActivity : AppCompatActivity() {
                     // Navigate to onboarding screen if not completed
                     navigateToOnboarding()
                 }
+            } else {
+                // User is already logged in
+                navigateToDashboard()
             }
-        }, 2000) // 3000 milliseconds = 3 seconds
+        }, 2000) // 2000 milliseconds = 2 seconds
     }
 
     private fun navigateToSignIn() {
-        val intent = Intent(this, DashboardActivity::class.java)
+        val intent = Intent(this, SignInActivity::class.java)
         startActivity(intent)
         finish()
     }
@@ -56,3 +56,4 @@ class MainActivity : AppCompatActivity() {
         finish()
     }
 }
+
