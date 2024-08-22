@@ -58,5 +58,18 @@
     <string name="mapbox_access_token" translatable="false" tools:ignore="UnusedResources">pk.eyJ1IjoiZWxnZW5pdW0iLCJhIjoiY2x6c2hqdjJ1MjkwYTJrcTdjZXYyMHEzcyJ9.tC0_B-TVQtekgrT0Ebb4jQ</string>
     <string name="notification_history">Notification History</string>
     <string name="notification">Notification</string>
+    <string name="settings">Settings</string>
+    <string name="create_application_feedback_rating">Create application feedback/rating</string>
+    <string name="view_faq_s_from_users">View FAQ\'s from Users</string>
+    <string name="contextual_suggestions">Contextual Suggestions</string>
+    <string name="app_settings">App Settings</string>
+    <string name="enable_events_notifications">Enable events notifications</string>
+    <string name="enable_traffic_update_notifications">Enable traffic update notifications</string>
+    <string name="exercise_reminder">Exercise reminder</string>
+    <string name="turn_on_push_notifications">Turn on push notifications</string>
+    <string name="new_event_reminders">New event reminders</string>
+    <string name="app_feedback_rating">App Feedback/Rating</string>
+    <string name="frequently_asked_questions">Frequently Asked Questions</string>
+    <string name="meal_reminder_suggestions">Meal reminder suggestions</string>
 
 </resources>

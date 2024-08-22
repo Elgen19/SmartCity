@@ -59,6 +59,7 @@ class DashboardActivity : AppCompatActivity() {
                 }
                 R.id.navigation_settings -> {
                     // Handle Settings action
+                    startActivity(Intent(this, SettingsActivity::class.java))
                     true
                 }
                 else -> false

@@ -22,6 +22,9 @@
         android:theme="@style/Theme.SmartCity"
         tools:targetApi="31">
         <activity
+            android:name=".SettingsActivity"
+            android:exported="false" />
+        <activity
             android:name=".NotificationHistoryActivity"
             android:exported="false" />
         <activity
