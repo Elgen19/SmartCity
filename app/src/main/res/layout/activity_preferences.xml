@@ -1,0 +1,244 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/backdraft2"
+    android:padding="16dp">
+
+    <!-- Content LinearLayout -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/button_save"
+        android:orientation="vertical">
+
+        <!-- Title at the top center -->
+        <TextView
+            android:id="@+id/title_preferences"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="16dp"
+            android:text="@string/preferences"
+            android:textColor="@color/primary_color"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <!-- First Card for Preferred Mode of Transport -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="56dp"
+            android:layout_marginBottom="16dp"
+            app:cardBackgroundColor="@color/white"
+            android:elevation="4dp"
+            android:padding="16dp"
+            app:cardCornerRadius="8dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- Title TextView -->
+                <TextView
+                    android:id="@+id/title_preferred_mode"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingBottom="8dp"
+                    android:text="@string/preferred_mode_of_transport"
+                    android:textColor="@color/brand_color"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    tools:ignore="TextContrastCheck" />
+
+                <!-- CheckBox Row 1 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingBottom="8dp"
+                    android:weightSum="2">
+
+                    <CheckBox
+                        android:id="@+id/checkbox_public_transport"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/gray"
+                        android:layout_weight="1"
+                        android:text="@string/public_transport" />
+
+                    <CheckBox
+                        android:id="@+id/checkbox_car"
+                        android:layout_width="0dp"
+                        android:textColor="@color/gray"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/car"
+                        tools:ignore="VisualLintButtonSize" />
+                </LinearLayout>
+
+                <!-- CheckBox Row 2 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:weightSum="2">
+
+                    <CheckBox
+                        android:id="@+id/checkbox_walking"
+                        android:layout_width="0dp"
+                        android:textColor="@color/gray"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/walking" />
+
+                    <CheckBox
+                        android:id="@+id/checkbox_motor"
+                        android:layout_width="0dp"
+                        android:textColor="@color/gray"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/motor" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Third Card for Preferred Events and Notifications -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp"
+            android:clickable="true"
+            android:focusable="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@color/white"
+                android:padding="16dp">
+
+                <!-- Title TextView -->
+                <TextView
+                    android:id="@+id/title_preferred_events"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingBottom="8dp"
+                    android:text="@string/preferred_events_and_notifications"
+                    android:textColor="@color/brand_color"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    tools:ignore="TextContrastCheck" />
+
+                <!-- CheckBox List -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- First Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:weightSum="2"
+                        android:paddingBottom="8dp">
+
+                        <CheckBox
+                            android:id="@+id/checkbox_weather_advisories"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:textColor="@color/gray"
+                            android:text="@string/weather_advisories" />
+
+                        <CheckBox
+                            android:id="@+id/checkbox_food_hubs"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/popular_food_hubs_stalls"
+                            android:textColor="@color/gray"
+                            tools:ignore="TouchTargetSizeCheck" />
+                    </LinearLayout>
+
+                    <!-- Second Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:weightSum="2"
+                        android:paddingBottom="8dp">
+
+                        <CheckBox
+                            android:id="@+id/checkbox_health_fitness"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/gray"
+                            android:layout_weight="1"
+                            android:text="@string/health_and_fitness" />
+
+                        <CheckBox
+                            android:id="@+id/checkbox_festivals_concerts"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/festivals_and_concerts"
+                            android:textColor="@color/gray"
+                            tools:ignore="TouchTargetSizeCheck" />
+                    </LinearLayout>
+
+                    <!-- Third Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:weightSum="2"
+                        android:paddingBottom="8dp">
+
+                        <CheckBox
+                            android:id="@+id/checkbox_traffic_alerts"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/gray"
+                            android:layout_weight="1"
+                            android:text="@string/traffic_alerts" />
+
+                        <CheckBox
+                            android:id="@+id/checkbox_public_transits"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/gray"
+                            android:layout_weight="1"
+                            android:text="@string/public_transits" />
+                    </LinearLayout>
+                </LinearLayout>
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+    </LinearLayout>
+
+    <!-- Save Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_save"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="16dp"
+        android:backgroundTint="@color/secondary_color"
+        android:padding="16dp"
+        android:text="@string/save"
+        app:rippleColor="@color/brand_color"
+        android:textColor="@color/white"
+        app:cornerRadius="8dp"
+        tools:ignore="VisualLintButtonSize" />
+
+</RelativeLayout>

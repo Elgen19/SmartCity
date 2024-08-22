@@ -127,7 +127,8 @@ class RegistrationActivity : AppCompatActivity() {
             "fullName" to fullName,
             "email" to email,
             "phoneNumber" to phoneNumber,
-            "profilePicUrl" to profilePicUrl // Save profile picture URL to the database
+            "profilePicUrl" to profilePicUrl, // Save profile picture URL to the database
+            "preferencesSet" to false
         )
 
         database.child(userId).setValue(userMap)

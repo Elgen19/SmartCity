@@ -104,27 +104,45 @@ class SignInActivity : AppCompatActivity() {
         auth.signInWithCredential(credential)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
-                    // Google Sign-In was successful, authenticate with Firebase
                     val user = auth.currentUser
                     if (user != null) {
                         // Check if the user data already exists in the database
                         database.child(user.uid).get().addOnCompleteListener { dataTask ->
-                            if (!dataTask.isSuccessful || !dataTask.result.exists()) {
+                            if (dataTask.isSuccessful && dataTask.result.exists()) {
+                                // User data exists, check preferences
+                                val preferencesSet = dataTask.result.child("preferencesSet").getValue(Boolean::class.java) ?: false
+                                if (preferencesSet) {
+                                    // Preferences already set, redirect to Dashboard
+                                    startDashboardActivity()
+                                } else {
+                                    // Preferences not set, redirect to PreferencesActivity
+                                    startPreferencesActivity()
+                                }
+                            } else {
                                 // User data does not exist, store it
                                 storeUserInfo(user.email, user.displayName, user.photoUrl?.toString())
+                                startPreferencesActivity()
                             }
                         }
                     }
-
-                    Toast.makeText(this, "Sign in successful!", Toast.LENGTH_SHORT).show()
-                    // Redirect to the main activity or dashboard
-                    val intent = Intent(this, DashboardActivity::class.java)
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    startActivity(intent)
                 } else {
                     Toast.makeText(this, "Sign in failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
                 }
             }
+    }
+
+
+    private fun startDashboardActivity() {
+        Toast.makeText(this, "Sign in successful!", Toast.LENGTH_LONG).show()
+        val intent = Intent(this, DashboardActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+    }
+
+    private fun startPreferencesActivity() {
+        val intent = Intent(this, PreferencesActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
     }
 
     private fun storeUserInfo(email: String?, fullName: String?, photoUrl: String?) {
@@ -133,20 +151,27 @@ class SignInActivity : AppCompatActivity() {
         // Get the high-resolution profile photo URL
         val highResPhotoUrl = photoUrl?.let { getHighResPhotoUrl(it) } ?: "android.resource://com.elgenium.smartcity/drawable/male"
 
-        val userInfo = mapOf(
-            "email" to email,
-            "fullName" to fullName,
-            "phoneNumber" to "Not Available",
-            "profilePicUrl" to highResPhotoUrl
-        )
-        database.child(userId).setValue(userInfo).addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                Toast.makeText(this, "User information saved successfully!", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(this, "Failed to save user information: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+        database.child(userId).get().addOnCompleteListener { dataTask ->
+            if (dataTask.isSuccessful && !dataTask.result.exists()) {
+                // Only set preferencesSet to false if user data does not exist
+                val userInfo = mapOf(
+                    "email" to email,
+                    "fullName" to fullName,
+                    "phoneNumber" to "Not Available",
+                    "profilePicUrl" to highResPhotoUrl,
+                    "preferencesSet" to false  // New flag to indicate if preferences are set
+                )
+                database.child(userId).setValue(userInfo).addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        Toast.makeText(this, "User information saved successfully!", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this, "Failed to save user information: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
             }
         }
     }
+
 
     private fun getHighResPhotoUrl(photoUrl: String): String {
         // Append a 'sz' parameter to request a higher resolution image
@@ -160,10 +185,22 @@ class SignInActivity : AppCompatActivity() {
                 if (task.isSuccessful) {
                     val user = auth.currentUser
                     if (user != null && user.isEmailVerified) {
-                        // Proceed to the main part of the app
-                        val intent = Intent(this, DashboardActivity::class.java)
-                        startActivity(intent)
-                        finish()
+                        // Check if the user has set preferences
+                        database.child(user.uid).get().addOnCompleteListener { dataTask ->
+                            if (dataTask.isSuccessful && dataTask.result.exists()) {
+                                val preferencesSet = dataTask.result.child("preferencesSet").getValue(Boolean::class.java) ?: false
+                                if (preferencesSet) {
+                                    // Preferences already set, redirect to Dashboard
+                                    startDashboardActivity()
+                                } else {
+                                    // Preferences not set, redirect to PreferencesActivity
+                                    startPreferencesActivity()
+                                }
+                            } else {
+                                // User data does not exist, something went wrong
+                                Toast.makeText(this, "User data not found. Please try again.", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     } else {
                         // Email not verified, show a message and offer to resend the verification email
                         Toast.makeText(this, "Please verify your email address before signing in.", Toast.LENGTH_LONG).show()
@@ -178,4 +215,5 @@ class SignInActivity : AppCompatActivity() {
                 }
             }
     }
+
 }
