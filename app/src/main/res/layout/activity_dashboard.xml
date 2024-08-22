@@ -90,8 +90,8 @@
         app:backgroundTint="@color/secondary_color"
         app:itemIconTint="@color/bottom_nav_item_color"
         app:activeIndicatorLabelPadding="4dp"
-        app:itemRippleColor="@color/primary_color"
         app:itemTextColor="@color/bottom_nav_item_color"
+        app:itemActiveIndicatorStyle="@style/App.Custom.Indicator"
         app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_nav_menu" />
 
