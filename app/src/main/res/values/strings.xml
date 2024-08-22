@@ -39,5 +39,18 @@
     <string name="good_afternoon">Good Afternoon,</string>
     <string name="good_noon">Good Noon,</string>
     <string name="good_evening">Good Evening,</string>
+    <string name="preferences">Preferences</string>
+    <string name="preferred_mode_of_transport">Preferred Mode of Transport</string>
+    <string name="public_transport">Public Transport</string>
+    <string name="car">Car</string>
+    <string name="walking">Walking</string>
+    <string name="motor">Motor</string>
+    <string name="preferred_events_and_notifications">Preferred Events and Notifications</string>
+    <string name="weather_advisories">Weather Advisories</string>
+    <string name="popular_food_hubs_stalls">Popular Food Hubs/Stalls</string>
+    <string name="health_and_fitness">Health and Fitness</string>
+    <string name="festivals_and_concerts">Festivals and Concerts</string>
+    <string name="traffic_alerts">Traffic Alerts</string>
+    <string name="public_transits">Public Transits</string>
 
 </resources>

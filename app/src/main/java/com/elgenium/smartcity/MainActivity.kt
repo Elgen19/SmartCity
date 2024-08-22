@@ -38,7 +38,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun navigateToSignIn() {
-        val intent = Intent(this, SignInActivity::class.java)
+        val intent = Intent(this, DashboardActivity::class.java)
         startActivity(intent)
         finish()
     }

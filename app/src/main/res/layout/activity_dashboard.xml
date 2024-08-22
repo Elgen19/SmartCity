@@ -62,6 +62,11 @@
         android:src="@drawable/baseline_notifications_24"
         tools:ignore="SpeakableTextPresentCheck,ImageContrastCheck" />
 
+
+
+
+
+
     <!-- Bottom Navigation View -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
@@ -73,9 +78,10 @@
         android:layout_marginTop="16dp"
         app:backgroundTint="@color/secondary_color"
         app:itemIconTint="@color/bottom_nav_item_color"
+        app:activeIndicatorLabelPadding="4dp"
         app:itemRippleColor="@color/primary_color"
         app:itemTextColor="@color/bottom_nav_item_color"
-        app:itemActiveIndicatorStyle="@style/CustomBottomNavStyle"
+        app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_nav_menu" />
 
 
