@@ -4,6 +4,8 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
@@ -20,13 +22,13 @@
         android:theme="@style/Theme.SmartCity"
         tools:targetApi="31">
         <activity
+            android:name=".NotificationHistoryActivity"
+            android:exported="false" />
+        <activity
             android:name=".PreferencesActivity"
             android:exported="false" />
         <activity
             android:name=".DashboardActivity"
-            android:exported="false" />
-        <activity
-            android:name=".Dashboard"
             android:exported="false" />
         <activity
             android:name=".EditProfileActivity"

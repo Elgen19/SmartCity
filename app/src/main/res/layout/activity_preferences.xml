@@ -3,8 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/backdraft2"
-    android:padding="16dp">
+    android:background="@color/primary_color">
 
     <!-- Content LinearLayout -->
     <LinearLayout
@@ -13,27 +12,50 @@
         android:layout_above="@+id/button_save"
         android:orientation="vertical">
 
-        <!-- Title at the top center -->
-        <TextView
-            android:id="@+id/title_preferences"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="16dp"
-            android:text="@string/preferences"
-            android:textColor="@color/primary_color"
-            android:textSize="24sp"
-            android:textStyle="bold" />
+        <!-- Title Section -->
+        <LinearLayout
+            android:id="@+id/titleSection"
+            android:layout_width="match_parent"
+            android:background="@drawable/background2"
+            android:layout_height="200dp"
+            android:orientation="vertical"
+            android:layout_marginBottom="32dp">
+
+            <!-- Title TextView -->
+            <TextView
+                android:id="@+id/preferencesTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:text="@string/personalize_your_experience"
+                android:layout_marginTop="40dp"
+                android:textColor="@color/brand_color"
+                android:textSize="40sp"
+                android:textStyle="bold" />
+
+            <!-- Subtitle TextView -->
+            <TextView
+                android:id="@+id/signinSubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/white"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:text="@string/supporting_text_pref"
+                android:textSize="16sp" />
+        </LinearLayout>
 
         <!-- First Card for Preferred Mode of Transport -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="56dp"
             android:layout_marginBottom="16dp"
             app:cardBackgroundColor="@color/white"
             android:elevation="4dp"
             android:padding="16dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
             app:cardCornerRadius="8dp">
 
             <LinearLayout
@@ -112,9 +134,12 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
             app:cardCornerRadius="8dp"
             app:cardElevation="4dp"
             android:clickable="true"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
             android:focusable="true">
 
             <LinearLayout
@@ -236,6 +261,8 @@
         android:backgroundTint="@color/secondary_color"
         android:padding="16dp"
         android:text="@string/save"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
         app:rippleColor="@color/brand_color"
         android:textColor="@color/white"
         app:cornerRadius="8dp"

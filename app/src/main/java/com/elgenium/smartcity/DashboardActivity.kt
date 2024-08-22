@@ -25,6 +25,10 @@ class DashboardActivity : AppCompatActivity() {
         auth = FirebaseAuth.getInstance()
         database = FirebaseDatabase.getInstance().getReference("Users")
 
+        binding.notificationButton.setOnClickListener {
+            startActivity(Intent(this, NotificationHistoryActivity::class.java))
+        }
+
         updateGreeting()
         loadProfileImage()
         setupListeners()
