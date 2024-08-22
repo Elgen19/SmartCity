@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/backdraft2"
+    android:padding="16dp">
+
+
+    <!-- Title TextView -->
+    <TextView
+        android:id="@+id/titleTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/settings"
+        android:textStyle="bold"
+        android:textColor="@color/primary_color"
+        android:textSize="32sp"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginStart="8dp"
+        android:layout_centerVertical="true" />
+
+    <!-- App Settings Title -->
+    <TextView
+        android:id="@+id/appSettingsTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/titleTextView"
+        android:layout_marginTop="56dp"
+        android:text="@string/app_settings"
+        android:textColor="@color/brand_color"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        tools:ignore="TextContrastCheck" />
+
+    <!-- Card for Settings -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/settingsCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/appSettingsTitle"
+        android:backgroundTint="@color/white"
+        android:layout_marginTop="8dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Turn on push notifications -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_marginBottom="8dp"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:id="@+id/turnOnPushNotificationsLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/turn_on_push_notifications"
+                    android:textSize="16sp"
+                    android:textColor="@android:color/black"
+                    android:layout_centerVertical="true"
+                    tools:ignore="RelativeOverlap" />
+
+                <SwitchCompat
+                    android:id="@+id/turnOnPushNotificationsSwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    tools:ignore="DuplicateSpeakableTextCheck,TouchTargetSizeCheck" />
+            </RelativeLayout>
+
+            <!-- Enable traffic update notifications -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_marginBottom="8dp"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:id="@+id/enableTrafficUpdateNotificationsLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/enable_traffic_update_notifications"
+                    android:textSize="16sp"
+                    android:textColor="@android:color/black"
+                    android:layout_centerVertical="true"
+                    tools:ignore="RelativeOverlap" />
+
+                <SwitchCompat
+                    android:id="@+id/enableTrafficUpdateNotificationsSwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    tools:ignore="TouchTargetSizeCheck" />
+            </RelativeLayout>
+
+            <!-- Enable events notifications -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_marginBottom="8dp"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:id="@+id/enableEventsNotificationsLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/enable_events_notifications"
+                    android:textSize="16sp"
+                    android:textColor="@android:color/black"
+                    android:layout_centerVertical="true"
+                    tools:ignore="RelativeOverlap" />
+
+                <SwitchCompat
+                    android:id="@+id/enableEventsNotificationsSwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    tools:ignore="TouchTargetSizeCheck" />
+            </RelativeLayout>
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+
+    <!-- Contextual Suggestions Title -->
+    <TextView
+        android:id="@+id/appContextualSuggestionsTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/settingsCard"
+        android:layout_marginTop="16dp"
+        android:text="@string/contextual_suggestions"
+        android:textColor="@color/brand_color"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        tools:ignore="TextContrastCheck" />
+
+    <!-- Card for Contextual Suggestions -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/contextualSuggestionsCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/settingsCard"
+        android:backgroundTint="@color/white"
+        android:layout_marginTop="48dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Meal reminder suggestions -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_marginBottom="8dp"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:id="@+id/mealReminderLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/meal_reminder_suggestions"
+                    android:textSize="16sp"
+                    android:textColor="@android:color/black"
+                    android:layout_centerVertical="true"
+                    tools:ignore="RelativeOverlap" />
+
+                <SwitchCompat
+                    android:id="@+id/mealReminderSwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    tools:ignore="TouchTargetSizeCheck" />
+            </RelativeLayout>
+
+            <!-- Exercise reminder -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_marginBottom="8dp"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:id="@+id/exerciseReminderLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/exercise_reminder"
+                    android:textSize="16sp"
+                    android:textColor="@android:color/black"
+                    android:layout_centerVertical="true"
+                    tools:ignore="RelativeOverlap" />
+
+                <SwitchCompat
+                    android:id="@+id/exerciseReminderSwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    tools:ignore="TouchTargetSizeCheck" />
+            </RelativeLayout>
+
+            <!-- New event reminders -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_marginBottom="8dp"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:id="@+id/newEventRemindersLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/new_event_reminders"
+                    android:textSize="16sp"
+                    android:textColor="@android:color/black"
+                    android:layout_centerVertical="true"
+                    tools:ignore="RelativeOverlap" />
+
+                <SwitchCompat
+                    android:id="@+id/newEventRemindersSwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    tools:ignore="TouchTargetSizeCheck" />
+            </RelativeLayout>
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Feedback Title -->
+    <TextView
+        android:id="@+id/feedbackTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/FAQCard"
+        android:layout_marginTop="16dp"
+        android:text="@string/app_feedback_rating"
+        android:textColor="@color/brand_color"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        tools:ignore="TextContrastCheck" />
+
+
+    <!-- Card for Profile Settings -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/feedbackCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/feedbackTitle"
+        android:layout_marginTop="8dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp"
+        android:clickable="true"
+        android:focusable="true"
+        app:cardBackgroundColor="@color/white">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:padding="16dp">
+
+
+            <!-- TextView for Edit Profile Settings -->
+            <TextView
+                android:id="@+id/createFeedbackText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:text="@string/create_application_feedback_rating"
+                android:textColor="@color/gray"
+                android:textSize="18sp"
+                tools:ignore="RelativeOverlap" />
+
+            <!-- Arrow Icon (>) -->
+            <ImageView
+                android:id="@+id/arrowIconForFeedback"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:contentDescription="@string/todo"
+                android:src="@drawable/go"
+                app:tint="@android:color/darker_gray"
+                tools:ignore="ImageContrastCheck" />
+        </RelativeLayout>
+
+    </androidx.cardview.widget.CardView>
+
+
+    <!-- FAQ Title -->
+    <TextView
+        android:id="@+id/faqTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/contextualSuggestionsCard"
+        android:layout_marginTop="16dp"
+        android:text="@string/frequently_asked_questions"
+        android:textColor="@color/brand_color"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        tools:ignore="TextContrastCheck" />
+
+
+    <!-- Card for FAQ -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/FAQCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/contextualSuggestionsCard"
+        android:layout_marginTop="48dp"
+        android:layout_marginBottom="16dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp"
+        android:clickable="true"
+        android:focusable="true"
+        app:cardBackgroundColor="@color/white">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:padding="16dp">
+
+
+            <!-- TextView for FAQ -->
+            <TextView
+                android:id="@+id/editProfileText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:text="@string/view_faq_s_from_users"
+                android:textColor="@color/gray"
+                android:textSize="18sp"
+                tools:ignore="RelativeOverlap" />
+
+            <!-- Arrow Icon (>) -->
+            <ImageView
+                android:id="@+id/arrowIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:contentDescription="@string/todo"
+                android:src="@drawable/go"
+                app:tint="@android:color/darker_gray"
+                tools:ignore="ImageContrastCheck" />
+        </RelativeLayout>
+
+    </androidx.cardview.widget.CardView>
+
+</RelativeLayout>
