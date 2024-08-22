@@ -69,5 +69,6 @@ dependencies {
     implementation (libs.circleimageview)
     implementation (libs.glide)
     annotationProcessor (libs.compiler)
+    implementation(libs.android)
 
 }
