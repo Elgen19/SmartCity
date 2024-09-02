@@ -15,3 +15,5 @@
 local.properties
 google-services.json
 /gradle.properties
+/local.defaults.properties
+/secrets.propertiesadd .
