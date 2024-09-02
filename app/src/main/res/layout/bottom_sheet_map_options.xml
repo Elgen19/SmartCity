@@ -1,0 +1,226 @@
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:padding="16dp"
+    android:background="@drawable/bottom_sheet_round_corners"
+    android:layout_height="wrap_content">
+
+    <!-- Close Button at the Top Right -->
+    <ImageButton
+        android:id="@+id/btnClose"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:src="@drawable/baseline_close_24"
+        android:contentDescription="Close"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        app:tint="@color/red" />
+
+    <!-- Main Content LinearLayout -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_below="@id/btnClose">
+
+        <!-- Map Types Label -->
+        <TextView
+            android:id="@+id/mapTypesLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Map Types"
+            android:textColor="@color/primary_color"
+            android:textSize="18sp"
+            android:textAppearance="?attr/textAppearanceSubtitle1"/>
+
+        <!-- Map Types Row -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_horizontal"
+            android:layout_marginTop="8dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal">
+
+                <ImageButton
+                    android:id="@+id/btnSatellite"
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:src="@drawable/satellite"
+                    android:contentDescription="Satellite"
+                    android:scaleType="fitCenter"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="8dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Satellite"
+                    android:textColor="@color/primary_color"
+                    android:textAlignment="center"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:layout_marginStart="16dp">
+
+                <ImageButton
+                    android:id="@+id/btnStandard"
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:src="@drawable/standard"
+                    android:scaleType="fitCenter"
+                    android:contentDescription="Standard"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="8dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Standard"
+                    android:textColor="@color/primary_color"
+                    android:textAlignment="center"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Map Styles Label -->
+        <TextView
+            android:id="@+id/mapStylesLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Map Styles"
+            android:textColor="@color/primary_color"
+            android:textSize="18sp"
+            android:textAppearance="?attr/textAppearanceSubtitle1"
+            android:layout_marginTop="16dp"/>
+
+        <!-- First Row of Map Styles -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_horizontal"
+            android:layout_marginTop="8dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal">
+
+                <ImageButton
+                    android:id="@+id/btnStreets"
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:src="@drawable/streets"
+                    android:scaleType="fitCenter"
+                    android:contentDescription="Streets"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="8dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Streets"
+                    android:textColor="@color/primary_color"
+                    android:textAlignment="center"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:layout_marginStart="16dp">
+
+                <ImageButton
+                    android:id="@+id/btnOutdoors"
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:src="@drawable/outdoors"
+                    android:scaleType="fitCenter"
+                    android:contentDescription="Outdoors"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="8dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Outdoors"
+                    android:textColor="@color/primary_color"
+                    android:textAlignment="center"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:layout_marginStart="16dp">
+
+                <ImageButton
+                    android:id="@+id/btnTrafficDay"
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:src="@drawable/traffic_day"
+                    android:scaleType="fitCenter"
+                    android:contentDescription="Traffic Day"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="8dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Traffic Day"
+                    android:textColor="@color/primary_color"
+                    android:textAlignment="center"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Second Row of Map Styles (For the 4th Button) -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_horizontal"
+            android:layout_marginTop="8dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal">
+
+                <ImageButton
+                    android:id="@+id/btnTrafficNight"
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:src="@drawable/traffic_night"
+                    android:scaleType="fitCenter"
+                    android:contentDescription="Traffic Night"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="8dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Traffic Night"
+                    android:textColor="@color/primary_color"
+                    android:textAlignment="center"/>
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</RelativeLayout>

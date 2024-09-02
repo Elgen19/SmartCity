@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
@@ -16,13 +17,16 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.elgenium.smartcity.googlesignin.GoogleSignInClientProvider
 import com.elgenium.smartcity.sharedpreferences.PreferencesManager
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
     private val LOCATION_PERMISSION_REQUEST_CODE = 1000
+    private lateinit var googleSignInClient: GoogleSignInClient
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,6 +34,9 @@ class MainActivity : AppCompatActivity() {
 
         // Initialize Firebase Auth
         auth = FirebaseAuth.getInstance()
+
+        // Initialize Google Sign-In Client if needed
+        googleSignInClient = GoogleSignInClientProvider.getGoogleSignInClient(this)
 
         // Initial check for location services and permissions
         checkLocationAndPermissions()
@@ -108,23 +115,56 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun proceedWithAppLogic() {
-        // Delay for 2 seconds, then start the appropriate activity
         Handler(Looper.getMainLooper()).postDelayed({
             if (auth.currentUser == null) {
                 // User is not logged in
                 if (PreferencesManager.isOnboardingCompleted(this)) {
-                    // Navigate to sign-in screen if onboarding is completed
                     navigateToSignIn()
                 } else {
-                    // Navigate to onboarding screen if not completed
                     navigateToOnboarding()
                 }
             } else {
-                // User is already logged in
-                navigateToDashboard()
+                // Check Firebase authentication state and refresh token if needed
+                checkFirebaseAuthState()
             }
-        }, 1000) // 2000 milliseconds = 2 seconds
+        }, 1000) // 1000 milliseconds = 1 second
     }
+
+
+    private fun checkFirebaseAuthState() {
+        val currentUser = auth.currentUser
+        currentUser?.getIdToken(true)?.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                // Token is refreshed, proceed to dashboard
+                navigateToDashboard()
+            } else {
+                // Handle the specific error
+                if (task.exception?.message?.contains("BAD_AUTHENTICATION") == true) {
+                    // Force sign-out and redirect to sign-in
+                   signOut()
+                } else {
+                    // Handle other potential exceptions
+                    Log.e("MainActivity", "FirebaseAuth token error: ${task.exception?.message}")
+                }
+            }
+        } ?: run {
+            // If currentUser is null, navigate to sign-in screen
+            navigateToSignIn()
+        }
+    }
+
+    private fun signOut() {
+        // Sign out from Firebase
+        auth.signOut()
+
+        // Sign out from Google
+        googleSignInClient.signOut().addOnCompleteListener(this) {
+            // After sign out, you can redirect to the sign-in screen
+            navigateToSignIn()
+        }
+    }
+
+
 
     private fun navigateToSignIn() {
         val intent = Intent(this, SignInActivity::class.java)
@@ -140,7 +180,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun navigateToDashboard() {
         val intent = Intent(this, DashboardActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
         finish()
     }
@@ -153,22 +192,21 @@ class MainActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-                // All required permissions are granted
                 proceedWithAppLogic()
             } else {
-                // Permissions are denied
-                AlertDialog.Builder(this).apply {
-                    setTitle("Permissions Required")
-                    setMessage("Location permissions are required for this app to function properly.")
-                    setPositiveButton("Grant Permissions") { _, _ ->
-                        requestLocationPermissions()
-                    }
-                    setNegativeButton("Cancel") { _, _ ->
-                        finish() // Close the app if the user doesn't want to grant permissions
-                    }
-                    setCancelable(false)
-                }.show()
+                // Show a dialog explaining the need for permissions
+                showPermissionsRationaleDialog()
             }
         }
+    }
+
+    private fun showPermissionsRationaleDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Permissions required")
+            .setMessage("This app requires location permissions to function properly. Please enable them in settings.")
+            .setPositiveButton("Retry") { _, _ -> requestLocationPermissions() }
+            .setNegativeButton("Cancel") { _, _ -> finish() }
+            .setCancelable(false)
+            .show()
     }
 }

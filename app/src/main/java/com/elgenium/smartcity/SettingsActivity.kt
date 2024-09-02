@@ -1,5 +1,6 @@
 package com.elgenium.smartcity
 
+import android.app.ActivityOptions
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -19,14 +20,26 @@ class SettingsActivity : AppCompatActivity() {
         binding.bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.navigation_home -> {
-                    // Handle Home action
-                    startActivity(Intent(this, DashboardActivity::class.java))
+                    val intent = Intent(this, DashboardActivity::class.java)
+                    val options = ActivityOptions.makeCustomAnimation(
+                        this,
+                        R.anim.fade_in,
+                        R.anim.fade_out
+                    )
+                    startActivity(intent, options.toBundle())
                     finish()
-
                     true
                 }
                 R.id.navigation_places -> {
                     // Handle Places action
+                    val intent = Intent(this, PlacesActivity::class.java)
+                    val options = ActivityOptions.makeCustomAnimation(
+                        this,
+                        R.anim.fade_in,
+                        R.anim.fade_out
+                    )
+                    startActivity(intent, options.toBundle())
+                    finish()
                     true
                 }
                 R.id.navigation_favorites -> {

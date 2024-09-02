@@ -1,5 +1,6 @@
 package com.elgenium.smartcity
 
+import android.app.ActivityOptions
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -26,7 +27,14 @@ class DashboardActivity : AppCompatActivity() {
         database = FirebaseDatabase.getInstance().getReference("Users")
 
         binding.notificationButton.setOnClickListener {
-            startActivity(Intent(this, NotificationHistoryActivity::class.java))
+            val intent = Intent(this, NotificationHistoryActivity::class.java)
+            val options = ActivityOptions.makeCustomAnimation(
+                this,
+                R.anim.fade_in,
+                R.anim.fade_out
+            )
+            startActivity(intent, options.toBundle())
+            finish()
         }
 
         updateGreeting()
@@ -36,7 +44,14 @@ class DashboardActivity : AppCompatActivity() {
 
     private fun setupListeners() {
         binding.profileImage.setOnClickListener {
-            startActivity(Intent(this, ProfileActivity::class.java))
+            val intent = Intent(this, ProfileActivity::class.java)
+            val options = ActivityOptions.makeCustomAnimation(
+                this,
+                R.anim.fade_in,
+                R.anim.fade_out
+            )
+            startActivity(intent, options.toBundle())
+            finish()
         }
 
         binding.bottomNavigation.setOnItemSelectedListener { item ->
@@ -47,6 +62,14 @@ class DashboardActivity : AppCompatActivity() {
                 }
                 R.id.navigation_places -> {
                     // Handle Places action
+                    val intent = Intent(this, PlacesActivity::class.java)
+                    val options = ActivityOptions.makeCustomAnimation(
+                        this,
+                        R.anim.fade_in,
+                        R.anim.fade_out
+                    )
+                    startActivity(intent, options.toBundle())
+                    finish()
                     true
                 }
                 R.id.navigation_favorites -> {
@@ -58,8 +81,13 @@ class DashboardActivity : AppCompatActivity() {
                     true
                 }
                 R.id.navigation_settings -> {
-                    // Handle Settings action
-                    startActivity(Intent(this, SettingsActivity::class.java))
+                    val intent = Intent(this, SettingsActivity::class.java)
+                    val options = ActivityOptions.makeCustomAnimation(
+                        this,
+                        R.anim.fade_in,
+                        R.anim.fade_out
+                    )
+                    startActivity(intent, options.toBundle())
                     finish()
                     true
                 }
