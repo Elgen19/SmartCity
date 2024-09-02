@@ -71,5 +71,6 @@
     <string name="app_feedback_rating">App Feedback/Rating</string>
     <string name="frequently_asked_questions">Frequently Asked Questions</string>
     <string name="meal_reminder_suggestions">Meal reminder suggestions</string>
+    <string name="title_activity_places">PlacesActivity</string>
 
 </resources>
