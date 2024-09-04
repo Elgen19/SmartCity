@@ -6,6 +6,9 @@
         <item name="android:statusBarColor">@color/secondary_color</item>
         <item name="android:buttonTint">@color/checkbox_selector</item>
 
+
+
+
     </style>
 
     <style name="Theme.SmartCity" parent="Base.Theme.SmartCity" />

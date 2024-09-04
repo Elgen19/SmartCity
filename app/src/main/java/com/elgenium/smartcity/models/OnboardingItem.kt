@@ -1,4 +1,4 @@
-package com.elgenium.smartcity.onboarding_model
+package com.elgenium.smartcity.models
 
 
 data class OnboardingItem(
