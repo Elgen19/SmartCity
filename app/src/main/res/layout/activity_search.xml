@@ -1,0 +1,101 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/primary_color">
+
+    <!-- Search Box Layout -->
+    <LinearLayout
+        android:id="@+id/searchBoxLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:orientation="horizontal"
+        android:background="@color/secondary_color"
+        android:padding="16dp">
+
+        <!-- Search View -->
+        <androidx.appcompat.widget.SearchView
+            android:id="@+id/searchView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            app:queryHint="Search a place"
+            android:background="@drawable/search_bar_bg"
+            app:iconifiedByDefault="false" />
+
+        <!-- Mic Button -->
+        <ImageButton
+            android:id="@+id/micButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:padding="8dp"
+            android:scaleType="centerCrop"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/mic"
+            android:layout_marginStart="8dp" />
+
+    </LinearLayout>
+
+    <!-- Recent Searches RecyclerView -->
+    <TextView
+        android:id="@+id/recentSearchesLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/searchBoxLayout"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginTop="16dp"
+        android:textColor="@color/secondary_color"
+        android:textSize="20sp"
+        android:text="Recent Searches"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recentSearchRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/recentSearchesLabel"
+        android:layout_marginBottom="16dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:visibility="visible"/>
+
+    <!-- Autocomplete RecyclerView -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/autocompleteRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/recentSearchesLabel"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:visibility="gone"/>
+
+
+    <!-- LottieAnimationView for the lotify -->
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/lotifyAnimation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        app:lottie_rawRes="@raw/no_data"
+        app:lottie_loop="true"
+        app:lottie_autoPlay="true"
+        android:visibility="gone"/>
+
+
+    <!-- Recent Searches RecyclerView -->
+    <TextView
+        android:id="@+id/emptyDataLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/lotifyAnimation"
+        android:layout_centerInParent="true"
+        android:textAlignment="center"
+        android:textColor="@color/gray"
+        android:textSize="18sp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:text="@string/search_labels"
+        android:visibility="gone"/>
+</RelativeLayout>

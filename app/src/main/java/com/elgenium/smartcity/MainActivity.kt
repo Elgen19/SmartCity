@@ -13,6 +13,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -194,19 +195,9 @@ class MainActivity : AppCompatActivity() {
             if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
                 proceedWithAppLogic()
             } else {
-                // Show a dialog explaining the need for permissions
-                showPermissionsRationaleDialog()
+                Toast.makeText(this, "Please enable location permission to use the app", Toast.LENGTH_LONG).show()
             }
         }
     }
 
-    private fun showPermissionsRationaleDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("Permissions required")
-            .setMessage("This app requires location permissions to function properly. Please enable them in settings.")
-            .setPositiveButton("Retry") { _, _ -> requestLocationPermissions() }
-            .setNegativeButton("Cancel") { _, _ -> finish() }
-            .setCancelable(false)
-            .show()
-    }
 }

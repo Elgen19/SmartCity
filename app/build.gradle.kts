@@ -69,6 +69,7 @@ dependencies {
     implementation(libs.core)
     implementation(libs.play.services.location)
     implementation(libs.play.services.maps)
+    implementation(libs.places)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -83,6 +84,11 @@ dependencies {
     annotationProcessor (libs.compiler)
     implementation(libs.android)
     implementation (libs.androidx.transition)
+    implementation ("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation ("com.squareup.okhttp3:okhttp:4.10.0")
+
+
 
 
 

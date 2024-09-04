@@ -31,7 +31,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Map Types"
-            android:textColor="@color/primary_color"
+            android:textColor="@color/gray"
             android:textSize="18sp"
             android:textAppearance="?attr/textAppearanceSubtitle1"/>
 
@@ -43,43 +43,20 @@
             android:gravity="center_horizontal"
             android:layout_marginTop="8dp">
 
+            <!-- Standard Map Type -->
             <LinearLayout
+                android:id="@+id/layoutStandard"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:gravity="center_horizontal">
 
                 <ImageButton
-                    android:id="@+id/btnSatellite"
-                    android:layout_width="100dp"
-                    android:layout_height="100dp"
-                    android:src="@drawable/satellite"
-                    android:contentDescription="Satellite"
-                    android:scaleType="fitCenter"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:padding="8dp"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Satellite"
-                    android:textColor="@color/primary_color"
-                    android:textAlignment="center"/>
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center_horizontal"
-                android:layout_marginStart="16dp">
-
-                <ImageButton
                     android:id="@+id/btnStandard"
                     android:layout_width="100dp"
                     android:layout_height="100dp"
                     android:src="@drawable/standard"
-                    android:scaleType="fitCenter"
+                    android:scaleType="centerCrop"
                     android:contentDescription="Standard"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:padding="8dp"/>
@@ -88,23 +65,77 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Standard"
-                    android:textColor="@color/primary_color"
+                    android:textColor="@color/gray"
+                    android:textAlignment="center"/>
+            </LinearLayout>
+
+            <!-- Satellite Map Type -->
+            <LinearLayout
+                android:id="@+id/layoutSatellite"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:layout_marginStart="16dp">
+
+                <ImageButton
+                    android:id="@+id/btnSatellite"
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:src="@drawable/satellite"
+                    android:scaleType="centerCrop"
+                    android:contentDescription="Satellite"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="8dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Satellite"
+                    android:textColor="@color/gray"
+                    android:textAlignment="center"/>
+            </LinearLayout>
+
+            <!-- Terrain Map Type -->
+            <LinearLayout
+                android:id="@+id/layoutTerrain"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:layout_marginStart="16dp">
+
+                <ImageButton
+                    android:id="@+id/btnTerrain"
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:src="@drawable/terrains"
+                    android:scaleType="centerCrop"
+                    android:contentDescription="Terrain"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="8dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Terrain"
+                    android:textColor="@color/gray"
                     android:textAlignment="center"/>
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Map Styles Label -->
+        <!-- Map Details Label -->
         <TextView
-            android:id="@+id/mapStylesLabel"
+            android:id="@+id/mapDetailsLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Map Styles"
-            android:textColor="@color/primary_color"
+            android:text="Map Details"
+            android:textColor="@color/gray"
             android:textSize="18sp"
             android:textAppearance="?attr/textAppearanceSubtitle1"
             android:layout_marginTop="16dp"/>
 
-        <!-- First Row of Map Styles -->
+        <!-- Map Details Row -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -112,6 +143,7 @@
             android:gravity="center_horizontal"
             android:layout_marginTop="8dp">
 
+            <!-- Traffic Layer Toggle -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -119,106 +151,22 @@
                 android:gravity="center_horizontal">
 
                 <ImageButton
-                    android:id="@+id/btnStreets"
+                    android:id="@+id/btnTraffic"
                     android:layout_width="100dp"
                     android:layout_height="100dp"
-                    android:src="@drawable/streets"
-                    android:scaleType="fitCenter"
-                    android:contentDescription="Streets"
+                    android:src="@drawable/traffic"
+                    android:contentDescription="Traffic"
+                    android:scaleType="centerCrop"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:padding="8dp"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Streets"
-                    android:textColor="@color/primary_color"
+                    android:text="Traffic"
+                    android:textColor="@color/gray"
                     android:textAlignment="center"/>
             </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center_horizontal"
-                android:layout_marginStart="16dp">
-
-                <ImageButton
-                    android:id="@+id/btnOutdoors"
-                    android:layout_width="100dp"
-                    android:layout_height="100dp"
-                    android:src="@drawable/outdoors"
-                    android:scaleType="fitCenter"
-                    android:contentDescription="Outdoors"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:padding="8dp"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Outdoors"
-                    android:textColor="@color/primary_color"
-                    android:textAlignment="center"/>
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center_horizontal"
-                android:layout_marginStart="16dp">
-
-                <ImageButton
-                    android:id="@+id/btnTrafficDay"
-                    android:layout_width="100dp"
-                    android:layout_height="100dp"
-                    android:src="@drawable/traffic_day"
-                    android:scaleType="fitCenter"
-                    android:contentDescription="Traffic Day"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:padding="8dp"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Traffic Day"
-                    android:textColor="@color/primary_color"
-                    android:textAlignment="center"/>
-            </LinearLayout>
-        </LinearLayout>
-
-        <!-- Second Row of Map Styles (For the 4th Button) -->
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_horizontal"
-            android:layout_marginTop="8dp">
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center_horizontal">
-
-                <ImageButton
-                    android:id="@+id/btnTrafficNight"
-                    android:layout_width="100dp"
-                    android:layout_height="100dp"
-                    android:src="@drawable/traffic_night"
-                    android:scaleType="fitCenter"
-                    android:contentDescription="Traffic Night"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:padding="8dp"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Traffic Night"
-                    android:textColor="@color/primary_color"
-                    android:textAlignment="center"/>
-            </LinearLayout>
-
         </LinearLayout>
 
     </LinearLayout>

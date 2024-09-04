@@ -11,7 +11,7 @@ import com.elgenium.smartcity.OnboardingScreenActivity
 import com.elgenium.smartcity.R
 import com.elgenium.smartcity.SignInActivity
 import com.elgenium.smartcity.databinding.ItemOnboardingBinding
-import com.elgenium.smartcity.onboarding_model.OnboardingItem
+import com.elgenium.smartcity.models.OnboardingItem
 import com.elgenium.smartcity.sharedpreferences.PreferencesManager
 
 class OnboardingAdapter(
