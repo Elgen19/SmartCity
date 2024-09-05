@@ -1,4 +1,4 @@
-package com.elgenium.smartcity.onboarding_adapter
+package com.elgenium.smartcity.viewpager_adapter
 
 import android.content.Context
 import android.content.Intent

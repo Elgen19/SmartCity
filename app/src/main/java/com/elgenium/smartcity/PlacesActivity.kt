@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.Canvas
 import android.graphics.Rect
 import android.os.Bundle
 import android.os.Looper
@@ -13,12 +12,15 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.ImageButton
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.viewpager2.widget.ViewPager2
 import com.elgenium.smartcity.databinding.ActivityPlacesBinding
-import com.elgenium.smartcity.models.PlacesResponse
-import com.elgenium.smartcity.network.PlacesService
+import com.elgenium.smartcity.models.PlaceDistanceResponse
+import com.elgenium.smartcity.network.PlaceDistance
+import com.elgenium.smartcity.viewpager_adapter.PhotoPagerAdapter
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -29,19 +31,17 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.BitmapDescriptor
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.PhotoMetadata
 import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.net.FetchPhotoRequest
 import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
@@ -126,7 +126,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private fun showMapStylesBottomSheet() {
         // Inflate the bottom sheet layout
-        val bottomSheetView = layoutInflater.inflate(R.layout.bottom_sheet_map_options, null)
+        val bottomSheetView = layoutInflater.inflate(R.layout.bottom_sheet_map_options, findViewById(android.R.id.content), false)
         val bottomSheetDialog = BottomSheetDialog(this)
         bottomSheetDialog.setContentView(bottomSheetView)
 
@@ -169,8 +169,6 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
         bottomSheetDialog.show()
     }
 
-
-
     private fun resetMapToDefaultLocation() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             fusedLocationClient.lastLocation.addOnSuccessListener { location ->
@@ -194,23 +192,39 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
 
 
     private fun fetchPlaceDetails(placeId: String) {
-        val request = FetchPlaceRequest.builder(placeId, listOf(Place.Field.LAT_LNG)).build()
+        val fields = listOf(
+            Place.Field.ID,
+            Place.Field.NAME,
+            Place.Field.ADDRESS,
+            Place.Field.PHONE_NUMBER,
+            Place.Field.WEBSITE_URI,
+            Place.Field.PHOTO_METADATAS,
+            Place.Field.RATING,
+            Place.Field.OPENING_HOURS,
+            Place.Field.LAT_LNG // Ensure this is included
+        )
+        val request = FetchPlaceRequest.builder(placeId, fields).build()
 
         placesClient.fetchPlace(request)
             .addOnSuccessListener { response ->
                 val place = response.place
                 place.latLng?.let { latLng ->
-                    // Animate the camera to the place location
+                    // Handle the valid latLng
+                    val marker = mMap.addMarker(MarkerOptions().position(latLng).title(place.name))
+                    marker?.tag = placeId
                     mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
-
-                    // Add a marker at the place location
-                    mMap.addMarker(MarkerOptions().position(latLng).title("Selected Place"))
+                    showPlaceDetailsBottomSheet(placeId)
+                } ?: run {
+                    Log.d("PlacesActivity", "Place does not have a LatLng.")
                 }
             }
             .addOnFailureListener { exception ->
                 Log.e("PlacesActivity", "Error fetching place details", exception)
             }
     }
+
+
+
 
 
 
@@ -233,7 +247,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLatLng, 15f))
 
                     // Fetch and add POIs after setting the initial location
-                    fetchAndAddPois(userLatLng)
+//                    fetchAndAddPois(userLatLng)
                 }
             }
 
@@ -247,110 +261,191 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
                     isFollowingUser = false
                 }
             }
+
+            // Marker click listener to show the bottom sheet
+            mMap.setOnMarkerClickListener { marker ->
+                // Fetch the place ID (you can save this when adding the marker)
+                val placeId = marker.tag as? String
+                placeId?.let {
+                    showPlaceDetailsBottomSheet(it)
+                }
+                false
+            }
+
+
         } else {
             // Request location permission
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQUEST_CODE)
         }
     }
 
+    private fun showPlaceDetailsBottomSheet(placeId: String) {
+        val bottomSheetView = layoutInflater.inflate(R.layout.bottom_sheet_place_details, findViewById(android.R.id.content), false)
+        val bottomSheetDialog = BottomSheetDialog(this)
+        bottomSheetDialog.setContentView(bottomSheetView)
 
-    private fun fetchAndAddPois(userLatLng: LatLng) {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            val apiKey = BuildConfig.MAPS_API_KEY
+        val placeName: TextView = bottomSheetView.findViewById(R.id.placeName)
+        val placeAddress: TextView = bottomSheetView.findViewById(R.id.placeAddress)
+        val placePhone: TextView = bottomSheetView.findViewById(R.id.placePhone)
+        val placeWebsite: TextView = bottomSheetView.findViewById(R.id.placeWebsite)
+        val placeRating: TextView = bottomSheetView.findViewById(R.id.placeRating)
+        val placePhoto: ViewPager2 = bottomSheetView.findViewById(R.id.viewPager)
+        val placeHours: TextView = bottomSheetView.findViewById(R.id.placeHours)
+        val placeDistance: TextView = bottomSheetView.findViewById(R.id.placeDistance)
+        val btnClose: ImageButton = bottomSheetView.findViewById(R.id.closeButton)
 
-            val retrofit = Retrofit.Builder()
-                .baseUrl("https://maps.googleapis.com/maps/api/")
-                .addConverterFactory(GsonConverterFactory.create())
-                .build()
+        val placeFields = listOf(
+            Place.Field.NAME,
+            Place.Field.ADDRESS,
+            Place.Field.PHONE_NUMBER,
+            Place.Field.PHOTO_METADATAS,
+            Place.Field.LAT_LNG,
+            Place.Field.OPENING_HOURS // Ensure this is included for location info
+        )
+        val request = FetchPlaceRequest.builder(placeId, placeFields).build()
 
-            val service = retrofit.create(PlacesService::class.java)
+        // Fetch the place details
+        placesClient.fetchPlace(request)
+            .addOnSuccessListener { response ->
+                val place = response.place
+                placeName.text = place.name ?: "Unknown Place"
+                placeAddress.text = place.address ?: "No Address Available"
+                placePhone.text = place.phoneNumber ?: "No Phone Available"
+                placeWebsite.text = place.websiteUri?.toString() ?: "No Website Available"
+                placeRating.text = getString(R.string.rating, place.rating ?: "No Rating")
 
-            val location = "${userLatLng.latitude},${userLatLng.longitude}"
-            val radius = 5000 // Radius in meters
-            val types = listOf("restaurant", "hotel", "bar") // Example categories
+                // Handle Opening Hours
+                val openingHours = place.openingHours
+                if (openingHours != null) {
+                    placeHours.text = getString(R.string.open, openingHours.weekdayText.joinToString("\n"))
+                } else {
+                    placeHours.text = getString(R.string.opening_hours_not_available)
+                }
 
-            // Define custom icons
-            val restaurantIcon = createCustomMarker(R.drawable.restaurant)
-            val hotelIcon = createCustomMarker(R.drawable.hotel)
-            val barIcon = createCustomMarker(R.drawable.bar)
-            val defaultIcon = createCustomMarker(R.drawable.marker_custom)
+                checkLocationPermission()
 
-            for (type in types) {
-                service.getNearbyPlaces(location, radius, type, apiKey).enqueue(object :
-                    Callback<PlacesResponse> {
-                    override fun onResponse(call: Call<PlacesResponse>, response: Response<PlacesResponse>) {
-                        if (response.isSuccessful) {
-                            response.body()?.results?.forEach { place ->
-                                val latLng = LatLng(place.geometry.location.lat, place.geometry.location.lng)
-                                val markerOptions = MarkerOptions()
-                                    .position(latLng)
-                                    .title(place.name)
-                                    .snippet("Category: $type")
+                // Get user location using fusedLocationClient
+                fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                    if (location != null) {
+                        val userLocation = LatLng(location.latitude, location.longitude)
+                        val placeLocation = place.latLng
 
-                                // Set the icon based on the category
-                                when (type) {
-                                    "restaurant" -> markerOptions.icon(restaurantIcon)
-                                    "hotel" -> markerOptions.icon(hotelIcon)
-                                    "bar" -> markerOptions.icon(barIcon)
-                                    else -> markerOptions.icon(defaultIcon) // Use default icon for other types
-                                }
+                        if (placeLocation != null) {
+                            // Now call the Directions API using Retrofit
+                            val apiKey = BuildConfig.MAPS_API_KEY
+                            val origin = "${userLocation.latitude},${userLocation.longitude}"
+                            val destination = "${placeLocation.latitude},${placeLocation.longitude}"
 
-                                mMap.addMarker(markerOptions)
-                            }
+                            val api = createRetrofitInstance()
+                            api.getDirections(origin, destination, apiKey)
+                                .enqueue(object : retrofit2.Callback<PlaceDistanceResponse> {
+                                    override fun onResponse(
+                                        call: Call<PlaceDistanceResponse>, response: retrofit2.Response<PlaceDistanceResponse>
+                                    ) {
+                                        if (response.isSuccessful && response.body() != null) {
+                                            val directionsResponse = response.body()
+                                            if (directionsResponse?.routes?.isNotEmpty() == true) {
+                                                val distance = directionsResponse.routes[0].legs[0].distance.text
+                                                placeDistance.text = getString(
+                                                    R.string.distance_from_location,
+                                                    distance
+                                                )
+                                            } else {
+                                                placeDistance.text = getString(R.string.distance_not_available)
+                                            }
+                                        } else {
+                                            placeDistance.text = getString(R.string.distance_error)
+                                        }
+                                    }
+
+                                    override fun onFailure(call: Call<PlaceDistanceResponse>, t: Throwable) {
+                                        Log.e("RetrofitError", "Error fetching directions: ${t.message}")
+                                        placeDistance.text = getString(R.string.distance_error)
+                                    }
+                                })
                         } else {
-                            Log.e("PlacesActivity", "Response error for type: $type. Error code: ${response.code()}")
+                            placeDistance.text = getString(R.string.distance_not_available)
+                        }
+                    } else {
+                        placeDistance.text = getString(R.string.distance_location_not_available)
+                    }
+                }
+
+                // Display place photos
+                val photoMetadatas = place.photoMetadatas ?: emptyList()
+                if (photoMetadatas.isNotEmpty()) {
+                    loadPhotosIntoViewPager(photoMetadatas, placePhoto)
+                }
+
+                if (place.latLng == null) {
+                    placeAddress.text = getString(R.string.location_details_not_available)
+                }
+
+                btnClose.setOnClickListener {
+                    bottomSheetDialog.dismiss()
+                }
+            }
+            .addOnFailureListener { exception ->
+                Log.e("PlacesActivity", "Error fetching place details for bottom sheet", exception)
+            }
+
+        bottomSheetDialog.show()
+    }
+
+
+    private fun loadPhotosIntoViewPager(photoMetadatas: List<PhotoMetadata>, viewPager: ViewPager2) {
+        val photoBitmaps = mutableListOf<Bitmap>()
+
+        // Fetch each photo
+        photoMetadatas.forEach { photoMetadata ->
+            val photoRequest = FetchPhotoRequest.builder(photoMetadata)
+                .setMaxWidth(400)
+                .setMaxHeight(400)
+                .build()
+            placesClient.fetchPhoto(photoRequest)
+                .addOnSuccessListener { response ->
+                    // Get the Bitmap and add it to the list
+                    val photoBitmap = response.bitmap
+                    photoBitmap.let {
+                        photoBitmaps.add(it)
+                        // Only set the adapter once, when all photos are loaded
+                        if (photoBitmaps.size == photoMetadatas.size) {
+                            viewPager.adapter = PhotoPagerAdapter(photoBitmaps) // Pass Bitmap list directly
                         }
                     }
+                }
+                .addOnFailureListener { exception ->
+                    Log.e("PlacesActivity", "Error fetching photo", exception)
+                }
+        }
+    }
 
-                    override fun onFailure(call: Call<PlacesResponse>, t: Throwable) {
-                        Log.e("PlacesActivity", "Error fetching POI data", t)
-                    }
-                })
-            }
-        } else {
-            ActivityCompat.requestPermissions(
-                this,
+    private fun createRetrofitInstance(): PlaceDistance {
+        val retrofit = Retrofit.Builder()
+            .baseUrl("https://maps.googleapis.com/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        return retrofit.create(PlaceDistance::class.java)
+    }
+
+
+
+
+
+    private fun checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                LOCATION_PERMISSION_REQUEST_CODE
-            )
+                LOCATION_PERMISSION_REQUEST_CODE)
         }
     }
 
 
 
-    private fun createCustomMarker(iconId: Int): BitmapDescriptor {
-        val markerWidth = 100 // Desired width of the marker in pixels
-        val markerHeight = 100 // Desired height of the marker in pixels
-        val iconSize = 30 // Desired size of the icon in pixels
 
-        // Create the base marker bitmap with desired size
-        val markerDrawable = ContextCompat.getDrawable(this, R.drawable.marker_custom)?.apply {
-            setBounds(0, 0, markerWidth, markerHeight)
-        }
-        val markerBitmap = Bitmap.createBitmap(markerWidth, markerHeight, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(markerBitmap)
-        markerDrawable?.draw(canvas)
 
-        // Create the icon bitmap and resize it to fit within the marker
-        val iconDrawable = ContextCompat.getDrawable(this, iconId)?.apply {
-            setBounds(0, 0, iconSize, iconSize) // Resize icon to fit within the marker
-        }
-        val iconBitmap = Bitmap.createBitmap(iconSize, iconSize, Bitmap.Config.ARGB_8888)
-        val iconCanvas = Canvas(iconBitmap)
-        iconDrawable?.draw(iconCanvas)
-
-        // Combine the marker and icon
-        val markerWithIconBitmap = Bitmap.createBitmap(markerWidth, markerHeight, Bitmap.Config.ARGB_8888)
-        val markerWithIconCanvas = Canvas(markerWithIconBitmap)
-        markerWithIconCanvas.drawBitmap(markerBitmap, 0f, 0f, null)
-
-        // Position the icon in the center of the marker
-        val left = (markerWidth - iconSize) / 2
-        val top = (markerHeight - iconSize) / 2
-        markerWithIconCanvas.drawBitmap(iconBitmap, left.toFloat(), top.toFloat(), null)
-
-        return BitmapDescriptorFactory.fromBitmap(markerWithIconBitmap)
-    }
 
 
 
@@ -376,11 +471,6 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-
-
-
-
-
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         if (ev.action == MotionEvent.ACTION_DOWN) {
             val view = currentFocus
@@ -396,12 +486,6 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
         }
         return super.dispatchTouchEvent(ev)
     }
-
-
-
-
-
-
 
     private fun navigateToActivity(activityClass: Class<*>) {
         val intent = Intent(this, activityClass)

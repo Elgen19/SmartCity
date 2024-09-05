@@ -1,0 +1,194 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@drawable/bottom_sheet_round_corners"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:id="@+id/topComponents"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <!-- Place Name TextView -->
+        <TextView
+            android:id="@+id/placeName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Place Name"
+            android:textColor="@color/gray"
+            android:textStyle="bold"
+            android:textSize="20sp"
+            android:layout_weight="1"
+            android:layout_gravity="center_vertical" />
+
+        <!-- Close Button ImageButton -->
+        <ImageButton
+            android:id="@+id/closeButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/baseline_close_24"
+            android:contentDescription="@string/back"
+            app:tint="@color/red"
+            android:layout_gravity="center_vertical" />
+
+    </LinearLayout>
+
+
+
+    <!-- ViewPager2 for displaying photos -->
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/viewPager"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:layout_below="@id/topComponents"
+        android:layout_marginTop="8dp" />
+
+    <!-- Place Address with Icon -->
+    <LinearLayout
+        android:id="@+id/placeAddressLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_below="@id/viewPager"
+        android:layout_marginTop="8dp">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/address" />
+
+        <TextView
+            android:id="@+id/placeAddress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Place Address"
+            android:textColor="@color/gray"
+            android:textSize="14sp"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
+
+    <!-- Place Phone with Icon -->
+    <LinearLayout
+        android:id="@+id/placePhoneLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_below="@id/placeAddressLayout"
+        android:layout_marginTop="8dp">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/phone" />
+
+        <TextView
+            android:id="@+id/placePhone"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Place Phone Number"
+            android:textColor="@color/gray"
+            android:textSize="14sp"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
+
+    <!-- Additional Information: Website -->
+    <LinearLayout
+        android:id="@+id/placeWebsiteLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_below="@id/placePhoneLayout"
+        android:layout_marginTop="8dp">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/web" />
+
+        <TextView
+            android:id="@+id/placeWebsite"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Place Website"
+            android:textColor="@color/gray"
+            android:textSize="14sp"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
+
+    <!-- Additional Information: Rating -->
+    <LinearLayout
+        android:id="@+id/placeRatingLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_below="@id/placeWebsiteLayout"
+        android:layout_marginTop="8dp">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/rating" />
+
+        <TextView
+            android:id="@+id/placeRating"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Rating: 4.5"
+            android:textColor="@color/gray"
+            android:textSize="14sp"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
+
+    <!-- Additional Information: Opening Hours -->
+    <LinearLayout
+        android:id="@+id/placeHoursLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_below="@id/placeRatingLayout"
+        android:layout_marginTop="8dp">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/open_hours" />
+
+        <TextView
+            android:id="@+id/placeHours"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Opening Hours"
+            android:textColor="@color/gray"
+            android:textSize="14sp"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
+
+    <!-- Additional Information: Distance from User -->
+    <LinearLayout
+        android:id="@+id/placeDistanceLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_below="@id/placeHoursLayout"
+        android:layout_marginTop="8dp">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/distance" />
+
+        <TextView
+            android:id="@+id/placeDistance"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Distance: 0 km"
+            android:textColor="@color/gray"
+            android:textSize="14sp"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
+
+</RelativeLayout>

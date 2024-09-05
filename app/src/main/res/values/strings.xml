@@ -73,5 +73,16 @@
     <string name="meal_reminder_suggestions">Meal reminder suggestions</string>
     <string name="title_activity_places">PlacesActivity</string>
     <string name="search_labels">You don’t have any recent searches. Begin searching to see your history here.</string>
+    <string name="rating">Rating: %1$s</string>
+    <string name="location_details_not_available">Location details not available</string>
+    <string name="open">Opening Hours:\n%1$s</string>
+    <string name="opening_hours_not_available">Opening Hours: Not Available</string>
+    <string name="distance">Distance from location: %1$s</string>
+    <string name="_2f_km">%.2f km</string>
+    <string name="distance_not_available">Distance from location: Not Available</string>
+    <string name="distance_location_not_available">Distance from location: Location Not Available</string>
+    <string name="distance_error">Distance from location: Error</string>
+    <string name="an_imageview_for_the_photos_of_the_place">an imageview for the photos of the place</string>
+    <string name="distance_from_location">Distance from location: %1$s</string>
 
 </resources>
