@@ -18,7 +18,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.elgenium.smartcity.googlesignin.GoogleSignInClientProvider
+import com.elgenium.smartcity.helpers.GoogleSignInClientProvider
+import com.elgenium.smartcity.helpers.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.sharedpreferences.PreferencesManager
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.firebase.auth.FirebaseAuth
@@ -32,6 +33,9 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        // sets the color of the navigation bar making it more personalized
+        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
 
         // Initialize Firebase Auth
         auth = FirebaseAuth.getInstance()

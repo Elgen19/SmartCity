@@ -18,6 +18,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.viewpager2.widget.ViewPager2
 import com.elgenium.smartcity.databinding.ActivityPlacesBinding
+import com.elgenium.smartcity.helpers.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.models.PlaceDistanceResponse
 import com.elgenium.smartcity.network.PlaceDistance
 import com.elgenium.smartcity.viewpager_adapter.PhotoPagerAdapter
@@ -62,6 +63,9 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
 
         binding = ActivityPlacesBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // sets the color of the navigation bar making it more personalized
+        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
 
         // get google maps API key in the secrets.properties
         val apiKey = BuildConfig.MAPS_API_KEY

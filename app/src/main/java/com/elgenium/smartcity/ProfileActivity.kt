@@ -6,7 +6,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.elgenium.smartcity.databinding.ActivityProfileBinding
-import com.elgenium.smartcity.googlesignin.GoogleSignInClientProvider
+import com.elgenium.smartcity.helpers.GoogleSignInClientProvider
+import com.elgenium.smartcity.helpers.NavigationBarColorCustomizerHelper
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.firebase.auth.FirebaseAuth
 
@@ -20,6 +21,9 @@ class ProfileActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityProfileBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // sets the color of the navigation bar making it more personalized
+        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
 
         // Initialize Firebase Auth
         auth = FirebaseAuth.getInstance()

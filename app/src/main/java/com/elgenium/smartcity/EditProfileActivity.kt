@@ -15,6 +15,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
 import com.elgenium.smartcity.databinding.ActivityEditProfileBinding
+import com.elgenium.smartcity.helpers.NavigationBarColorCustomizerHelper
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -40,6 +41,9 @@ class EditProfileActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityEditProfileBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // sets the color of the navigation bar making it more personalized
+        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
 
         auth = FirebaseAuth.getInstance()
         databaseReference = FirebaseDatabase.getInstance().getReference("Users")

@@ -1,4 +1,4 @@
-package com.elgenium.smartcity.googlesignin
+package com.elgenium.smartcity.helpers
 
 import android.content.Context
 import com.elgenium.smartcity.BuildConfig
