@@ -17,6 +17,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.elgenium.smartcity.databinding.ActivitySearchBinding
+import com.elgenium.smartcity.helpers.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.models.Search
 import com.elgenium.smartcity.recyclerview_adapter.AutocompleteAdapter
 import com.elgenium.smartcity.recyclerview_adapter.RecentSearchAdapter
@@ -57,6 +58,9 @@ class SearchActivity : AppCompatActivity() {
 
         binding = ActivitySearchBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // sets the color of the navigation bar making it more personalized
+        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
 
         auth = FirebaseAuth.getInstance()
         val currentUser = auth.currentUser

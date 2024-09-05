@@ -4,8 +4,9 @@ package com.elgenium.smartcity
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.elgenium.smartcity.databinding.ActivityOnboardingScreenBinding
-import com.elgenium.smartcity.viewpager_adapter.OnboardingAdapter
+import com.elgenium.smartcity.helpers.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.models.OnboardingItem
+import com.elgenium.smartcity.viewpager_adapter.OnboardingAdapter
 
 
 class OnboardingScreenActivity : AppCompatActivity() {
@@ -17,6 +18,9 @@ class OnboardingScreenActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityOnboardingScreenBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // sets the color of the navigation bar making it more personalized
+        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
 
         onboardingAdapter = OnboardingAdapter(
             onboardingItems = getOnboardingItems(),
