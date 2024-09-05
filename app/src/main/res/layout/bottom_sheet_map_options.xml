@@ -6,50 +6,63 @@
     android:background="@drawable/bottom_sheet_round_corners"
     android:layout_height="wrap_content">
 
-    <!-- Close Button at the Top Right -->
-    <ImageButton
-        android:id="@+id/btnClose"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:src="@drawable/baseline_close_24"
-        android:contentDescription="Close"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        app:tint="@color/red" />
-
-    <!-- Main Content LinearLayout -->
+    <!-- Header Row with Close Button and Map Types Label -->
     <LinearLayout
+        android:id="@+id/topComponents"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_below="@id/btnClose">
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
 
         <!-- Map Types Label -->
         <TextView
             android:id="@+id/mapTypesLabel"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="Map Types"
             android:textColor="@color/gray"
             android:textSize="18sp"
-            android:textAppearance="?attr/textAppearanceSubtitle1"/>
+            android:textAppearance="?attr/textAppearanceSubtitle1"
+            android:layout_weight="1"
+            android:layout_gravity="center_vertical" />
+
+        <!-- Close Button -->
+        <ImageButton
+            android:id="@+id/btnClose"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/baseline_close_24"
+            android:contentDescription="Close"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            app:tint="@color/red"
+            android:layout_gravity="center_vertical" />
+
+    </LinearLayout>
+
+    <!-- Main Content LinearLayout -->
+    <LinearLayout
+        android:id="@+id/mainComponent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_below="@id/topComponents"
+        android:layout_marginTop="8dp">
 
         <!-- Map Types Row -->
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center_horizontal"
-            android:layout_marginTop="8dp">
+            android:gravity="center_horizontal">
 
             <!-- Standard Map Type -->
             <LinearLayout
                 android:id="@+id/layoutStandard"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:gravity="center_horizontal">
+                android:gravity="center_horizontal"
+                android:layout_weight="1">
 
                 <ImageButton
                     android:id="@+id/btnStandard"
@@ -72,10 +85,11 @@
             <!-- Satellite Map Type -->
             <LinearLayout
                 android:id="@+id/layoutSatellite"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:gravity="center_horizontal"
+                android:layout_weight="1"
                 android:layout_marginStart="16dp">
 
                 <ImageButton
@@ -99,10 +113,11 @@
             <!-- Terrain Map Type -->
             <LinearLayout
                 android:id="@+id/layoutTerrain"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:gravity="center_horizontal"
+                android:layout_weight="1"
                 android:layout_marginStart="16dp">
 
                 <ImageButton
@@ -123,12 +138,15 @@
                     android:textAlignment="center"/>
             </LinearLayout>
         </LinearLayout>
+    </LinearLayout>
 
-        <!-- Map Details Label -->
+
+    <!-- Map Details Label -->
         <TextView
             android:id="@+id/mapDetailsLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_below="@+id/mainComponent"
             android:text="Map Details"
             android:textColor="@color/gray"
             android:textSize="18sp"
@@ -137,6 +155,7 @@
 
         <!-- Map Details Row -->
         <LinearLayout
+            android:layout_below="@+id/mapDetailsLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
@@ -168,7 +187,4 @@
                     android:textAlignment="center"/>
             </LinearLayout>
         </LinearLayout>
-
-    </LinearLayout>
-
 </RelativeLayout>

@@ -4,7 +4,7 @@ package com.elgenium.smartcity
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.elgenium.smartcity.databinding.ActivityOnboardingScreenBinding
-import com.elgenium.smartcity.onboarding_adapter.OnboardingAdapter
+import com.elgenium.smartcity.viewpager_adapter.OnboardingAdapter
 import com.elgenium.smartcity.models.OnboardingItem
 
 
