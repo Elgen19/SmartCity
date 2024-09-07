@@ -1,0 +1,70 @@
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/backdraft2"
+    android:importantForAccessibility="no"
+    android:padding="16dp"
+    tools:context=".ContactsActivity">
+
+    <LinearLayout
+        android:id="@+id/headerComponent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <!-- Back Button -->
+        <ImageButton
+            android:id="@+id/backButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/baseline_arrow_back_24"
+            android:contentDescription="@string/back"
+            app:tint="@color/neutral_color" />
+
+        <!-- Title TextView -->
+        <TextView
+            android:id="@+id/titleTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_gravity="center"
+            android:text="@string/manage_emergency_contacts"
+            android:textStyle="bold"
+            android:textColor="@color/primary_color"
+            android:textSize="24sp" />
+
+    </LinearLayout>
+
+
+    <!-- RecyclerView for Contacts -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvContacts"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/headerComponent"
+        android:layout_above="@id/btnAddContact"
+        android:layout_marginTop="32dp"
+        android:scrollbars="vertical" />
+
+    <!-- Add Contact FloatingActionButton -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btnAddContact"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="16dp"
+        android:backgroundTint="@color/secondary_color"
+        android:importantForAccessibility="no"
+        app:fabSize="normal"
+        app:rippleColor="@color/brand_color"
+        app:srcCompat="@drawable/add"
+        app:tint="@color/primary_color"
+        tools:ignore="SpeakableTextPresentCheck" />
+
+
+</RelativeLayout>

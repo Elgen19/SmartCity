@@ -7,37 +7,43 @@
     android:padding="16dp"
     android:background="@drawable/backdraft2">
 
-    <!-- Back Button -->
-    <ImageButton
-        android:id="@+id/backButton"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_alignParentStart="true"
+    <LinearLayout
         android:layout_alignParentTop="true"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:src="@drawable/baseline_arrow_back_24"
-        android:contentDescription="@string/back"
-        app:tint="@color/neutral_color" />
-
-    <!-- Title TextView -->
-    <TextView
-        android:id="@+id/titleTextView"
-        android:layout_width="wrap_content"
+        android:id="@+id/headerComponent"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_alignTop="@id/backButton"
-        android:layout_marginStart="8dp"
-        android:text="@string/edit_profile"
-        android:textStyle="bold"
-        android:textColor="@color/primary_color"
-        android:textSize="32sp" />
+        android:layout_centerVertical="true"
+        android:orientation="horizontal">
+
+        <!-- Back Button -->
+        <ImageButton
+            android:id="@+id/backButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/baseline_arrow_back_24"
+            android:contentDescription="@string/back"
+            app:tint="@color/neutral_color" />
+
+        <!-- Title TextView -->
+        <TextView
+            android:id="@+id/titleTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginStart="8dp"
+            android:text="@string/edit_profile"
+            android:textStyle="bold"
+            android:textColor="@color/primary_color"
+            android:textSize="20sp" />
+    </LinearLayout>
 
     <!-- Profile Picture -->
     <de.hdodenhof.circleimageview.CircleImageView
         android:id="@+id/profileImageView"
         android:layout_width="150dp"
         android:layout_height="150dp"
-        android:layout_below="@id/titleTextView"
+        android:layout_below="@id/headerComponent"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="64dp"
         android:clickable="true"
@@ -54,7 +60,7 @@
         android:layout_marginTop="24dp"
         android:text="@string/personal_information"
         android:textColor="@color/brand_color"
-        android:textSize="24sp"
+        android:textSize="20sp"
         android:textStyle="bold"
         tools:ignore="TextContrastCheck" />
 

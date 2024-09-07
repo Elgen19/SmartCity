@@ -7,42 +7,46 @@
     android:background="@drawable/backdraft2"
     android:padding="16dp">
 
-    <!-- Back Button ImageButton -->
-    <ImageButton
-        android:id="@+id/backButton"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:src="@drawable/baseline_arrow_back_24"
-        android:contentDescription="@string/back"
-        app:tint="@color/neutral_color" />
+   <LinearLayout
+       android:id="@+id/headerComponent"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content"
+       android:orientation="horizontal">
 
-    <!-- Title TextView -->
-    <TextView
-        android:id="@+id/titleTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/profile"
-        android:textStyle="bold"
-        android:textColor="@color/primary_color"
-        android:textSize="32sp"
-        android:layout_centerHorizontal="true"
-        android:layout_alignTop="@id/backButton"
-        android:layout_marginStart="8dp"
-        android:layout_centerVertical="true" />
+       <!-- Back Button -->
+       <ImageButton
+           android:id="@+id/backButton"
+           android:layout_width="48dp"
+           android:layout_height="48dp"
+           android:background="?attr/selectableItemBackgroundBorderless"
+           android:src="@drawable/baseline_arrow_back_24"
+           android:contentDescription="@string/back"
+           app:tint="@color/neutral_color" />
+
+       <!-- Title TextView -->
+       <TextView
+           android:id="@+id/titleTextView"
+           android:layout_width="wrap_content"
+           android:layout_height="wrap_content"
+           android:layout_marginStart="8dp"
+           android:layout_gravity="center"
+           android:text="@string/profile"
+           android:textStyle="bold"
+           android:textColor="@color/primary_color"
+           android:textSize="24sp" />
+
+   </LinearLayout>
+
 
     <!-- Card for Profile Settings -->
     <androidx.cardview.widget.CardView
         android:id="@+id/profileCard"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/titleTextView"
+        android:layout_below="@id/headerComponent"
         android:layout_marginTop="56dp"
         android:layout_marginBottom="16dp"
         app:cardCornerRadius="8dp"
-        app:cardElevation="4dp"
         android:clickable="true"
         android:focusable="true"
         app:cardBackgroundColor="@color/white">
@@ -55,8 +59,8 @@
             <!-- Profile Icon -->
             <ImageView
                 android:id="@+id/profileIcon"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
                 android:layout_alignParentStart="true"
                 android:layout_centerVertical="true"
                 android:contentDescription="@string/todo"
@@ -72,12 +76,66 @@
                 android:layout_marginStart="16dp"
                 android:text="@string/edit_profile_settings"
                 android:textColor="@color/gray"
-                android:textSize="18sp"
                 tools:ignore="RelativeOverlap" />
 
             <!-- Arrow Icon (>) -->
             <ImageView
                 android:id="@+id/arrowIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:contentDescription="@string/todo"
+                android:src="@drawable/go"
+                app:tint="@android:color/darker_gray"
+                tools:ignore="ImageContrastCheck" />
+        </RelativeLayout>
+
+    </androidx.cardview.widget.CardView>
+
+
+    <!-- Card for Profile Settings -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/contactsCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/profileCard"
+        android:layout_marginBottom="16dp"
+        app:cardCornerRadius="8dp"
+        android:clickable="true"
+        android:focusable="true"
+        app:cardBackgroundColor="@color/white">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:padding="16dp">
+
+            <!-- Profile Icon -->
+            <ImageView
+                android:id="@+id/contactIcon"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:contentDescription="@string/todo"
+                android:src="@drawable/contact" />
+
+            <!-- TextView for Edit Profile Settings -->
+            <TextView
+                android:id="@+id/contactsText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toEndOf="@id/contactIcon"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="16dp"
+                android:text="@string/manage_emergency_contacts"
+                android:textColor="@color/gray"
+                tools:ignore="RelativeOverlap" />
+
+            <!-- Arrow Icon (>) -->
+            <ImageView
+                android:id="@+id/arrowIconForContacts"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:layout_alignParentEnd="true"
