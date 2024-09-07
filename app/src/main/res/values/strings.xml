@@ -20,7 +20,7 @@
     <string name="supporting_text">Enter the email address associated with your account and we\'ll send an email with instructions to reset your password.</string>
     <string name="submit">Submit</string>
     <string name="reset_password">Reset Password</string>
-    <string name="edit_profile_settings">Edit profile settings</string>
+    <string name="edit_profile_settings">Edit Profile Settings</string>
     <string name="back">Back</string>
     <string name="profile">Profile</string>
     <string name="todo">TODO</string>
@@ -84,5 +84,15 @@
     <string name="distance_error">Distance from location: Error</string>
     <string name="an_imageview_for_the_photos_of_the_place">an imageview for the photos of the place</string>
     <string name="distance_from_location">Distance from location: %1$s</string>
+    <string name="emergency_contacts">Emergency Contacts</string>
+    <string name="title">Title</string>
+    <string name="contact_number">Contact number</string>
+    <string name="contact_email">Contact Email</string>
+    <string name="save_contact">Save Contact</string>
+    <string name="contact_name">Contact Name</string>
+    <string name="manage_emergency_contacts">Manage Emergency Contacts</string>
+    <string name="relation">relation</string>
+    <string name="edit_contact">Edit Contact</string>
+    <string name="update">Update</string>
 
 </resources>

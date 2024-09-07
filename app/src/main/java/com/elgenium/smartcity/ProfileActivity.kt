@@ -41,6 +41,11 @@ class ProfileActivity : AppCompatActivity() {
             startActivity(Intent(this, EditProfileActivity::class.java))
         }
 
+        binding.contactsCard.setOnClickListener {
+            binding.contactsCard.setCardBackgroundColor(ContextCompat.getColor(this, R.color.neutral_color))
+            startActivity(Intent(this, ContactsActivity::class.java))
+        }
+
         binding.backButton.setOnClickListener {
             startActivity(Intent(this, DashboardActivity::class.java))
             finish()

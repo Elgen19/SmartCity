@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Contact Name -->
+    <TextView
+        android:id="@+id/contactName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="18sp"
+        android:text="@string/title"
+        android:textStyle="bold"
+        android:textColor="@color/gray" />
+
+    <!-- Contact Relation -->
+    <TextView
+        android:id="@+id/contactRelation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/relation"
+        android:textSize="14sp"
+        android:textColor="@color/gray" />
+
+    <!-- Contact Number -->
+    <TextView
+        android:id="@+id/contactNumber"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/contact_number"
+        android:textSize="14sp"
+        android:textColor="@color/gray" />
+
+    <!-- Contact Email -->
+    <TextView
+        android:id="@+id/contactEmail"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/contact_email"
+        android:textSize="14sp"
+        android:textColor="@color/gray" />
+
+
+</LinearLayout>
