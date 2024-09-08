@@ -9,11 +9,17 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
 import com.elgenium.smartcity.databinding.ActivityDashboardBinding
 import com.elgenium.smartcity.helpers.NavigationBarColorCustomizerHelper
+import com.elgenium.smartcity.models.RoadLocation
+import com.elgenium.smartcity.models.RoadsResponse
+import com.elgenium.smartcity.models.TrafficResponse
 import com.elgenium.smartcity.models.WeatherResponse
 import com.elgenium.smartcity.network.OpenWeatherApiService
+import com.elgenium.smartcity.network.RoadsApiService
+import com.elgenium.smartcity.network.TomTomApiService
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.firebase.auth.FirebaseAuth
@@ -33,6 +39,8 @@ class DashboardActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var database: DatabaseReference
     private lateinit var apiService: OpenWeatherApiService
+    private lateinit var apiServiceForTraffic: TomTomApiService
+    private lateinit var apiServiceForRoads: RoadsApiService
     private val locationRequestCode = 1001
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var geocoder: Geocoder
@@ -47,12 +55,31 @@ class DashboardActivity : AppCompatActivity() {
         // sets the color of the navigation bar making it more personalized
         NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
 
-        // Initialize Retrofit
+        // Initialize Retrofit for open weather
         val retrofit = Retrofit.Builder()
             .baseUrl("https://api.openweathermap.org/data/2.5/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
         apiService = retrofit.create(OpenWeatherApiService::class.java)
+
+        val retrofitForTraffic = Retrofit.Builder()
+            .baseUrl("https://api.tomtom.com/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        apiServiceForTraffic  = retrofitForTraffic.create(TomTomApiService::class.java)
+
+        // Initialize Retrofit for Roads API
+        val retrofitForRoads = Retrofit.Builder()
+            .baseUrl("https://roads.googleapis.com/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+        apiServiceForRoads = retrofitForRoads.create(RoadsApiService::class.java)
+
+
+
+
+
 
         // Initialize location services
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
@@ -74,11 +101,178 @@ class DashboardActivity : AppCompatActivity() {
             finish()
         }
 
+
         fetchWeather()
         updateGreeting()
         loadProfileImage()
         setupListeners()
+
+        // Call methods to get data
+        fetchNearestRoad(apiServiceForRoads, apiServiceForTraffic)
     }
+
+    private fun fetchNearestRoad(roadsApiService: RoadsApiService, trafficApiService: TomTomApiService) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                if (location != null) {
+                    val latitude = location.latitude
+                    val longitude = location.longitude
+                    val path = "$latitude,$longitude"
+
+                    roadsApiService.getSnappedRoads(path, BuildConfig.MAPS_API_KEY).enqueue(object : Callback<RoadsResponse> {
+                        override fun onResponse(call: Call<RoadsResponse>, response: Response<RoadsResponse>) {
+                            if (response.isSuccessful) {
+                                val snappedPoints = response.body()?.snappedPoints ?: emptyList()
+                                Log.d("DashboardActivity", "response: ${response.body()}")
+                                if (snappedPoints.isNotEmpty()) {
+                                    val roadLocation = snappedPoints.first().location
+                                    Log.d("DashboardActivity", "road location: $roadLocation")
+
+
+                                    // Fetch traffic data using the obtained road location
+                                    fetchTrafficData(trafficApiService, roadLocation)
+
+                                    // Use these coordinates to get the address
+                                    val address = getStreetNameFromCoordinates(latitude, longitude)
+                                    binding.roadName.text = address
+                                    Log.d("DashboardActivity", "address one: $address")
+
+                                }
+                            } else {
+                                Log.e("DashboardActivity", "Failed to get roads data: ${response.message()}")
+                                Toast.makeText(this@DashboardActivity, "Failed to get roads data", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+
+                        override fun onFailure(call: Call<RoadsResponse>, t: Throwable) {
+                            Log.e("DashboardActivity", "Error fetching roads data", t)
+                            Toast.makeText(this@DashboardActivity, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    })
+                } else {
+                    Log.e("DashboardActivity", "Unable to retrieve location")
+                    Toast.makeText(this, "Unable to retrieve location", Toast.LENGTH_SHORT).show()
+                }
+            }
+        } else {
+            Log.e("DashboardActivity", "Location permission not granted")
+            requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), locationRequestCode)
+        }
+    }
+
+
+    private fun getStreetNameFromCoordinates(latitude: Double, longitude: Double): String? {
+        val geocoder = Geocoder(this, Locale.getDefault())
+        Log.d("DashboardActivity", "Starting geocoding for coordinates: Latitude = $latitude, Longitude = $longitude")
+
+        return try {
+            val addresses = geocoder.getFromLocation(latitude, longitude, 1)
+            if (!addresses.isNullOrEmpty()) {
+                val address = addresses[0]
+                val streetName = address.thoroughfare ?: "Street name not found" // Get the street name
+
+                Log.d("DashboardActivity", "Street name found: $streetName")
+                streetName
+            } else {
+                Log.w("DashboardActivity", "No address found for the given coordinates.")
+                "No address found"
+            }
+        } catch (e: Exception) {
+            Log.e("DashboardActivity", "Geocoding failed due to an exception: ${e.message}", e)
+            "Geocoder failed"
+        }
+    }
+
+
+
+
+    private fun fetchTrafficData(trafficApiService: TomTomApiService, roadLocation: RoadLocation) {
+        val point = "${roadLocation.latitude},${roadLocation.longitude}"
+        trafficApiService.getTrafficData(BuildConfig.TOM_TOM_TRAFFIC_API, point).enqueue(object : Callback<TrafficResponse> {
+            override fun onResponse(call: Call<TrafficResponse>, response: Response<TrafficResponse>) {
+                if (response.isSuccessful) {
+                    val trafficData = response.body()
+                    if (trafficData != null) {
+                        val flowSegmentData = trafficData.flowSegmentData
+                        Log.d("DashboardActivity", "Segment Data: $flowSegmentData")
+                        if (flowSegmentData != null) {
+                            val currentSpeed = flowSegmentData.currentSpeed
+                            val freeFlowSpeed = flowSegmentData.freeFlowSpeed
+                            val currentTravelTime = flowSegmentData.currentTravelTime
+                            val freeFlowTravelTime = flowSegmentData.freeFlowTravelTime
+                            val roadClosure = flowSegmentData.roadClosure
+
+                            // Classify the traffic
+                            val trafficStatus = classifyTraffic(currentSpeed, freeFlowSpeed)
+                            Log.d("DashboardActivity", "Traffic Status: $trafficStatus")
+
+                            // Update UI based on traffic status
+                            when (trafficStatus) {
+                                "Light Traffic" -> {
+                                    Log.d("DashboardActivity", "Traffic Status: LIGHT")
+                                    binding.trafficStatus.text = getString(R.string.light)
+                                    binding.trafficStatus.setTextColor(ContextCompat.getColor(applicationContext, R.color.traffic_light_color))
+                                }
+                                "Moderate Traffic" -> {
+                                    Log.d("DashboardActivity", "Traffic Status: MODERATE")
+                                    binding.trafficStatus.text = getString(R.string.moderate)
+                                    binding.trafficStatus.setTextColor(ContextCompat.getColor(applicationContext, R.color.traffic_moderate_color))
+                                }
+                                "Heavy Traffic" -> {
+                                    Log.d("DashboardActivity", "Traffic Status: HEAVY")
+                                    binding.trafficStatus.text = getString(R.string.heavy)
+                                    binding.trafficStatus.setTextColor(ContextCompat.getColor(applicationContext, R.color.traffic_heavy_color))
+                                }
+                            }
+
+
+                            Log.d("DashboardActivity", "Current Speed: $currentSpeed km/h")
+                            Log.d("DashboardActivity", "Free Flow Speed: $freeFlowSpeed km/h")
+                            Log.d("DashboardActivity", "Current Travel Time: $currentTravelTime seconds")
+                            Log.d("DashboardActivity", "Free Flow Travel Time: $freeFlowTravelTime seconds")
+                            Log.d("DashboardActivity", "Road Closure: $roadClosure")
+
+                               // Update UI with the traffic data
+                            binding.currentSpeedValue.text = getString(R.string.current_speed_format, currentSpeed)
+                            binding.freeFlowSpeedValue.text = getString(R.string.free_flow_speed_format, freeFlowSpeed)
+                            binding.freeFlowTravelTimeValue.text = getString(R.string.free_flow_travel_time_format, freeFlowTravelTime)
+                            binding.currentTravelTimeValue.text = getString(R.string.current_travel_time_format, currentTravelTime)
+                            binding.roadClosureValue.text = if (roadClosure == true) "Closed" else "Open"
+                        }
+                    }
+                } else {
+                    Log.e("DashboardActivity", "Failed to get traffic data: ${response.message()}")
+                    Toast.makeText(this@DashboardActivity, "Failed to get traffic data", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onFailure(call: Call<TrafficResponse>, t: Throwable) {
+                Log.e("DashboardActivity", "Error fetching traffic data", t)
+                Toast.makeText(this@DashboardActivity, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    private fun classifyTraffic(currentSpeed: Double?, freeFlowSpeed: Double?): String {
+        if (currentSpeed == null || freeFlowSpeed == null) {
+            return "Unknown"
+        }
+
+        // Calculate the percentage difference
+        val speedRatio = currentSpeed / freeFlowSpeed
+
+        // Define thresholds for classification
+        return when {
+            speedRatio >= 0.8 -> "Light Traffic"   // 80% or more of free flow speed
+            speedRatio >= 0.5 -> "Moderate Traffic" // 50% to 79% of free flow speed
+            else -> "Heavy Traffic"                // Less than 50% of free flow speed
+        }
+    }
+
+
+
+
+
 
 
     private fun fetchWeather() {
@@ -148,11 +342,6 @@ class DashboardActivity : AppCompatActivity() {
             requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), locationRequestCode)
         }
     }
-
-
-
-
-
 
     private fun setupListeners() {
         binding.profileImage.setOnClickListener {

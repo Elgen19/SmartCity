@@ -11,5 +11,8 @@
     <color name="green">#49B153</color>
     <color name="dark_gray">#AAAAAA</color>
     <color name="white2">#e8eaed</color>
+    <color name="traffic_light_color">#00FF00</color> <!-- Green -->
+    <color name="traffic_moderate_color">#FFFF00</color> <!-- Yellow -->
+    <color name="traffic_heavy_color">#FF0000</color> <!-- Red -->
 
 </resources>
