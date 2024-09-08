@@ -92,6 +92,10 @@ class DashboardActivity : AppCompatActivity() {
                     val addressList = geocoder.getFromLocation(latitude, longitude, 1)
                     val cityName = addressList?.firstOrNull()?.locality ?: "Unknown"
 
+                    // Get the detailed address from the location
+                    val address = addressList?.firstOrNull()
+                    val preciseAddress = address?.getAddressLine(0) ?: "Unknown Location"
+
                     Log.d("DashboardActivity", "City name: $cityName")
 
                     apiService.getWeather(cityName, apiKey).enqueue(object : Callback<WeatherResponse> {
@@ -115,6 +119,7 @@ class DashboardActivity : AppCompatActivity() {
                                     binding.temperatureText.text = getString(R.string.temperature_format, temperature)
                                     binding.heatIndexValue.text = getString(R.string.temperature_format, heatIndex)
                                     binding.cityNameText.text = cityName
+                                    binding.locationText.text = preciseAddress
 
                                     // Load the weather icon into the ImageView
                                     Glide.with(this@DashboardActivity)
