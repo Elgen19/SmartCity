@@ -94,5 +94,7 @@
     <string name="relation">relation</string>
     <string name="edit_contact">Edit Contact</string>
     <string name="update">Update</string>
+    <string name="temperature_format">%1$.1f°C</string>
+
 
 </resources>
