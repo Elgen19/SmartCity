@@ -95,6 +95,14 @@
     <string name="edit_contact">Edit Contact</string>
     <string name="update">Update</string>
     <string name="temperature_format">%1$.1f°C</string>
+    <string name="light">Light</string>
+    <string name="moderate">Moderate</string>
+    <string name="heavy">Heavy</string>
+    <string name="current_speed_format">%1$.2f km/h</string>
+    <string name="free_flow_speed_format">%1$.2f km/h</string>
+    <string name="free_flow_travel_time_format">%1$d seconds</string>
+    <string name="current_travel_time_format">%1$d seconds</string>
+
 
 
 </resources>
