@@ -1,0 +1,4 @@
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@color/red"/> <!-- The color will change programmatically based on status -->
+    <corners android:radius="16dp"/>
+</shape>

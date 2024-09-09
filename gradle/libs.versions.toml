@@ -26,6 +26,7 @@ core = "1.45.0"
 playServicesLocation = "21.3.0"
 googleAndroidLibrariesMapsplatformSecretsGradlePlugin = "2.0.1"
 playServicesMaps = "19.0.0"
+cardview = "1.0.0"
 
 [libraries]
 android = { module = "com.mapbox.maps:android", version.ref = "android" }
@@ -53,6 +54,7 @@ firebase-storage-ktx = { group = "com.google.firebase", name = "firebase-storage
 core = { group = "com.google.ar", name = "core", version.ref = "core" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 play-services-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "playServicesMaps" }
+androidx-cardview = { group = "androidx.cardview", name = "cardview", version.ref = "cardview" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -45,8 +45,16 @@
 
         <activity
             android:name=".PlacesActivity"
-            android:exported="false"
-            android:label="@string/title_activity_places" />
+            android:exported="true"
+            android:label="@string/title_activity_places" >
+        <intent-filter>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="smartcity" android:host="places" />
+        </intent-filter>
+        </activity>
+
         <activity
             android:name=".SettingsActivity"
             android:exported="false" />
