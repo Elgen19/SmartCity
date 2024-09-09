@@ -1,11 +1,11 @@
 package com.elgenium.smartcity.network
 
-import com.elgenium.smartcity.models.PlaceDistanceResponse
+import com.elgenium.smartcity.network_reponses.PlaceDistanceResponse
 import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Query
 
-interface PlaceDistance {
+interface PlaceDistanceService {
     @GET("maps/api/directions/json")
     fun getDirections(
         @Query("origin") origin: String,

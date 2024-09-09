@@ -13,13 +13,13 @@ import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
 import com.elgenium.smartcity.databinding.ActivityDashboardBinding
 import com.elgenium.smartcity.helpers.NavigationBarColorCustomizerHelper
-import com.elgenium.smartcity.models.RoadLocation
-import com.elgenium.smartcity.models.RoadsResponse
-import com.elgenium.smartcity.models.TrafficResponse
-import com.elgenium.smartcity.models.WeatherResponse
 import com.elgenium.smartcity.network.OpenWeatherApiService
 import com.elgenium.smartcity.network.RoadsApiService
 import com.elgenium.smartcity.network.TomTomApiService
+import com.elgenium.smartcity.network_reponses.RoadLocation
+import com.elgenium.smartcity.network_reponses.RoadsResponse
+import com.elgenium.smartcity.network_reponses.TrafficResponse
+import com.elgenium.smartcity.network_reponses.WeatherResponse
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.firebase.auth.FirebaseAuth

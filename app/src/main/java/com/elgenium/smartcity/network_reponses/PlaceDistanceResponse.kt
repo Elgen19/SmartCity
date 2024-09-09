@@ -1,4 +1,4 @@
-package com.elgenium.smartcity.models
+package com.elgenium.smartcity.network_reponses
 
 data class PlaceDistanceResponse(
     val routes: List<Route>

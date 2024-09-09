@@ -1,6 +1,6 @@
 package com.elgenium.smartcity.network
 
-import com.elgenium.smartcity.models.TrafficResponse
+import com.elgenium.smartcity.network_reponses.TrafficResponse
 import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Query
