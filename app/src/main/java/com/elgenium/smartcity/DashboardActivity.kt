@@ -187,7 +187,6 @@ class DashboardActivity : AppCompatActivity() {
         }
     }
 
-
     private fun getStreetNameFromCoordinates(latitude: Double, longitude: Double): String? {
         val geocoder = Geocoder(this, Locale.getDefault())
         Log.d("DashboardActivity", "Starting geocoding for coordinates: Latitude = $latitude, Longitude = $longitude")
@@ -293,7 +292,6 @@ class DashboardActivity : AppCompatActivity() {
         }
     }
 
-
     private fun fetchWeather() {
         Log.d("DashboardActivity", "Fetching weather")
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -322,7 +320,6 @@ class DashboardActivity : AppCompatActivity() {
             requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), locationRequestCode)
         }
     }
-
 
     private fun handleUserLocationAndWeatherFetching(location: Location){
         Log.d("DashboardActivity", "Location retrieved: Lat ${location.latitude}, Long ${location.longitude}")
@@ -411,6 +408,14 @@ class DashboardActivity : AppCompatActivity() {
                 }
                 R.id.navigation_favorites -> {
                     // Handle Favorites action
+                    val intent = Intent(this, FavoritesActivity::class.java)
+                    val options = ActivityOptions.makeCustomAnimation(
+                        this,
+                        R.anim.fade_in,
+                        R.anim.fade_out
+                    )
+                    startActivity(intent, options.toBundle())
+                    finish()
                     true
                 }
                 R.id.navigation_events -> {

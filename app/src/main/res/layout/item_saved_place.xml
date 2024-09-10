@@ -1,0 +1,24 @@
+<!-- item_saved_place.xml -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/white"
+    android:orientation="vertical"
+    android:padding="8dp">
+
+
+        <TextView
+            android:id="@+id/placeName"
+            android:layout_width="wrap_content"
+            android:textColor="@color/gray"
+            android:text="Place Name"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceListItem" />
+
+        <TextView
+            android:id="@+id/placeAddress"
+            android:textColor="@color/gray"
+            android:layout_width="wrap_content"
+            android:text="place address"
+            android:layout_height="wrap_content" />
+</LinearLayout>
