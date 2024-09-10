@@ -23,6 +23,12 @@
         android:theme="@style/Theme.SmartCity"
         tools:targetApi="31">
         <activity
+            android:name=".FavoritesActivity"
+            android:exported="false" />
+        <activity
+            android:name=".SavedPlacesActivity"
+            android:exported="false" />
+        <activity
             android:name=".ContactsActivity"
             android:exported="false" />
         <activity
@@ -46,15 +52,18 @@
         <activity
             android:name=".PlacesActivity"
             android:exported="true"
-            android:label="@string/title_activity_places" >
-        <intent-filter>
-            <action android:name="android.intent.action.VIEW" />
-            <category android:name="android.intent.category.DEFAULT" />
-            <category android:name="android.intent.category.BROWSABLE" />
-            <data android:scheme="smartcity" android:host="places" />
-        </intent-filter>
-        </activity>
+            android:label="@string/title_activity_places">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
 
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="places"
+                    android:scheme="smartcity" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".SettingsActivity"
             android:exported="false" />

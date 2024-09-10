@@ -25,6 +25,7 @@ import androidx.core.content.ContextCompat
 import androidx.viewpager2.widget.ViewPager2
 import com.elgenium.smartcity.databinding.ActivityPlacesBinding
 import com.elgenium.smartcity.helpers.NavigationBarColorCustomizerHelper
+import com.elgenium.smartcity.models.SavedPlace
 import com.elgenium.smartcity.network.PlaceDistanceService
 import com.elgenium.smartcity.network.PlacesService
 import com.elgenium.smartcity.network_reponses.PlaceDistanceResponse
@@ -55,7 +56,10 @@ import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -64,7 +68,6 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
 import java.util.Locale
 
 @Suppress("PrivatePropertyName")
@@ -88,16 +91,6 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
         super.onCreate(savedInstanceState)
         binding = ActivityPlacesBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-//        // Handle deep link
-//        intent?.data?.let { uri ->
-//            if (uri.scheme == "smartcity" && uri.host == "places") {
-//                val deepLinkPlaceId = uri.lastPathSegment
-//                if (!deepLinkPlaceId.isNullOrEmpty()) {
-//                    fetchPlaceDetails(deepLinkPlaceId)
-//                }
-//            }
-//        }
 
         // sets the color of the navigation bar making it more personalized
         NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
@@ -396,40 +389,71 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
                 val database = FirebaseDatabase.getInstance()
                 val userRef = database.getReference("Users/$userId/saved_places")
 
-                // Create a unique key for the new place entry
-                val newPlaceRef = userRef.push()
+                // Fetch data from the bottom sheet UI elements
+                val placeId = place.id
+                val placeName = bottomSheetView.findViewById<TextView>(R.id.placeName).text.toString()
+                val placeAddress = bottomSheetView.findViewById<TextView>(R.id.placeAddress).text.toString()
+                val placePhoneNumber = bottomSheetView.findViewById<TextView>(R.id.placePhone).text.toString()
+                val placeLatLng = place.latLng
+                val placeOpeningDays = bottomSheetView.findViewById<TextView>(R.id.placeHoursDays).text.toString()
+                val placeOpeningHours = bottomSheetView.findViewById<TextView>(R.id.placeHoursTime).text.toString()
+                val placeRating = bottomSheetView.findViewById<TextView>(R.id.placeRating).text.toString()
+                val placeWebsite = bottomSheetView.findViewById<TextView>(R.id.placeWebsite).text.toString()
+                val placeDistance = bottomSheetView.findViewById<TextView>(R.id.placeDistance).text.toString()
+                val placeStatus = bottomSheetView.findViewById<TextView>(R.id.openStatus).text.toString()
+
 
                 // Prepare place data
-                val placeData = mapOf(
-                    "id" to place.id,
-                    "location" to place.name,
-                    "address" to place.address,
-                    "website" to place.websiteUri.toString(),
-                    "rating" to place.rating,
-                    "latLng" to place.latLng.toString(),
-                    "timestamp" to SimpleDateFormat("EEEE, MMMM d, yyyy 'at' h:mm a", Locale.getDefault()).format(
-                        Date()
+                val placeData = placeId?.let {
+                    SavedPlace(
+                        id = it,
+                        name = placeName,
+                        address = placeAddress,
+                        phoneNumber = placePhoneNumber,
+                        latLng = placeLatLng?.toString(),
+                        openingDays = placeOpeningDays,
+                        openingHours = placeOpeningHours,
+                        rating = placeRating,
+                        websiteUri = placeWebsite,
+                        distance = placeDistance,
+                        openingStatus = placeStatus
                     )
-                )
+                }
 
-                // Save the place data
-                newPlaceRef.setValue(placeData)
-                    .addOnSuccessListener {
-                        // Successfully saved the place data
-                        Toast.makeText(this, "Place saved successfully!", Toast.LENGTH_SHORT).show()
+                // Check for existing records
+                userRef.orderByChild("id").equalTo(placeId).addListenerForSingleValueEvent(object :
+                    ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        if (snapshot.exists()) {
+                            // Place already exists, show a message or handle accordingly
+                            Toast.makeText(this@PlacesActivity, "Place is already saved!", Toast.LENGTH_SHORT).show()
+                        } else {
+                            // Save the place data
+                            val newPlaceRef = userRef.push()
+                            newPlaceRef.setValue(placeData)
+                                .addOnSuccessListener {
+                                    // Successfully saved the place data
+                                    Toast.makeText(this@PlacesActivity, "Place saved successfully!", Toast.LENGTH_SHORT).show()
+                                }
+                                .addOnFailureListener { exception ->
+                                    // Handle any errors
+                                    Log.e("PlacesActivity", "Error saving place data", exception)
+                                    Toast.makeText(this@PlacesActivity, "Failed to save place. Please try again.", Toast.LENGTH_SHORT).show()
+                                }
+                        }
                     }
-                    .addOnFailureListener { exception ->
-                        // Handle any errors
-                        Log.e("PlacesActivity", "Error saving place data", exception)
-                        Toast.makeText(this, "Failed to save place. Please try again.", Toast.LENGTH_SHORT).show()
+
+                    override fun onCancelled(error: DatabaseError) {
+                        // Handle possible errors
+                        Log.e("PlacesActivity", "Database error", error.toException())
                     }
+                })
             } else {
                 // Handle case where user is not authenticated
                 Toast.makeText(this, "User not authenticated. Please log in.", Toast.LENGTH_SHORT).show()
             }
         }
     }
-
 
     private fun fetchAndAddPois(userLatLng: LatLng, category: String? = null) {
         // Check if category is null or empty
@@ -645,7 +669,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
                 updatePlaceDetailsUI(place, bottomSheetView) // Update place details UI
                 handleOpeningHours(place, bottomSheetView) // Handle and display opening hours
                 checkLocationPermissionAndFetchDistance(place, bottomSheetView) // Check location permission and fetch distance
-                displayPlacePhotos(place, bottomSheetView) // Display place photos
+                getAndLoadPhotoMetadatasFromPlace(place, bottomSheetView) // Display place photos
                 setupMoreButton(bottomSheetView, bottomSheetDialog, place)
                 setupCloseButton(bottomSheetView, bottomSheetDialog)
                 setupSavedPlaces(bottomSheetView, bottomSheetDialog,place)
@@ -778,8 +802,8 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
 
                     // Enqueue the API request to get directions and distance.
                     api.getDirections(origin, destination, apiKey)
-                        .enqueue(object : retrofit2.Callback<PlaceDistanceResponse> {
-                            override fun onResponse(call: Call<PlaceDistanceResponse>, response: retrofit2.Response<PlaceDistanceResponse>) {
+                        .enqueue(object : Callback<PlaceDistanceResponse> {
+                            override fun onResponse(call: Call<PlaceDistanceResponse>, response: Response<PlaceDistanceResponse>) {
                                 // Handle the response from the API.
                                 if (response.isSuccessful && response.body() != null) {
                                     val directionsResponse = response.body()
@@ -817,7 +841,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    private fun displayPlacePhotos(place: Place, bottomSheetView: View) {
+    private fun getAndLoadPhotoMetadatasFromPlace(place: Place, bottomSheetView: View): List<PhotoMetadata> {
         // Get the ViewPager2 instance from the bottom sheet view to display photos.
         val placePhoto: ViewPager2 = bottomSheetView.findViewById(R.id.viewPager)
 
@@ -835,6 +859,8 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
             // Hide the ViewPager2 if no photos are available.
             placePhoto.visibility = View.GONE
         }
+
+        return place.photoMetadatas ?: emptyList()
     }
 
     private fun setupCloseButton(bottomSheetView: View, bottomSheetDialog: BottomSheetDialog) {
