@@ -5,7 +5,9 @@ import android.app.ActivityOptions
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Geocoder
+import android.location.Location
 import android.os.Bundle
+import android.os.Looper
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -21,6 +23,9 @@ import com.elgenium.smartcity.network_reponses.RoadsResponse
 import com.elgenium.smartcity.network_reponses.TrafficResponse
 import com.elgenium.smartcity.network_reponses.WeatherResponse
 import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseReference
@@ -45,6 +50,8 @@ class DashboardActivity : AppCompatActivity() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var geocoder: Geocoder
     private val apiKey = BuildConfig.OPEN_WEATHER_API
+    private lateinit var locationCallback: LocationCallback
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -111,49 +118,69 @@ class DashboardActivity : AppCompatActivity() {
         fetchNearestRoad(apiServiceForRoads, apiServiceForTraffic)
     }
 
+    private val locationRequest = LocationRequest.create().apply {
+        interval = 10000 // 10 seconds
+        fastestInterval = 5000 // 5 seconds
+        priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+    }
+
+
     private fun fetchNearestRoad(roadsApiService: RoadsApiService, trafficApiService: TomTomApiService) {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                if (location != null) {
-                    val latitude = location.latitude
-                    val longitude = location.longitude
-                    val path = "$latitude,$longitude"
+            // Initialize LocationCallback
+            locationCallback = object : LocationCallback() {
+                override fun onLocationResult(locationResult: LocationResult) {
+                    val location = locationResult.lastLocation
+                    if (location != null) {
+                        val latitude = location.latitude
+                        val longitude = location.longitude
+                        val path = "$latitude,$longitude"
 
-                    roadsApiService.getSnappedRoads(path, BuildConfig.MAPS_API_KEY).enqueue(object : Callback<RoadsResponse> {
-                        override fun onResponse(call: Call<RoadsResponse>, response: Response<RoadsResponse>) {
-                            if (response.isSuccessful) {
-                                val snappedPoints = response.body()?.snappedPoints ?: emptyList()
-                                Log.d("DashboardActivity", "response: ${response.body()}")
-                                if (snappedPoints.isNotEmpty()) {
-                                    val roadLocation = snappedPoints.first().location
-                                    Log.d("DashboardActivity", "road location: $roadLocation")
+                        Log.d("DashboardActivity", "Location retrieved: Lat $latitude, Long $longitude")
 
+                        roadsApiService.getSnappedRoads(path, BuildConfig.MAPS_API_KEY).enqueue(object : Callback<RoadsResponse> {
+                            override fun onResponse(call: Call<RoadsResponse>, response: Response<RoadsResponse>) {
+                                if (response.isSuccessful) {
+                                    val snappedPoints = response.body()?.snappedPoints ?: emptyList()
+                                    Log.d("DashboardActivity", "Roads response: ${response.body()}")
+                                    if (snappedPoints.isNotEmpty()) {
+                                        val roadLocation = snappedPoints.first().location
+                                        Log.d("DashboardActivity", "Road location: $roadLocation")
 
-                                    // Fetch traffic data using the obtained road location
-                                    fetchTrafficData(trafficApiService, roadLocation)
+                                        // Fetch traffic data using the obtained road location
+                                        fetchTrafficData(trafficApiService, roadLocation)
 
-                                    // Use these coordinates to get the address
-                                    val address = getStreetNameFromCoordinates(latitude, longitude)
-                                    binding.roadName.text = address
-                                    Log.d("DashboardActivity", "address one: $address")
+                                        // Use these coordinates to get the address
+                                        val address = getStreetNameFromCoordinates(latitude, longitude)
+                                        binding.roadName.text = address
+                                        Log.d("DashboardActivity", "Address: $address")
 
+                                        // Stop location updates once you have the location
+                                        fusedLocationClient.removeLocationUpdates(locationCallback)
+                                    } else {
+                                        Log.e("DashboardActivity", "No snapped points found in response")
+                                        Toast.makeText(this@DashboardActivity, "No roads found near your location", Toast.LENGTH_SHORT).show()
+                                    }
+                                } else {
+                                    Log.e("DashboardActivity", "Failed to get roads data: ${response.message()}")
+                                    Toast.makeText(this@DashboardActivity, "Failed to get roads data", Toast.LENGTH_SHORT).show()
                                 }
-                            } else {
-                                Log.e("DashboardActivity", "Failed to get roads data: ${response.message()}")
-                                Toast.makeText(this@DashboardActivity, "Failed to get roads data", Toast.LENGTH_SHORT).show()
                             }
-                        }
 
-                        override fun onFailure(call: Call<RoadsResponse>, t: Throwable) {
-                            Log.e("DashboardActivity", "Error fetching roads data", t)
-                            Toast.makeText(this@DashboardActivity, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
-                        }
-                    })
-                } else {
-                    Log.e("DashboardActivity", "Unable to retrieve location")
-                    Toast.makeText(this, "Unable to retrieve location", Toast.LENGTH_SHORT).show()
+                            override fun onFailure(call: Call<RoadsResponse>, t: Throwable) {
+                                Log.e("DashboardActivity", "Error fetching roads data", t)
+                                Toast.makeText(this@DashboardActivity, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        })
+                    } else {
+                        Log.e("DashboardActivity", "Location is null in LocationCallback")
+                        Toast.makeText(this@DashboardActivity, "Unable to retrieve location", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
+
+            // Request location updates
+            fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
         } else {
             Log.e("DashboardActivity", "Location permission not granted")
             requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), locationRequestCode)
@@ -182,9 +209,6 @@ class DashboardActivity : AppCompatActivity() {
             "Geocoder failed"
         }
     }
-
-
-
 
     private fun fetchTrafficData(trafficApiService: TomTomApiService, roadLocation: RoadLocation) {
         val point = "${roadLocation.latitude},${roadLocation.longitude}"
@@ -270,77 +294,89 @@ class DashboardActivity : AppCompatActivity() {
     }
 
 
-
-
-
-
-
     private fun fetchWeather() {
         Log.d("DashboardActivity", "Fetching weather")
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                if (location != null) {
-                    Log.d("DashboardActivity", "Location retrieved: Lat ${location.latitude}, Long ${location.longitude}")
-                    val latitude = location.latitude
-                    val longitude = location.longitude
-                    val addressList = geocoder.getFromLocation(latitude, longitude, 1)
-                    val cityName = addressList?.firstOrNull()?.locality ?: "Unknown"
 
-                    // Get the detailed address from the location
-                    val address = addressList?.firstOrNull()
-                    val preciseAddress = address?.getAddressLine(0) ?: "Unknown Location"
-
-                    Log.d("DashboardActivity", "City name: $cityName")
-
-                    apiService.getWeather(cityName, apiKey).enqueue(object : Callback<WeatherResponse> {
-                        override fun onResponse(call: Call<WeatherResponse>, response: Response<WeatherResponse>) {
-                            if (response.isSuccessful) {
-                                val weatherResponse = response.body()
-                                weatherResponse?.let {
-                                    val weatherDescription = it.weather.firstOrNull()?.description ?: "Unknown"
-                                    val temperature = it.main.temp
-                                    val heatIndex = it.main.feels_like
-                                    val iconCode = it.weather.firstOrNull()?.icon ?: "01d"
-                                    val iconUrl = "https://openweathermap.org/img/wn/$iconCode.png"
-
-                                    Log.d("DashboardActivity", "Weather description: $weatherDescription")
-                                    Log.d("DashboardActivity", "Temperature: $temperature, Heat index: $heatIndex")
-                                    Log.d("DashboardActivity", "Icon URL: $iconUrl")
-
-                                    binding.weatherStatusText.text = weatherDescription.replaceFirstChar { char ->
-                                        if (char.isLowerCase()) char.titlecase(Locale.ROOT) else char.toString()
-                                    }
-                                    binding.temperatureText.text = getString(R.string.temperature_format, temperature)
-                                    binding.heatIndexValue.text = getString(R.string.temperature_format, heatIndex)
-                                    binding.cityNameText.text = cityName
-                                    binding.locationText.text = preciseAddress
-
-                                    // Load the weather icon into the ImageView
-                                    Glide.with(this@DashboardActivity)
-                                        .load(iconUrl)
-                                        .placeholder(R.drawable.cloud) // Optional placeholder
-                                        .into(binding.weatherIcon)
-                                }
-                            } else {
-                                Log.e("DashboardActivity", "Failed to get weather data: ${response.message()}")
-                                Toast.makeText(this@DashboardActivity, "Failed to get weather data", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-
-                        override fun onFailure(call: Call<WeatherResponse>, t: Throwable) {
-                            Log.e("DashboardActivity", "Error fetching weather data", t)
-                            Toast.makeText(this@DashboardActivity, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
-                        }
-                    })
-                } else {
-                    Log.e("DashboardActivity", "Unable to retrieve location")
-                    Toast.makeText(this, "Unable to retrieve location", Toast.LENGTH_SHORT).show()
+            // Use the class-level locationRequest
+            val locationCallback = object : LocationCallback() {
+                override fun onLocationResult(locationResult: LocationResult) {
+                    // Called when location results are available
+                    val location = locationResult.lastLocation
+                    if (location != null) {
+                        Log.d("DashboardActivity", "Location retrieved: Lat ${location.latitude}, Long ${location.longitude}")
+                        // Proceed with weather fetching
+                        handleUserLocationAndWeatherFetching(location)
+                        // Remove updates once location is fetched
+                        fusedLocationClient.removeLocationUpdates(this)
+                    } else {
+                        Log.e("DashboardActivity", "Location is null")
+                    }
                 }
             }
+
+            // Request location updates using the existing locationRequest
+            fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
         } else {
             Log.e("DashboardActivity", "Location permission not granted")
             requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), locationRequestCode)
         }
+    }
+
+
+    private fun handleUserLocationAndWeatherFetching(location: Location){
+        Log.d("DashboardActivity", "Location retrieved: Lat ${location.latitude}, Long ${location.longitude}")
+        val latitude = location.latitude
+        val longitude = location.longitude
+        val addressList = geocoder.getFromLocation(latitude, longitude, 1)
+        val cityName = addressList?.firstOrNull()?.locality ?: "Unknown"
+
+        // Get the detailed address from the location
+        val address = addressList?.firstOrNull()
+        val preciseAddress = address?.getAddressLine(0) ?: "Unknown Location"
+
+        Log.d("DashboardActivity", "City name: $cityName")
+
+        apiService.getWeather(cityName, apiKey).enqueue(object : Callback<WeatherResponse> {
+            override fun onResponse(call: Call<WeatherResponse>, response: Response<WeatherResponse>) {
+                if (response.isSuccessful) {
+                    val weatherResponse = response.body()
+                    weatherResponse?.let {
+                        val weatherDescription = it.weather.firstOrNull()?.description ?: "Unknown"
+                        val temperature = it.main.temp
+                        val heatIndex = it.main.feels_like
+                        val iconCode = it.weather.firstOrNull()?.icon ?: "01d"
+                        val iconUrl = "https://openweathermap.org/img/wn/$iconCode.png"
+
+                        Log.d("DashboardActivity", "Weather description: $weatherDescription")
+                        Log.d("DashboardActivity", "Temperature: $temperature, Heat index: $heatIndex")
+                        Log.d("DashboardActivity", "Icon URL: $iconUrl")
+
+                        binding.weatherStatusText.text = weatherDescription.replaceFirstChar { char ->
+                            if (char.isLowerCase()) char.titlecase(Locale.ROOT) else char.toString()
+                        }
+                        binding.temperatureText.text = getString(R.string.temperature_format, temperature)
+                        binding.heatIndexValue.text = getString(R.string.temperature_format, heatIndex)
+                        binding.cityNameText.text = cityName
+                        binding.locationText.text = preciseAddress
+
+                        // Load the weather icon into the ImageView
+                        Glide.with(this@DashboardActivity)
+                            .load(iconUrl)
+                            .placeholder(R.drawable.cloud) // Optional placeholder
+                            .into(binding.weatherIcon)
+                    }
+                } else {
+                    Log.e("DashboardActivity", "Failed to get weather data: ${response.message()}")
+                    Toast.makeText(this@DashboardActivity, "Failed to get weather data", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onFailure(call: Call<WeatherResponse>, t: Throwable) {
+                Log.e("DashboardActivity", "Error fetching weather data", t)
+                Toast.makeText(this@DashboardActivity, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
     }
 
     private fun setupListeners() {
