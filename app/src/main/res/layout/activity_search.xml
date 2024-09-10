@@ -37,12 +37,121 @@
 
     </LinearLayout>
 
+    <!-- Category Label -->
+    <TextView
+        android:id="@+id/categoryLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/searchBoxLayout"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:textColor="@color/secondary_color"
+        android:textSize="20sp"
+        android:text="Categories" />
+
+    <!-- Category Horizontal ScrollView -->
+    <HorizontalScrollView
+        android:id="@+id/categoryScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/categoryLabel"
+        android:layout_marginTop="8dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
+
+            <!-- Material Buttons -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnHotels"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Hotels"
+                app:iconTint="@color/secondary_color"
+                android:textColor="@color/gray"
+                app:icon="@drawable/hotel"
+                android:drawablePadding="8dp"
+                android:padding="12dp"
+                android:layout_marginEnd="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnBars"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Bars"
+                app:iconTint="@color/secondary_color"
+                android:textColor="@color/gray"
+                app:icon="@drawable/bar"
+                android:drawablePadding="8dp"
+                android:padding="12dp"
+                android:layout_marginEnd="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRestaurants"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Restaurants"
+                app:iconTint="@color/secondary_color"
+                android:textColor="@color/gray"
+                app:icon="@drawable/restaurant"
+                android:drawablePadding="8dp"
+                android:padding="12dp"
+                android:layout_marginEnd="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCoffee"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Coffee"
+                app:icon="@drawable/coffee"
+                app:iconTint="@color/secondary_color"
+                android:textColor="@color/gray"
+                android:drawablePadding="8dp"
+                android:padding="12dp"
+                android:layout_marginEnd="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGroceries"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:drawablePadding="8dp"
+                app:iconTint="@color/secondary_color"
+                android:textColor="@color/gray"
+                app:icon="@drawable/grocery"
+                android:padding="12dp"
+                android:layout_marginEnd="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGas"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Gas"
+                app:iconTint="@color/secondary_color"
+                android:textColor="@color/gray"
+                app:icon="@drawable/gas"
+                android:drawablePadding="8dp"
+                android:padding="12dp"
+                android:layout_marginEnd="8dp" />
+
+        </LinearLayout>
+    </HorizontalScrollView>
+
     <!-- Recent Searches RecyclerView -->
     <TextView
         android:id="@+id/recentSearchesLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/searchBoxLayout"
+        android:layout_below="@id/categoryScrollView"
         android:layout_marginStart="16dp"
         android:layout_marginBottom="8dp"
         android:layout_marginTop="16dp"

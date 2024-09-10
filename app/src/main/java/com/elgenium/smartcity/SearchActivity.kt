@@ -120,6 +120,7 @@ class SearchActivity : AppCompatActivity() {
 
         setupAutocomplete()
         searchViewAppearance()
+        setupCategoryButtonListeners()
 
 
         recentSearchAdapter = RecentSearchAdapter(recentSearches) { recentSearch ->
@@ -136,10 +137,10 @@ class SearchActivity : AppCompatActivity() {
         }
 
 
-// Set up the RecyclerView for recent searches
+        // Set up the RecyclerView for recent searches
         binding.recentSearchRecyclerView.layoutManager = LinearLayoutManager(this)
 
-// Create a custom drawable with your desired color
+        // Create a custom drawable with your desired color
         val dividerDrawableForRecentSearches = ColorDrawable(ContextCompat.getColor(this, R.color.dark_gray))
 
         val dividerItemDecorationForRecentSearches = DividerItemDecoration(
@@ -170,6 +171,25 @@ class SearchActivity : AppCompatActivity() {
                 callback(null)
             }
     }
+
+    private fun setupCategoryButtonListeners() {
+        binding.btnHotels.setOnClickListener { launchCategoryIntent("hotel") }
+        binding.btnBars.setOnClickListener { launchCategoryIntent("bar") }
+        binding.btnRestaurants.setOnClickListener { launchCategoryIntent("restaurant") }
+        binding.btnCoffee.setOnClickListener { launchCategoryIntent("coffee") }
+        binding.btnGroceries.setOnClickListener { launchCategoryIntent("grocery") }
+        binding.btnGas.setOnClickListener { launchCategoryIntent("gas") }
+    }
+
+    private fun launchCategoryIntent(category: String) {
+        val intent = Intent(this, PlacesActivity::class.java)
+        intent.putExtra("CATEGORY", category)
+        startActivity(intent)
+    }
+
+
+
+
 
 
     private fun loadRecentSearches() {

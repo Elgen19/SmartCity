@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
@@ -25,7 +26,9 @@ import androidx.viewpager2.widget.ViewPager2
 import com.elgenium.smartcity.databinding.ActivityPlacesBinding
 import com.elgenium.smartcity.helpers.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.network.PlaceDistanceService
+import com.elgenium.smartcity.network.PlacesService
 import com.elgenium.smartcity.network_reponses.PlaceDistanceResponse
+import com.elgenium.smartcity.network_reponses.PlacesResponse
 import com.elgenium.smartcity.viewpager_adapter.PhotoPagerAdapter
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -37,8 +40,11 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptor
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.PhotoMetadata
@@ -48,12 +54,17 @@ import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
 import java.util.Locale
 
 @Suppress("PrivatePropertyName")
@@ -67,6 +78,10 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
     private val DEFAULT_HEADING = 0f
     private val DEFAULT_ORIENTATION = 0f
     private var isFollowingUser = true
+    private var currentRedMarker: Marker? = null
+    private val poiMarkers = mutableListOf<Marker>()
+
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -97,13 +112,10 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
-
-
         // Initialize FloatingActionButton using ViewBinding
         binding.fabCurrentLocation.setOnClickListener {
             resetMapToDefaultLocation()
         }
-
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = supportFragmentManager
@@ -146,6 +158,31 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
             showMapStylesBottomSheet()
         }
 
+        // Get the category from the intent, if available
+        val category = intent.getStringExtra("CATEGORY")
+
+        // Fetch the user's location (ensure you have location permission)
+        getUserLocation { userLatLng ->
+            // Use the userLatLng here
+            fetchAndAddPois(userLatLng, category)
+        }
+
+    }
+
+    private fun getUserLocation(onLocationReceived: (LatLng) -> Unit) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            == PackageManager.PERMISSION_GRANTED) {
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                location?.let {
+                    val userLatLng = LatLng(it.latitude, it.longitude)
+                    onLocationReceived(userLatLng)
+                } ?: run {
+                    Log.e("LocationError", "Location is null")
+                }
+            }
+        } else {
+            checkLocationPermission()
+        }
     }
 
     private fun showMapStylesBottomSheet() {
@@ -205,6 +242,27 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
                         .tilt(DEFAULT_ORIENTATION)
                         .build()
 
+                    // Remove the previous red marker if it exists
+                    currentRedMarker?.let { existingMarker ->
+                        try {
+                            existingMarker.remove()
+                            Log.d("PlacesActivity", "Removed previous red marker during reset")
+                        } catch (e: Exception) {
+                            Log.e("PlacesActivity", "Error removing previous red marker during reset", e)
+                        }
+                    }
+
+                    // Remove all POI markers
+                    poiMarkers.forEach { marker ->
+                        try {
+                            marker.remove()
+                            Log.d("PlacesActivity", "Removed POI marker: ${marker.title}")
+                        } catch (e: Exception) {
+                            Log.e("PlacesActivity", "Error removing POI marker: ${marker.title}", e)
+                        }
+                    }
+                    poiMarkers.clear() // Clear the list after removing markers
+
                     // Use animateCamera to smoothly transition to the new camera position
                     mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition))
                 }
@@ -213,6 +271,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQUEST_CODE)
         }
     }
+
 
     private fun fetchPlaceDetailsAndPlotMarkerOnMap(placeId: String) {
         val fields = listOf(
@@ -233,10 +292,28 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
             .addOnSuccessListener { response ->
                 val place = response.place
                 place.latLng?.let { latLng ->
-                    // Handle the valid latLng
-                    val marker = mMap.addMarker(MarkerOptions().position(latLng).title(place.name))
-                    marker?.tag = placeId
+                    // Remove the previous red marker if it exists
+                    currentRedMarker?.let { existingMarker ->
+                        try {
+                            existingMarker.remove()
+                            Log.d("PlacesActivity", "Removed previous red marker")
+                        } catch (e: Exception) {
+                            Log.e("PlacesActivity", "Error removing previous red marker", e)
+                        }
+                    }
+
+                    // Add the new red marker
+                    val redMarkerOptions = MarkerOptions()
+                        .position(latLng)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)) // Ensure red icon is used
+                    currentRedMarker = mMap.addMarker(redMarkerOptions)
+                    currentRedMarker?.tag = placeId
+
+                    // Animate camera to the new red marker
                     mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
+
+                    // Call fetchPlaceDetails to show the bottom sheet
+                    Log.d("PlacesActivity", "Calling fetchPlaceDetails for placeId: $placeId")
                     fetchPlaceDetails(placeId)
                 } ?: run {
                     Log.d("PlacesActivity", "Place does not have a LatLng.")
@@ -258,15 +335,9 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
             // Optional: Hide the default My Location button
             mMap.uiSettings.isMyLocationButtonEnabled = false
 
-            // Move the camera to the user's location once
-            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                location?.let {
-                    val userLatLng = LatLng(it.latitude, it.longitude)
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLatLng, 15f))
-
-                    // Fetch and add POIs after setting the initial location
-//                    fetchAndAddPois(userLatLng)
-                }
+            // Use the getUserLocation method to move the camera to the user's location
+            getUserLocation { userLatLng ->
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLatLng, 15f))
             }
 
             // Start location updates without moving the camera
@@ -285,18 +356,19 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
                 // Fetch the place ID (you can save this when adding the marker)
                 val placeId = marker.tag as? String
                 placeId?.let {
-                    fetchPlaceDetailsAndPlotMarkerOnMap(it)
-                }
-                false
-            }
+                    // Fetch place details and show the bottom sheet
+                    fetchPlaceDetailsAndPlotMarkerOnMap(placeId)
 
+                    // Return true to indicate the click event has been handled
+                    true
+                } ?: false
+            }
 
         } else {
             // Request location permission
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQUEST_CODE)
         }
     }
-
 
     private fun setupMoreButton(bottomSheetView: View, bottomSheetDialog: BottomSheetDialog, place: Place) {
         val btnMore: MaterialButton = bottomSheetView.findViewById(R.id.btnMore)
@@ -310,6 +382,166 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
+    private fun setupSavedPlaces(bottomSheetView: View, bottomSheetDialog: BottomSheetDialog, place: Place) {
+        val btnSave: MaterialButton = bottomSheetView.findViewById(R.id.btnSave)
+
+        btnSave.setOnClickListener {
+            // Dismiss the current bottom sheet if needed
+            bottomSheetDialog.dismiss()
+
+            // Get the current user ID
+            val userId = FirebaseAuth.getInstance().currentUser?.uid
+            if (userId != null) {
+                // Get a reference to the Firebase Realtime Database
+                val database = FirebaseDatabase.getInstance()
+                val userRef = database.getReference("Users/$userId/saved_places")
+
+                // Create a unique key for the new place entry
+                val newPlaceRef = userRef.push()
+
+                // Prepare place data
+                val placeData = mapOf(
+                    "id" to place.id,
+                    "location" to place.name,
+                    "address" to place.address,
+                    "website" to place.websiteUri.toString(),
+                    "rating" to place.rating,
+                    "latLng" to place.latLng.toString(),
+                    "timestamp" to SimpleDateFormat("EEEE, MMMM d, yyyy 'at' h:mm a", Locale.getDefault()).format(
+                        Date()
+                    )
+                )
+
+                // Save the place data
+                newPlaceRef.setValue(placeData)
+                    .addOnSuccessListener {
+                        // Successfully saved the place data
+                        Toast.makeText(this, "Place saved successfully!", Toast.LENGTH_SHORT).show()
+                    }
+                    .addOnFailureListener { exception ->
+                        // Handle any errors
+                        Log.e("PlacesActivity", "Error saving place data", exception)
+                        Toast.makeText(this, "Failed to save place. Please try again.", Toast.LENGTH_SHORT).show()
+                    }
+            } else {
+                // Handle case where user is not authenticated
+                Toast.makeText(this, "User not authenticated. Please log in.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+
+    private fun fetchAndAddPois(userLatLng: LatLng, category: String? = null) {
+        // Check if category is null or empty
+        if (category.isNullOrEmpty()) {
+            Log.d("PlacesActivity", "No category provided. No POIs will be displayed.")
+            return // Exit the method if no category is provided
+        }
+
+        // Check for location permission
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            val apiKey = BuildConfig.MAPS_API_KEY
+
+            val retrofit = Retrofit.Builder()
+                .baseUrl("https://maps.googleapis.com/maps/api/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+
+            val service = retrofit.create(PlacesService::class.java)
+
+            val location = "${userLatLng.latitude},${userLatLng.longitude}"
+            val radius = 5000 // Radius in meters
+
+            // Define custom icons
+            val restaurantIcon = createCustomMarker(R.drawable.restaurant)
+            val hotelIcon = createCustomMarker(R.drawable.hotel)
+            val barIcon = createCustomMarker(R.drawable.bar)
+            val defaultIcon = createCustomMarker(R.drawable.marker_custom)
+
+            // List with the provided category
+            val categories = listOf(category)
+
+            Log.d("PlacesActivity", "category in list: $categories")
+
+            for (type in categories) {
+                service.getNearbyPlaces(location, radius, type, apiKey).enqueue(object :
+                    Callback<PlacesResponse> {
+                    override fun onResponse(call: Call<PlacesResponse>, response: Response<PlacesResponse>) {
+                        if (response.isSuccessful) {
+                            response.body()?.results?.forEach { place ->
+                                Log.d("PlacesActivity", "Place: ${response.body()}")
+                                val latLng = LatLng(place.geometry.location.lat, place.geometry.location.lng)
+                                val markerOptions = MarkerOptions()
+                                    .position(latLng)
+                                    .title(place.name)
+                                    .snippet("Category: $type")
+
+                                // Set the icon based on the category
+                                when (type) {
+                                    "restaurant" -> markerOptions.icon(restaurantIcon)
+                                    "hotel" -> markerOptions.icon(hotelIcon)
+                                    "bar" -> markerOptions.icon(barIcon)
+                                    else -> markerOptions.icon(defaultIcon) // Use default icon for other types
+                                }
+
+                                val marker = mMap.addMarker(markerOptions)
+                                marker?.tag = place.place_id // Ensure place.id is valid
+                                marker?.let { poiMarkers.add(it) }
+                                Log.d("PlacesActivity", "Marker added with ID: ${place.place_id}")
+                                Log.d("PlacesActivity", "POI markers on the list: $poiMarkers")
+                            }
+                        } else {
+                            Log.e("PlacesActivity", "Response error for type: $type. Error code: ${response.code()}")
+                        }
+                    }
+
+                    override fun onFailure(call: Call<PlacesResponse>, t: Throwable) {
+                        Log.e("PlacesActivity", "Error fetching POI data", t)
+                    }
+                })
+            }
+        } else {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                LOCATION_PERMISSION_REQUEST_CODE
+            )
+        }
+    }
+
+    private fun createCustomMarker(iconId: Int): BitmapDescriptor {
+        val markerWidth = 100 // Desired width of the marker in pixels
+        val markerHeight = 100 // Desired height of the marker in pixels
+        val iconSize = 30 // Desired size of the icon in pixels
+
+        // Create the base marker bitmap with desired size
+        val markerDrawable = ContextCompat.getDrawable(this, R.drawable.marker_custom)?.apply {
+            setBounds(0, 0, markerWidth, markerHeight)
+        }
+        val markerBitmap = Bitmap.createBitmap(markerWidth, markerHeight, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(markerBitmap)
+        markerDrawable?.draw(canvas)
+
+        // Create the icon bitmap and resize it to fit within the marker
+        val iconDrawable = ContextCompat.getDrawable(this, iconId)?.apply {
+            setBounds(0, 0, iconSize, iconSize) // Resize icon to fit within the marker
+        }
+        val iconBitmap = Bitmap.createBitmap(iconSize, iconSize, Bitmap.Config.ARGB_8888)
+        val iconCanvas = Canvas(iconBitmap)
+        iconDrawable?.draw(iconCanvas)
+
+        // Combine the marker and icon
+        val markerWithIconBitmap = Bitmap.createBitmap(markerWidth, markerHeight, Bitmap.Config.ARGB_8888)
+        val markerWithIconCanvas = Canvas(markerWithIconBitmap)
+        markerWithIconCanvas.drawBitmap(markerBitmap, 0f, 0f, null)
+
+        // Position the icon in the center of the marker
+        val left = (markerWidth - iconSize) / 2
+        val top = (markerHeight - iconSize) / 2
+        markerWithIconCanvas.drawBitmap(iconBitmap, left.toFloat(), top.toFloat(), null)
+
+        return BitmapDescriptorFactory.fromBitmap(markerWithIconBitmap)
+    }
 
     private fun setupOptionsBottomSheet(place: Place) {
         // Inflate a new view for the bottom sheet
@@ -377,9 +609,9 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
         bottomSheetDialog.show()
     }
 
-
     private fun fetchPlaceDetails(placeId: String) {
         // Define the fields to fetch for the place
+        Log.d("PlacesActivity", "fetchPlaceDetails called for placeId: $placeId")
         val placeFields = listOf(
             Place.Field.ID,
             Place.Field.NAME,
@@ -407,6 +639,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
         // Fetch the place details using the Places API
         placesClient.fetchPlace(request)
             .addOnSuccessListener { response ->
+                Log.d("PlacesActivity", "Place details fetched successfully")
                 // On successful response, update the UI with place details
                 val place = response.place
                 updatePlaceDetailsUI(place, bottomSheetView) // Update place details UI
@@ -415,6 +648,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
                 displayPlacePhotos(place, bottomSheetView) // Display place photos
                 setupMoreButton(bottomSheetView, bottomSheetDialog, place)
                 setupCloseButton(bottomSheetView, bottomSheetDialog)
+                setupSavedPlaces(bottomSheetView, bottomSheetDialog,place)
             }
             .addOnFailureListener { exception ->
                 // Log an error message if the request fails
@@ -423,9 +657,8 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Show the bottom sheet dialog
         bottomSheetDialog.show()
+
     }
-
-
 
     private fun updatePlaceDetailsUI(place: Place, bottomSheetView: View) {
         // Find the UI elements in the bottom sheet view.
@@ -495,9 +728,9 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
                     val openTimeParsed = openTimeString?.let { timeFormat.parse(it) }
                     val closeTimeParsed = closeTimeString?.let { timeFormat.parse(it) }
 
-                    // Check if the current time is within the opening hours.
+                    // Handle the case where closing time is on the next day.
                     if (openTimeParsed != null && closeTimeParsed != null && currentTimeOnly != null) {
-                        if (currentTimeOnly.after(openTimeParsed) && currentTimeOnly.before(closeTimeParsed)) {
+                        if (openTimeParsed <= currentTimeOnly && (currentTimeOnly < closeTimeParsed || closeTimeParsed.before(openTimeParsed))) {
                             isOpen = true
                         }
                     }
@@ -611,7 +844,6 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
             bottomSheetDialog.dismiss()
         }
     }
-
 
     private fun formatTimeString(timeString: String?): String {
         if (timeString.isNullOrEmpty()) return "No Time"

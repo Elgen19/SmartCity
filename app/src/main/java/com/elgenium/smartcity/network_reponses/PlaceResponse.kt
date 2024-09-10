@@ -1,13 +1,13 @@
 package com.elgenium.smartcity.network_reponses
 
-
 data class PlacesResponse(
-    val results: List<PlaceResult>
+    val results: List<Place>
 )
 
-data class PlaceResult(
-    val geometry: Geometry,
-    val name: String
+data class Place(
+    val place_id: String?, // Ensure this field matches the API response
+    val name: String,
+    val geometry: Geometry
 )
 
 data class Geometry(
