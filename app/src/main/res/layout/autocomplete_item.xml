@@ -6,12 +6,23 @@
     android:padding="8dp">
 
     <TextView
-        android:id="@+id/autocomplete_item_text"
+        android:id="@+id/autocomplete_item_primary_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textSize="16sp"
-        android:text="hello"
+        android:text="Place name"
         android:textColor="@color/gray"
-        android:padding="8dp" />
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp" />
 
+    <TextView
+        android:id="@+id/autocomplete_item_secondary_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="12sp"
+        android:text="place address"
+        android:textColor="@color/gray2"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:layout_marginTop="4dp"/>
 </LinearLayout>

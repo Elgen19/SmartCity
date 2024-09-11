@@ -8,40 +8,42 @@ import androidx.recyclerview.widget.RecyclerView
 import com.elgenium.smartcity.R
 import com.google.android.libraries.places.api.model.AutocompletePrediction
 
-// In AutocompleteAdapter.kt
 class AutocompleteAdapter(
-    private var suggestions: List<AutocompletePrediction>,
-    private val onItemClick: (AutocompletePrediction) -> Unit // Click listener callback
+    private var predictions: List<AutocompletePrediction>,
+    private val onItemClick: (AutocompletePrediction) -> Unit
 ) : RecyclerView.Adapter<AutocompleteAdapter.ViewHolder>() {
 
-    // Define a ViewHolder to hold references to the views in each item
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val textView: TextView = itemView.findViewById(R.id.autocomplete_item_text)
+        private val primaryText: TextView = itemView.findViewById(R.id.autocomplete_item_primary_text)
+        private val secondaryText: TextView = itemView.findViewById(R.id.autocomplete_item_secondary_text)
 
-        init {
-            // Set up the click listener
+        fun bind(prediction: AutocompletePrediction) {
+            primaryText.text = prediction.getPrimaryText(null).toString()
+            secondaryText.text = prediction.getSecondaryText(null).toString()
+
             itemView.setOnClickListener {
-                // Use the callback to handle item click
-                onItemClick(suggestions[adapterPosition])
+                onItemClick(prediction)
             }
         }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val itemView = LayoutInflater.from(parent.context)
+        val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.autocomplete_item, parent, false)
-        return ViewHolder(itemView)
+        return ViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.textView.text = suggestions[position].getPrimaryText(null)
+        holder.bind(predictions[position])
     }
 
-    override fun getItemCount(): Int = suggestions.size
+    override fun getItemCount(): Int = predictions.size
 
-    fun updatePredictions(newSuggestions: List<AutocompletePrediction>) {
-        suggestions = newSuggestions
+    fun updatePredictions(newPredictions: List<AutocompletePrediction>) {
+        predictions = newPredictions
         notifyDataSetChanged()
     }
 }
+
+
 

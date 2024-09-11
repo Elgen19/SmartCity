@@ -1,5 +1,6 @@
 package com.elgenium.smartcity
 
+import PlacesClientSingleton
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -24,6 +25,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.viewpager2.widget.ViewPager2
 import com.elgenium.smartcity.databinding.ActivityPlacesBinding
+import com.elgenium.smartcity.helpers.ActivityNavigationUtils.navigateToActivity
 import com.elgenium.smartcity.helpers.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.models.SavedPlace
 import com.elgenium.smartcity.network.PlaceDistanceService
@@ -47,12 +49,10 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
-import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.PhotoMetadata
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.net.FetchPhotoRequest
 import com.google.android.libraries.places.api.net.FetchPlaceRequest
-import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.firebase.auth.FirebaseAuth
@@ -76,7 +76,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var mMap: GoogleMap
     private lateinit var binding: ActivityPlacesBinding
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private lateinit var placesClient: PlacesClient
+    private val placesClient by lazy { PlacesClientSingleton.getClient(this) }
     private val DEFAULT_ZOOM_LEVEL = 15f
     private val DEFAULT_HEADING = 0f
     private val DEFAULT_ORIENTATION = 0f
@@ -94,14 +94,6 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // sets the color of the navigation bar making it more personalized
         NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
-
-        // get google maps API key in the secrets.properties
-        val apiKey = BuildConfig.MAPS_API_KEY
-
-        if (!Places.isInitialized()) {
-            Places.initializeWithNewPlacesApiEnabled(applicationContext, apiKey)
-        }
-        placesClient = Places.createClient(this)
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
@@ -122,14 +114,14 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
         binding.bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.navigation_home -> {
-                    navigateToActivity(DashboardActivity::class.java)
+                    navigateToActivity(this, DashboardActivity::class.java, true)
                     true
                 }
                 R.id.navigation_places -> true
                 R.id.navigation_favorites -> true
                 R.id.navigation_events -> true
                 R.id.navigation_settings -> {
-                    navigateToActivity(SettingsActivity::class.java)
+                    navigateToActivity(this, SettingsActivity::class.java, true)
                     true
                 }
                 else -> false
@@ -138,7 +130,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Set up the Search FAB to navigate to SearchActivity
         binding.fabSearch.setOnClickListener {
-            navigateToActivity(SearchActivity::class.java)
+            navigateToActivity(this, SearchActivity::class.java, true)
         }
 
         val placeId = intent.getStringExtra("PLACE_ID")
@@ -314,6 +306,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
             }
             .addOnFailureListener { exception ->
                 Log.e("PlacesActivity", "Error fetching place details", exception)
+                Toast.makeText(this, "error fetching", Toast.LENGTH_SHORT).show()
             }
     }
 
@@ -677,6 +670,8 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
             .addOnFailureListener { exception ->
                 // Log an error message if the request fails
                 Log.e("PlacesActivity", "Error fetching place details for bottom sheet", exception)
+                Toast.makeText(this, "error fetching at botom sheet", Toast.LENGTH_SHORT).show()
+
             }
 
         // Show the bottom sheet dialog
@@ -975,11 +970,6 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
         return super.dispatchTouchEvent(ev)
     }
 
-    private fun navigateToActivity(activityClass: Class<*>) {
-        val intent = Intent(this, activityClass)
-        startActivity(intent)
-        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
-    }
 
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1
