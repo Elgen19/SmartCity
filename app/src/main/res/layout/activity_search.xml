@@ -207,4 +207,18 @@
         android:paddingEnd="16dp"
         android:text="@string/search_labels"
         android:visibility="gone"/>
+
+    <!-- LottieAnimationView for loading indicator -->
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/lottieAnimation"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_marginTop="16dp"
+        android:layout_below="@+id/categoryScrollView"
+        android:layout_centerHorizontal="true"
+        app:lottie_rawRes="@raw/loading_lotify"
+        app:lottie_autoPlay="true"
+        app:lottie_loop="true"
+        android:visibility="gone"/>
+
 </RelativeLayout>
