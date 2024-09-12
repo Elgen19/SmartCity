@@ -1,4 +1,4 @@
-package com.elgenium.smartcity.helpers
+package com.elgenium.smartcity.singletons
 
 import android.content.Context
 import com.elgenium.smartcity.BuildConfig

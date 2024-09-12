@@ -4,7 +4,7 @@ package com.elgenium.smartcity
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.elgenium.smartcity.databinding.ActivityOnboardingScreenBinding
-import com.elgenium.smartcity.helpers.NavigationBarColorCustomizerHelper
+import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.models.OnboardingItem
 import com.elgenium.smartcity.viewpager_adapter.OnboardingAdapter
 

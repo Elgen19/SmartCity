@@ -13,6 +13,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_marginBottom="8dp"
+        android:padding="24dp"
         android:clickable="true"
         android:focusable="true">
 
@@ -25,7 +26,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Edit"
+            android:text="Edit Contact"
             android:textSize="16sp"
             android:textColor="@color/secondary_color" />
     </LinearLayout>
@@ -43,6 +44,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
+        android:padding="24dp"
         android:clickable="true"
         android:focusable="true">
 
@@ -55,7 +57,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Delete"
+            android:text="Delete Contact"
             android:textSize="16sp"
             android:textColor="@color/secondary_color" />
     </LinearLayout>

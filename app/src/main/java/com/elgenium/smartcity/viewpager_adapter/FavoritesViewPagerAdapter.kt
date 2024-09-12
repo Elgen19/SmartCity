@@ -3,6 +3,7 @@ package com.elgenium.smartcity.viewpager_adapter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.elgenium.smartcity.R
@@ -24,6 +25,14 @@ class FavoritesViewPagerAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val recyclerView: RecyclerView = holder.itemView.findViewById(R.id.recyclerViewSavedPlaces)
         recyclerView.layoutManager = LinearLayoutManager(holder.itemView.context)
+
+        // Add DividerItemDecoration
+        val dividerItemDecoration = DividerItemDecoration(
+            recyclerView.context,
+            (recyclerView.layoutManager as LinearLayoutManager).orientation
+        )
+        recyclerView.addItemDecoration(dividerItemDecoration)
+
         recyclerView.adapter = SavedPlacesAdapter(savedPlaces, onItemClick, onItemLongClick)
     }
 

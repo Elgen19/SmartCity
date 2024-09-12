@@ -14,7 +14,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
 import com.elgenium.smartcity.databinding.ActivityDashboardBinding
-import com.elgenium.smartcity.helpers.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.network.OpenWeatherApiService
 import com.elgenium.smartcity.network.RoadsApiService
 import com.elgenium.smartcity.network.TomTomApiService
@@ -22,6 +21,8 @@ import com.elgenium.smartcity.network_reponses.RoadLocation
 import com.elgenium.smartcity.network_reponses.RoadsResponse
 import com.elgenium.smartcity.network_reponses.TrafficResponse
 import com.elgenium.smartcity.network_reponses.WeatherResponse
+import com.elgenium.smartcity.singletons.BottomNavigationManager
+import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -82,6 +83,10 @@ class DashboardActivity : AppCompatActivity() {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
         apiServiceForRoads = retrofitForRoads.create(RoadsApiService::class.java)
+
+
+        // Singleton object that will handle bottom navigation functionality
+        BottomNavigationManager.setupBottomNavigation(this, binding.bottomNavigation, DashboardActivity::class.java)
 
 
 
@@ -388,54 +393,7 @@ class DashboardActivity : AppCompatActivity() {
             finish()
         }
 
-        binding.bottomNavigation.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.navigation_home -> {
-                    // Handle Home action
-                    true
-                }
-                R.id.navigation_places -> {
-                    // Handle Places action
-                    val intent = Intent(this, PlacesActivity::class.java)
-                    val options = ActivityOptions.makeCustomAnimation(
-                        this,
-                        R.anim.fade_in,
-                        R.anim.fade_out
-                    )
-                    startActivity(intent, options.toBundle())
-                    finish()
-                    true
-                }
-                R.id.navigation_favorites -> {
-                    // Handle Favorites action
-                    val intent = Intent(this, FavoritesActivity::class.java)
-                    val options = ActivityOptions.makeCustomAnimation(
-                        this,
-                        R.anim.fade_in,
-                        R.anim.fade_out
-                    )
-                    startActivity(intent, options.toBundle())
-                    finish()
-                    true
-                }
-                R.id.navigation_events -> {
-                    // Handle Events action
-                    true
-                }
-                R.id.navigation_settings -> {
-                    val intent = Intent(this, SettingsActivity::class.java)
-                    val options = ActivityOptions.makeCustomAnimation(
-                        this,
-                        R.anim.fade_in,
-                        R.anim.fade_out
-                    )
-                    startActivity(intent, options.toBundle())
-                    finish()
-                    true
-                }
-                else -> false
-            }
-        }
+
     }
 
     private fun updateGreeting() {

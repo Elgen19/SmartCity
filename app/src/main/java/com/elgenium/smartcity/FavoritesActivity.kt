@@ -14,8 +14,9 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
 import com.elgenium.smartcity.databinding.ActivityFavoritesBinding
-import com.elgenium.smartcity.helpers.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.models.SavedPlace
+import com.elgenium.smartcity.singletons.ActivityNavigationUtils
+import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.viewpager_adapter.FavoritesViewPagerAdapter
 import com.elgenium.smartcity.viewpager_adapter.PhotoPagerAdapter
 import com.google.android.libraries.places.api.Places
@@ -193,6 +194,8 @@ class FavoritesActivity : AppCompatActivity() {
         val addAPlaceOptionLayout: LinearLayout = bottomSheetView.findViewById(R.id.addAPlaceOptionLayout)
         val shareOptionLayout: LinearLayout = bottomSheetView.findViewById(R.id.shareOptionLayout)
         val removeOptionLayout: LinearLayout = bottomSheetView.findViewById(R.id.removeOptionLayout)
+        val reportOptionLayout: LinearLayout = bottomSheetView.findViewById(R.id.reportOptionLayout)
+
 
         addAPlaceOptionLayout.setOnClickListener {
             // Navigate to search activity
@@ -231,6 +234,12 @@ class FavoritesActivity : AppCompatActivity() {
             bottomSheetDialog.dismiss()
         }
 
+        reportOptionLayout.setOnClickListener{
+            // navigate to ReportEventActivity
+            ActivityNavigationUtils.navigateToActivity(this, ReportEventActivity::class.java, false)
+            bottomSheetDialog.dismiss()
+        }
+
         bottomSheetDialog.show()
     }
 
@@ -264,8 +273,6 @@ class FavoritesActivity : AppCompatActivity() {
         }
     }
 
-
-
     private fun showPlaceDetails(place: SavedPlace) {
         Log.d("FavoritesActivity", "Showing details for place: $place")
         val bottomSheetDialog = BottomSheetDialog(this)
@@ -291,11 +298,10 @@ class FavoritesActivity : AppCompatActivity() {
         placePhone.text = place.phoneNumber ?: "No phone number available"
         placeWebsite.text = place.websiteUri ?: "No website available"
         placeRating.text = place.rating ?: "N/A"
-        placeHoursDays.text = place.openingDays
-        placeHoursTime.text = place.openingHours
+
 
         // gets the photo metadata for display in viewpager
-        getPhotoMetadatas(place.id, bottomSheetView)
+        place.id?.let { getPhotoMetadatas(it, bottomSheetView) }
 
         // close button listener
         btnClose.setOnClickListener {

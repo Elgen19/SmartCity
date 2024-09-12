@@ -1,0 +1,292 @@
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/primary_color"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Top Bar with Back Button and Title -->
+    <RelativeLayout
+        android:id="@+id/topComponents"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/baseline_arrow_back_24" />
+
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginStart="16dp"
+            android:text="Events"
+            android:textColor="@color/brand_color"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+    </RelativeLayout>
+
+    <!-- Event Name Label -->
+    <TextView
+        android:layout_below="@+id/topComponents"
+        android:id="@+id/tvEventNameLabel"
+        android:layout_width="wrap_content"
+        android:textColor="@color/secondary_color"
+        android:layout_height="wrap_content"
+        android:text="What is the name of the event?"
+        android:layout_marginTop="16dp" />
+
+    <!-- Event Name Input -->
+    <EditText
+        android:id="@+id/etEventName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tvEventNameLabel"
+        android:background="@drawable/border_drawable"
+        android:hint="Name of the event"
+        android:layout_marginTop="8dp" />
+
+    <!-- Event Location Label and Get Location Button -->
+    <LinearLayout
+        android:id="@+id/layoutLocation"
+        android:layout_below="@+id/etEventName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="16dp">
+
+        <TextView
+            android:id="@+id/tvEventLocationLabel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="@color/secondary_color"
+            android:text="Where is the event located?" />
+
+        <Button
+            android:id="@+id/btnGetLocation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/secondary_color"
+            android:text="Get Location" />
+
+    </LinearLayout>
+
+    <!-- Displayed Location -->
+    <TextView
+        android:layout_below="@+id/layoutLocation"
+        android:id="@+id/tvLocation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/gray2"
+        android:text="Your location will appear here" />
+
+    <!-- Event Details Label -->
+    <TextView
+        android:layout_below="@+id/tvLocation"
+        android:id="@+id/tvEventDetailsLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/secondary_color"
+        android:text="What is the event all about?"
+        android:layout_marginTop="16dp" />
+
+    <!-- Horizontal ScrollView for Event Types -->
+    <HorizontalScrollView
+        android:id="@+id/scrollViewButtons"
+        android:layout_below="@+id/tvEventDetailsLabel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none"
+        android:layout_marginTop="8dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <!-- Event Type Buttons -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnFestival"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Festival"
+                app:icon="@drawable/festival"
+                app:iconTint="@color/secondary_color"
+                app:iconGravity="textStart"
+                android:textAllCaps="false"
+                android:textColor="@color/gray"
+                app:strokeColor="@color/gray"
+                app:cornerRadius="8dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnTrafficAccident"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Traffic Accident"
+                app:icon="@drawable/traffic_accident"
+                app:iconTint="@color/secondary_color"
+                android:textAllCaps="false"
+                app:iconGravity="textStart"
+                android:layout_marginStart="8dp"
+                android:textColor="@color/gray"
+                app:strokeColor="@color/gray"
+                app:cornerRadius="8dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnFlooding"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Flooding"
+                app:icon="@drawable/flooding"
+                app:iconTint="@color/secondary_color"
+                app:iconGravity="textStart"
+                android:textAllCaps="false"
+                android:layout_marginStart="8dp"
+                android:textColor="@color/gray"
+                app:strokeColor="@color/gray"
+                app:cornerRadius="8dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnConcert"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Concert"
+                app:icon="@drawable/concert"
+                app:iconTint="@color/secondary_color"
+                android:textAllCaps="false"
+                app:iconGravity="textStart"
+                android:layout_marginStart="8dp"
+                android:textColor="@color/gray"
+                app:strokeColor="@color/gray"
+                app:cornerRadius="8dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnOthers"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Others"
+                app:iconTint="@color/secondary_color"
+                app:icon="@drawable/more"
+                android:textAllCaps="false"
+                app:iconGravity="textStart"
+                android:layout_marginStart="8dp"
+                android:textColor="@color/gray"
+                app:strokeColor="@color/gray"
+                app:cornerRadius="8dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- Event Description Label -->
+    <TextView
+        android:layout_below="@+id/scrollViewButtons"
+        android:id="@+id/tvDateAndTimeLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/secondary_color"
+        android:text="Describe the event in detail"
+        android:layout_marginTop="16dp" />
+
+    <!-- Date and Time Buttons -->
+    <LinearLayout
+        android:layout_below="@+id/tvDateAndTimeLabel"
+        android:id="@+id/layoutDate"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDateTimeStarted"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textColor="@color/gray"
+            app:strokeColor="@color/gray"
+            app:icon="@drawable/time_start"
+            app:iconTint="@color/secondary_color"
+            android:textAllCaps="false"
+            app:cornerRadius="8dp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_weight="1"
+            android:text="Date &amp; Time \nStarted" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDateTimeEnded"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Date &amp; Time \nEnded"
+            app:icon="@drawable/time_end"
+            app:iconTint="@color/secondary_color"
+            android:textAllCaps="false"
+            android:textColor="@color/gray"
+            app:strokeColor="@color/gray"
+            app:cornerRadius="8dp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_marginStart="16dp" />
+    </LinearLayout>
+
+    <!-- Event Description Label -->
+    <TextView
+        android:layout_below="@+id/layoutDate"
+        android:id="@+id/tvEventDescriptionLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/secondary_color"
+        android:text="Describe the event in detail"
+        android:layout_marginTop="16dp" />
+
+    <!-- Event Description Input -->
+    <EditText
+        android:layout_below="@+id/tvEventDescriptionLabel"
+        android:id="@+id/etEventDescription"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/border_drawable"
+        android:hint="Provide a detailed description"
+        android:inputType="textMultiLine"
+        android:gravity="start"
+        android:minLines="4"
+        android:layout_marginTop="8dp" />
+
+    <!-- Add Attachment Button -->
+    <com.google.android.material.button.MaterialButton
+        android:layout_below="@+id/etEventDescription"
+        android:id="@+id/btnAddAttachment"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textAllCaps="false"
+        android:text="Add an attachment"
+        android:textColor="@color/secondary_color"
+        app:icon="@drawable/attachment"
+        app:iconTint="@color/secondary_color"
+        app:iconGravity="textStart"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+    <!-- Submit Button -->
+    <Button
+        android:id="@+id/btnSubmit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/secondary_color"
+        android:text="Submit"
+        android:layout_alignParentBottom="true"
+        android:layout_marginTop="24dp" />
+</RelativeLayout>

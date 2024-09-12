@@ -25,13 +25,14 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.viewpager2.widget.ViewPager2
 import com.elgenium.smartcity.databinding.ActivityPlacesBinding
-import com.elgenium.smartcity.helpers.ActivityNavigationUtils.navigateToActivity
-import com.elgenium.smartcity.helpers.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.models.SavedPlace
 import com.elgenium.smartcity.network.PlaceDistanceService
 import com.elgenium.smartcity.network.PlacesService
 import com.elgenium.smartcity.network_reponses.PlaceDistanceResponse
 import com.elgenium.smartcity.network_reponses.PlacesResponse
+import com.elgenium.smartcity.singletons.ActivityNavigationUtils.navigateToActivity
+import com.elgenium.smartcity.singletons.BottomNavigationManager
+import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.viewpager_adapter.PhotoPagerAdapter
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -83,75 +84,69 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
     private var isFollowingUser = true
     private var currentRedMarker: Marker? = null
     private val poiMarkers = mutableListOf<Marker>()
-
-
-
+    private var placeIDFromIntent: String?= "No Place ID"
+    private var savedPlace: SavedPlace = SavedPlace()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityPlacesBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // sets the color of the navigation bar making it more personalized
+        // Singleton object to set the color of the navigation bar making it more personalized
         NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
 
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        // Singleton object that will handle bottom navigation functionality
+        BottomNavigationManager.setupBottomNavigation(this, binding.bottomNavigation, PlacesActivity::class.java)
 
-        // Initialize FloatingActionButton using ViewBinding
-        binding.fabCurrentLocation.setOnClickListener {
-            resetMapToDefaultLocation()
-        }
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-        // Set the selected item in the BottomNavigationView
-        binding.bottomNavigation.selectedItemId = R.id.navigation_places
-
-        // Set up the BottomNavigationView listener
-        binding.bottomNavigation.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.navigation_home -> {
-                    navigateToActivity(this, DashboardActivity::class.java, true)
-                    true
-                }
-                R.id.navigation_places -> true
-                R.id.navigation_favorites -> true
-                R.id.navigation_events -> true
-                R.id.navigation_settings -> {
-                    navigateToActivity(this, SettingsActivity::class.java, true)
-                    true
-                }
-                else -> false
-            }
-        }
-
         // Set up the Search FAB to navigate to SearchActivity
         binding.fabSearch.setOnClickListener {
             navigateToActivity(this, SearchActivity::class.java, true)
         }
 
-        val placeId = intent.getStringExtra("PLACE_ID")
-
-        placeId?.let {
-            fetchPlaceDetailsAndPlotMarkerOnMap(it)
-        }
-
+        // Setup map styles button listener
         binding.fabMapStyles.setOnClickListener {
             showMapStylesBottomSheet()
         }
 
-        // Get the category from the intent, if available
-        val category = intent.getStringExtra("CATEGORY")
+        // Initialize FloatingActionButton using ViewBinding
+        binding.fabCurrentLocation.setOnClickListener {
+            resetMapToDefaultLocation()
+        }
 
+        // Fetch the place ID from intent
+        placeIDFromIntent = intent.getStringExtra("PLACE_ID")
+
+        placeIDFromIntent?.let { it ->
+            fetchPlaceDetailsFromAPI(it) { savedPlace ->
+                savedPlace?.let {
+                    this.savedPlace = it
+                    // Update UI or do something with the savedPlace
+                    plotMarkerOnMap(placeIDFromIntent!!, savedPlace) // Use the Place object to plot the marker
+                    showPlaceDetailsInBottomSheet(it) // Use the Place object to show details
+                } ?: run {
+                    // Handle the case where savedPlace is null
+                    Log.e("PlacesActivity", "Failed to fetch place details")
+                }
+            }
+        }
+        Log.d("PlacesActivity", "On create place id:  $placeIDFromIntent")
+        Log.d("PlacesActivity", "Inside of place data:  $savedPlace")
+
+
+        // Get the category from the intent from Search Activity, if available
+        val category = intent.getStringExtra("CATEGORY")
         // Fetch the user's location (ensure you have location permission)
         getUserLocation { userLatLng ->
             // Use the userLatLng here
             fetchAndAddPois(userLatLng, category)
         }
-
     }
 
     private fun getUserLocation(onLocationReceived: (LatLng) -> Unit) {
@@ -257,59 +252,6 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-
-    private fun fetchPlaceDetailsAndPlotMarkerOnMap(placeId: String) {
-        val fields = listOf(
-            Place.Field.ID,
-            Place.Field.NAME,
-            Place.Field.EDITORIAL_SUMMARY,
-            Place.Field.ADDRESS,
-            Place.Field.PHONE_NUMBER,
-            Place.Field.WEBSITE_URI,
-            Place.Field.PHOTO_METADATAS,
-            Place.Field.RATING,
-            Place.Field.OPENING_HOURS,
-            Place.Field.LAT_LNG // Ensure this is included
-        )
-        val request = FetchPlaceRequest.builder(placeId, fields).build()
-
-        placesClient.fetchPlace(request)
-            .addOnSuccessListener { response ->
-                val place = response.place
-                place.latLng?.let { latLng ->
-                    // Remove the previous red marker if it exists
-                    currentRedMarker?.let { existingMarker ->
-                        try {
-                            existingMarker.remove()
-                            Log.d("PlacesActivity", "Removed previous red marker")
-                        } catch (e: Exception) {
-                            Log.e("PlacesActivity", "Error removing previous red marker", e)
-                        }
-                    }
-
-                    // Add the new red marker
-                    val redMarkerOptions = MarkerOptions()
-                        .position(latLng)
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)) // Ensure red icon is used
-                    currentRedMarker = mMap.addMarker(redMarkerOptions)
-                    currentRedMarker?.tag = placeId
-
-                    // Animate camera to the new red marker
-                    mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
-
-                    // Call fetchPlaceDetails to show the bottom sheet
-                    Log.d("PlacesActivity", "Calling fetchPlaceDetails for placeId: $placeId")
-                    fetchPlaceDetails(placeId)
-                } ?: run {
-                    Log.d("PlacesActivity", "Place does not have a LatLng.")
-                }
-            }
-            .addOnFailureListener { exception ->
-                Log.e("PlacesActivity", "Error fetching place details", exception)
-                Toast.makeText(this, "error fetching", Toast.LENGTH_SHORT).show()
-            }
-    }
-
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
 
@@ -337,26 +279,27 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
                 }
             }
 
-            // Marker click listener to show the bottom sheet
+//            // Marker click listener to show the bottom sheet
             mMap.setOnMarkerClickListener { marker ->
                 // Fetch the place ID (you can save this when adding the marker)
                 val placeId = marker.tag as? String
                 placeId?.let {
-                    // Fetch place details and show the bottom sheet
-                    fetchPlaceDetailsAndPlotMarkerOnMap(placeId)
-
+                    Log.d("PlacesActivity", "At on map click marker listener: $savedPlace")
+                    // Plot the marker on the map
+                    plotMarkerOnMap(placeId, savedPlace)
+                    // Show place details in the bottom sheet
+                    showPlaceDetailsInBottomSheet(savedPlace)
                     // Return true to indicate the click event has been handled
                     true
                 } ?: false
             }
-
         } else {
             // Request location permission
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQUEST_CODE)
         }
     }
 
-    private fun setupMoreButton(bottomSheetView: View, bottomSheetDialog: BottomSheetDialog, place: Place) {
+    private fun setupMoreButton(bottomSheetView: View, bottomSheetDialog: BottomSheetDialog) {
         val btnMore: MaterialButton = bottomSheetView.findViewById(R.id.btnMore)
 
         btnMore.setOnClickListener {
@@ -364,11 +307,11 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
             bottomSheetDialog.dismiss()
 
             // Show the options bottom sheet
-            setupOptionsBottomSheet(place)
+            setupOptionsBottomSheet(bottomSheetView)
         }
     }
 
-    private fun setupSavedPlaces(bottomSheetView: View, bottomSheetDialog: BottomSheetDialog, place: Place) {
+    private fun setupSavedPlaces(bottomSheetView: View, bottomSheetDialog: BottomSheetDialog, place: SavedPlace) {
         val btnSave: MaterialButton = bottomSheetView.findViewById(R.id.btnSave)
 
         btnSave.setOnClickListener {
@@ -383,11 +326,9 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
                 val userRef = database.getReference("Users/$userId/saved_places")
 
                 // Fetch data from the bottom sheet UI elements
-                val placeId = place.id
                 val placeName = bottomSheetView.findViewById<TextView>(R.id.placeName).text.toString()
                 val placeAddress = bottomSheetView.findViewById<TextView>(R.id.placeAddress).text.toString()
                 val placePhoneNumber = bottomSheetView.findViewById<TextView>(R.id.placePhone).text.toString()
-                val placeLatLng = place.latLng
                 val placeOpeningDays = bottomSheetView.findViewById<TextView>(R.id.placeHoursDays).text.toString()
                 val placeOpeningHours = bottomSheetView.findViewById<TextView>(R.id.placeHoursTime).text.toString()
                 val placeRating = bottomSheetView.findViewById<TextView>(R.id.placeRating).text.toString()
@@ -397,24 +338,26 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
 
 
                 // Prepare place data
-                val placeData = placeId?.let {
+                val placeData = placeIDFromIntent?.let {
                     SavedPlace(
                         id = it,
                         name = placeName,
                         address = placeAddress,
                         phoneNumber = placePhoneNumber,
-                        latLng = placeLatLng?.toString(),
-                        openingDays = placeOpeningDays,
-                        openingHours = placeOpeningHours,
+                        latLng = place.latLng,
+                        openingDaysAndTime = "$placeOpeningDays==$placeOpeningHours",
                         rating = placeRating,
                         websiteUri = placeWebsite,
                         distance = placeDistance,
-                        openingStatus = placeStatus
+                        openingStatus = placeStatus,
+                        photoMetadataList = place.photoMetadataList
                     )
                 }
 
+                Log.d("PlacesActivity", "Inside of place data:  $placeData")
+
                 // Check for existing records
-                userRef.orderByChild("id").equalTo(placeId).addListenerForSingleValueEvent(object :
+                userRef.orderByChild("id").equalTo(placeIDFromIntent).addListenerForSingleValueEvent(object :
                     ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
                         if (snapshot.exists()) {
@@ -560,126 +503,159 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
         return BitmapDescriptorFactory.fromBitmap(markerWithIconBitmap)
     }
 
-    private fun setupOptionsBottomSheet(place: Place) {
+    private fun setupOptionsBottomSheet(bottomSheetView: View) {
         // Inflate a new view for the bottom sheet
         val inflater = LayoutInflater.from(this)
-        val bottomSheetView = inflater.inflate(R.layout.bottom_sheet_more_options, null)
+        val bottomSheetViewMoreOptions = inflater.inflate(R.layout.bottom_sheet_more_options, binding.root, false)
 
         // Create a new BottomSheetDialog instance
-        val bottomSheetDialog = BottomSheetDialog(this)
-        bottomSheetDialog.setContentView(bottomSheetView)
+        val bottomSheetDialogMoreOptions = BottomSheetDialog(this)
+        bottomSheetDialogMoreOptions.setContentView(bottomSheetViewMoreOptions)
 
-        val callOptionLayout: LinearLayout = bottomSheetView.findViewById(R.id.callOptionLayout)
-        val shareOptionLayout: LinearLayout = bottomSheetView.findViewById(R.id.shareOptionLayout)
-        val reportOptionLayout: LinearLayout = bottomSheetView.findViewById(R.id.reportOptionLayout)
+        // obtain details from the more options bottom sheet dialog
+        val callOptionLayout: LinearLayout = bottomSheetViewMoreOptions.findViewById(R.id.callOptionLayout)
+        val shareOptionLayout: LinearLayout = bottomSheetViewMoreOptions.findViewById(R.id.shareOptionLayout)
+        val reportOptionLayout: LinearLayout = bottomSheetViewMoreOptions.findViewById(R.id.reportOptionLayout)
 
-        val phoneNumber = place.phoneNumber
+        // obtain data from the place details bottom sheet
+        // this prevents another API request by reusing the already available data on the bottom sheet place details
+        val phoneNumber: TextView = bottomSheetView.findViewById(R.id.placePhone)
+        val placeName: TextView = bottomSheetView.findViewById(R.id.placeName)
+        val placeAddress: TextView = bottomSheetView.findViewById(R.id.placeAddress)
+        val placeRating: TextView = bottomSheetView.findViewById(R.id.placeRating)
 
         // Set up call option
-        if (phoneNumber.isNullOrEmpty()) {
+        if (phoneNumber.text.toString().isEmpty()) {
             callOptionLayout.visibility = View.GONE
         } else {
             callOptionLayout.visibility = View.VISIBLE
             callOptionLayout.setOnClickListener {
                 val intent = Intent(Intent.ACTION_DIAL).apply {
-                    data = Uri.parse("tel:$phoneNumber")
+                    data = Uri.parse("tel:${phoneNumber.text}")
                 }
                 startActivity(intent)
             }
         }
 
         shareOptionLayout.setOnClickListener {
-            // Check if place.id is not null
-            val placeId = place.id
-            if (placeId != null) {
-                // Create a sharing intent with more details
-                val shareText = """
+        // setup share text
+            val shareText = """
             📍 Check out this place:
             
-            Name: ${place.name}
-            Address: ${place.address}
-            Phone: ${place.phoneNumber ?: "No phone number available"}
-            Description: ${place.editorialSummary ?: "No description available."}
-            Rating: ${place.rating ?: "No rating available."}
+            Name: ${placeName.text}
+            Address: ${placeAddress.text}
+            Phone: ${phoneNumber.text} ?: "No phone number available"}
+            Rating: ${placeRating.text} ?: "No rating available."}
         """.trimIndent()
 
-                val shareIntent = Intent().apply {
-                    action = Intent.ACTION_SEND
-                    putExtra(Intent.EXTRA_TEXT, shareText)
-                    type = "text/plain"
-                }
-                startActivity(Intent.createChooser(shareIntent, "Share via"))
-            } else {
-                // Handle the case where place.id is null
-                Toast.makeText(this, "Place ID is missing. Cannot share the place.", Toast.LENGTH_SHORT).show()
+            val shareIntent = Intent().apply {
+                action = Intent.ACTION_SEND
+                putExtra(Intent.EXTRA_TEXT, shareText)
+                type = "text/plain"
             }
+            startActivity(Intent.createChooser(shareIntent, "Share via"))
         }
 
 
         // Set up report an event option
         reportOptionLayout.setOnClickListener {
             // Handle report an event option click
-            Toast.makeText(this, "Report an event option clicked", Toast.LENGTH_SHORT).show()
+           navigateToActivity(this, ReportEventActivity::class.java, false)
         }
 
         // Show the bottom sheet dialog
-        bottomSheetDialog.show()
+        bottomSheetDialogMoreOptions.show()
     }
 
-    private fun fetchPlaceDetails(placeId: String) {
-        // Define the fields to fetch for the place
-        Log.d("PlacesActivity", "fetchPlaceDetails called for placeId: $placeId")
-        val placeFields = listOf(
+    private fun fetchPlaceDetailsFromAPI(placeId: String, callback: (SavedPlace?) -> Unit) {
+        val fields = listOf(
             Place.Field.ID,
             Place.Field.NAME,
-            Place.Field.EDITORIAL_SUMMARY,
             Place.Field.ADDRESS,
             Place.Field.PHONE_NUMBER,
+            Place.Field.WEBSITE_URI,
             Place.Field.PHOTO_METADATAS,
-            Place.Field.LAT_LNG,
-            Place.Field.OPENING_HOURS,
             Place.Field.RATING,
-            Place.Field.WEBSITE_URI
+            Place.Field.OPENING_HOURS,
+            Place.Field.LAT_LNG
         )
+        val request = FetchPlaceRequest.builder(placeId, fields).build()
 
-        // Build the request to fetch the place details
-        val request = FetchPlaceRequest.builder(placeId, placeFields).build()
+        placesClient.fetchPlace(request)
+            .addOnSuccessListener { response ->
+                val place = response.place
+                // Convert Place object to SavedPlace object
+                val savedPlace = SavedPlace(
+                    id = place.id,
+                    name = place.name,
+                    address = place.address,
+                    phoneNumber = place.phoneNumber,
+                    latLng = place.latLng,
+                    openingDaysAndTime = place.openingHours?.weekdayText?.joinToString(", "),
+                    rating = place.rating?.toString(),
+                    websiteUri = place.websiteUri?.toString(),
+                    photoMetadataList = place.photoMetadatas ?: emptyList()
+                )
+                callback(savedPlace) // Return the SavedPlace object via callback
+            }
+            .addOnFailureListener { exception ->
+                Log.e("PlacesActivity", "Error fetching place details", exception)
+                callback(null) // Return null if the API call fails
+            }
+    }
 
-        // Inflate a new view for the bottom sheet
+    private fun plotMarkerOnMap(placeId: String, place: SavedPlace) {
+        Log.d("PlacesActivity", "Inside of place data on plotMarkerOnMap:  $savedPlace")
+
+        place.latLng?.let { latLng ->
+            // Remove the previous red marker if it exists
+            currentRedMarker?.let { existingMarker ->
+                try {
+                    existingMarker.remove()
+                    Log.d("PlacesActivity", "Removed previous red marker")
+                } catch (e: Exception) {
+                    Log.e("PlacesActivity", "Error removing previous red marker", e)
+                }
+            }
+
+            // Add the new red marker
+            val redMarkerOptions = MarkerOptions()
+                .position(latLng)
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
+            currentRedMarker = mMap.addMarker(redMarkerOptions)
+            currentRedMarker?.tag = placeId
+
+            // Animate the camera to the new red marker
+            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
+        } ?: run {
+            Log.d("PlacesActivity", "Place does not have a LatLng.")
+        }
+    }
+
+    private fun showPlaceDetailsInBottomSheet(place: SavedPlace) {
+        // Inflate the bottom sheet view
         val inflater = LayoutInflater.from(this)
-        val bottomSheetView = inflater.inflate(R.layout.bottom_sheet_place_details, null)
+        val bottomSheetView = inflater.inflate(R.layout.bottom_sheet_place_details, binding.root, false)
 
         // Create a new BottomSheetDialog instance
         val bottomSheetDialog = BottomSheetDialog(this)
         bottomSheetDialog.setContentView(bottomSheetView)
 
-        // Fetch the place details using the Places API
-        placesClient.fetchPlace(request)
-            .addOnSuccessListener { response ->
-                Log.d("PlacesActivity", "Place details fetched successfully")
-                // On successful response, update the UI with place details
-                val place = response.place
-                updatePlaceDetailsUI(place, bottomSheetView) // Update place details UI
-                handleOpeningHours(place, bottomSheetView) // Handle and display opening hours
-                checkLocationPermissionAndFetchDistance(place, bottomSheetView) // Check location permission and fetch distance
-                getAndLoadPhotoMetadatasFromPlace(place, bottomSheetView) // Display place photos
-                setupMoreButton(bottomSheetView, bottomSheetDialog, place)
-                setupCloseButton(bottomSheetView, bottomSheetDialog)
-                setupSavedPlaces(bottomSheetView, bottomSheetDialog,place)
-            }
-            .addOnFailureListener { exception ->
-                // Log an error message if the request fails
-                Log.e("PlacesActivity", "Error fetching place details for bottom sheet", exception)
-                Toast.makeText(this, "error fetching at botom sheet", Toast.LENGTH_SHORT).show()
-
-            }
+        // Update the UI with place details
+        updatePlaceDetailsUI(place, bottomSheetView)
+        handleOpeningHours(place, bottomSheetView)
+        checkLocationPermissionAndFetchDistance(place, bottomSheetView)
+        getAndLoadPhotoMetadatasFromPlace(place, bottomSheetView)
+        setupMoreButton(bottomSheetView, bottomSheetDialog)
+        setupCloseButton(bottomSheetView, bottomSheetDialog)
+        setupSavedPlaces(bottomSheetView, bottomSheetDialog, place)
+        setupGetDirectionsButton(bottomSheetView, bottomSheetDialog)
 
         // Show the bottom sheet dialog
         bottomSheetDialog.show()
-
     }
 
-    private fun updatePlaceDetailsUI(place: Place, bottomSheetView: View) {
+    private fun updatePlaceDetailsUI(place: SavedPlace, bottomSheetView: View) {
         // Find the UI elements in the bottom sheet view.
         val placeName: TextView = bottomSheetView.findViewById(R.id.placeName)
         val placeAddress: TextView = bottomSheetView.findViewById(R.id.placeAddress)
@@ -691,7 +667,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
         placeName.text = place.name ?: "Unknown Place" // Set place name or default text if null.
         placeAddress.text = place.address ?: "No Address Available" // Set place address or default text if null.
         placePhone.text = place.phoneNumber ?: "No Phone Available" // Set place phone number or default text if null.
-        placeWebsite.text = place.websiteUri?.toString() ?: "No Website Available" // Set place website or default text if null.
+        placeWebsite.text = place.websiteUri ?: "No Website Available" // Set place website or default text if null.
         placeRating.text = getString(R.string.rating, place.rating ?: "No Rating") // Set place rating or default text if null.
 
         // Handle the case where the place does not have latitude and longitude information.
@@ -700,29 +676,11 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    private fun handleOpeningHours(place: Place, bottomSheetView: View) {
-        // Retrieve the opening hours from the place object.
-        val openingHours = place.openingHours
+    private fun handleOpeningHours(place: SavedPlace, bottomSheetView: View) {
+        // Retrieve the opening hours and days from the place object.
+        val openingDaysAndTime = place.openingDaysAndTime ?: "No opening days available"
 
-        // Define the time format to be used for parsing and formatting time.
-        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-        val calendar = Calendar.getInstance()
-        val currentTime = calendar.time // Get the current time.
-        val currentDay = calendar.get(Calendar.DAY_OF_WEEK) // Get the current day of the week.
-        val currentTimeOnly = timeFormat.parse(timeFormat.format(currentTime)) // Format the current time.
-
-        // Format the days of the week for which the place is open.
-        val daysText = openingHours?.periods?.joinToString("\n") { period ->
-            val day = period.open?.day?.name ?: "Unknown Day"
-            day
-        } ?: "No information for hours or days available"
-
-        // Format the opening and closing times for each period.
-        val timesText = openingHours?.periods?.joinToString("\n") { period ->
-            val openTime = formatTimeString(period.open?.time.toString())
-            val closeTime = formatTimeString(period.close?.time.toString())
-            "$openTime - $closeTime"
-        } ?: ""
+        Log.d("PlacesActivity", "Opening days and time: $openingDaysAndTime")
 
         // Find the UI elements for displaying hours and status.
         val placeHoursDays: TextView = bottomSheetView.findViewById(R.id.placeHoursDays)
@@ -730,53 +688,108 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
         val openStatus: TextView = bottomSheetView.findViewById(R.id.openStatus)
         val placeDistance: TextView = bottomSheetView.findViewById(R.id.placeDistance)
 
-        // Set the formatted days and times text.
-        placeHoursDays.text = daysText
-        placeHoursTime.text = timesText
-
-        // Determine if the place is currently open.
-        if (openingHours != null) {
-            var isOpen = false
-            openingHours.periods.forEach { period ->
-                val dayOfWeek = period.open?.day?.ordinal?.plus(1) // Calendar day starts from 1 (Sunday)
-                if (dayOfWeek == currentDay) {
-                    val openTimeString = period.open?.time?.let { "${it.hours}:${it.minutes}" }
-                    val closeTimeString = period.close?.time?.let { "${it.hours}:${it.minutes}" }
-
-                    // Parse the opening and closing times.
-                    val openTimeParsed = openTimeString?.let { timeFormat.parse(it) }
-                    val closeTimeParsed = closeTimeString?.let { timeFormat.parse(it) }
-
-                    // Handle the case where closing time is on the next day.
-                    if (openTimeParsed != null && closeTimeParsed != null && currentTimeOnly != null) {
-                        if (openTimeParsed <= currentTimeOnly && (currentTimeOnly < closeTimeParsed || closeTimeParsed.before(openTimeParsed))) {
-                            isOpen = true
-                        }
-                    }
-                }
-            }
-
-            // Update the UI based on the open/closed status.
-            if (isOpen) {
-                openStatus.text = getString(R.string.open_status)
-                openStatus.setBackgroundResource(R.drawable.open_pill_background)
-            } else {
-                openStatus.text = getString(R.string.closed)
-                openStatus.setBackgroundResource(R.drawable.closed_pill_background)
-            }
-
-            openStatus.visibility = View.VISIBLE
-        } else {
+        if (openingDaysAndTime == "No opening days available") {
             // Hide the open status if no opening hours information is available.
             openStatus.visibility = View.GONE
+
             // Adjust margin for placeDistance TextView.
             val layoutParams = placeDistance.layoutParams as ViewGroup.MarginLayoutParams
             layoutParams.marginStart = 0
             placeDistance.layoutParams = layoutParams
+
+            // Clear text for hours and days if not available.
+            placeHoursDays.text = getString(R.string.no_available_opening_day_or_time_information)
+            placeHoursTime.text = getString(R.string.empty)
+            return
         }
+
+        // Split the openingDaysAndTime string into lines
+        val daysList = mutableListOf<String>()
+        val timesList = mutableListOf<String>()
+
+        // Process each line in the string
+        openingDaysAndTime.split(", ").forEach { dayInfo ->
+            val parts = dayInfo.split(": ")
+            if (parts.size == 2) {
+                daysList.add(parts[0])
+                timesList.add(parts[1].replace("–", "-").replace("\u202F", " ")) // Replace non-standard dash and non-breaking space
+            }
+        }
+
+        // Update the UI elements
+        placeHoursDays.text = daysList.joinToString("\n")
+        placeHoursTime.text = timesList.joinToString("\n")
+
+        // Determine if the place is currently open
+        val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+        val calendar = Calendar.getInstance()
+        val currentDay = calendar.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.LONG, Locale.getDefault())
+        val currentTime = calendar.time
+        val currentTimeFormatted = timeFormat.format(currentTime)
+
+        Log.d("PlacesActivity", "Current day: $currentDay")
+        Log.d("PlacesActivity", "Current time formatted: $currentTimeFormatted")
+
+        var isOpen = false
+
+        // Check the opening hours for the current day
+        daysList.forEachIndexed { index, day ->
+            Log.d("PlacesActivity", "Checking day: $day")
+
+            if (day.equals(currentDay, ignoreCase = true)) {
+                val times = timesList[index].split("-")
+
+                Log.d("PlacesActivity", "Time List : $timesList")
+                Log.d("PlacesActivity", "Time split : $times")
+
+                if (times.size == 2) {
+                    try {
+                        val openTime = timeFormat.parse(times[0].trim())
+                        val closeTime = timeFormat.parse(times[1].trim())
+                        val currentFormattedTime = timeFormat.parse(currentTimeFormatted)
+
+                        Log.d("PlacesActivity", "Open time: $openTime")
+                        Log.d("PlacesActivity", "Close time: $closeTime")
+                        Log.d("PlacesActivity", "Current time: $currentFormattedTime")
+
+                        // Handle cases where closing time is the next day
+                        if (closeTime != null) {
+                            if (closeTime.before(openTime)) {
+                                // The place is open overnight
+                                if (currentFormattedTime != null) {
+                                    if (currentFormattedTime.after(openTime) || currentFormattedTime.before(closeTime)) {
+                                        isOpen = true
+                                    }
+                                }
+                            } else {
+                                // The place is open during the day
+                                if (currentFormattedTime != null) {
+                                    if (currentFormattedTime.after(openTime) && currentFormattedTime.before(closeTime)) {
+                                        isOpen = true
+                                    }
+                                }
+                            }
+                        }
+                    } catch (e: ParseException) {
+                        Log.e("PlacesActivity", "Error parsing time string: ${e.message}")
+                    }
+                }
+            }
+        }
+
+        // Update the UI based on the open/closed status
+        if (isOpen) {
+            openStatus.text = getString(R.string.open_status)
+            openStatus.setBackgroundResource(R.drawable.open_pill_background)
+        } else {
+            openStatus.text = getString(R.string.closed)
+            openStatus.setBackgroundResource(R.drawable.closed_pill_background)
+        }
+
+        openStatus.visibility = View.VISIBLE
     }
 
-    private fun checkLocationPermissionAndFetchDistance(place: Place, bottomSheetView: View) {
+    private fun checkLocationPermissionAndFetchDistance(place: SavedPlace, bottomSheetView: View) {
         // Check if location permissions are granted.
         checkLocationPermission()
 
@@ -836,12 +849,12 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    private fun getAndLoadPhotoMetadatasFromPlace(place: Place, bottomSheetView: View): List<PhotoMetadata> {
+    private fun getAndLoadPhotoMetadatasFromPlace(place: SavedPlace, bottomSheetView: View): List<PhotoMetadata> {
         // Get the ViewPager2 instance from the bottom sheet view to display photos.
         val placePhoto: ViewPager2 = bottomSheetView.findViewById(R.id.viewPager)
 
         // Retrieve the list of photo metadata for the place. Use an empty list if none are available.
-        val photoMetadatas = place.photoMetadatas ?: emptyList()
+        val photoMetadatas = place.photoMetadataList
 
         // Check if there are any photo metadata available.
         if (photoMetadatas.isNotEmpty()) {
@@ -855,7 +868,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
             placePhoto.visibility = View.GONE
         }
 
-        return place.photoMetadatas ?: emptyList()
+        return place.photoMetadataList
     }
 
     private fun setupCloseButton(bottomSheetView: View, bottomSheetDialog: BottomSheetDialog) {
@@ -866,25 +879,13 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    private fun formatTimeString(timeString: String?): String {
-        if (timeString.isNullOrEmpty()) return "No Time"
+    private fun setupGetDirectionsButton(bottomSheetView: View, bottomSheetDialog: BottomSheetDialog) {
+        val btnGetDirections: MaterialButton = bottomSheetView.findViewById(R.id.btnGetDirections)
+        btnGetDirections.setOnClickListener {
+            // Dismiss the bottom sheet dialog
+            bottomSheetDialog.dismiss()
 
-        // Remove 'LocalTime{hours=' and '}'
-        val trimmedTimeString = timeString
-            .replace("LocalTime{hours=", "")
-            .replace(", minutes=", ":")
-            .replace("}", "")
-
-        // Create a SimpleDateFormat for parsing and formatting
-        val inputFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-        val outputFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
-
-        return try {
-            val date = inputFormat.parse(trimmedTimeString.trim()) // Parse the time string
-            if (date != null) outputFormat.format(date) else "Invalid Time"
-        } catch (e: ParseException) {
-            Log.e("PlacesActivity", "Error parsing time string: ${e.message}")
-            "Invalid Time"
+            navigateToActivity(this, DirectionsActivity::class.java, false)
         }
     }
 

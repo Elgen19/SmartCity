@@ -104,6 +104,8 @@
     <string name="current_travel_time_format">%1$d seconds</string>
     <string name="closed">Closed</string>
     <string name="open_status">Open</string>
+    <string name="no_available_opening_day_or_time_information">No available opening day or time information</string>
+    <string name="empty" />
 
 
 </resources>

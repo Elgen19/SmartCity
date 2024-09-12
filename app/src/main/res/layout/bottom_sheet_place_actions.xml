@@ -113,4 +113,41 @@
             android:gravity="center_vertical" />
     </LinearLayout>
 
+    <!-- Separator -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/dark_gray"
+        android:layout_marginVertical="8dp" />
+
+    <!-- Remove saved place Option -->
+    <LinearLayout
+        android:id="@+id/reportOptionLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:clickable="true"
+        android:focusable="true"
+        android:padding="16dp"
+        tools:ignore="UseCompoundDrawables">
+
+        <ImageView
+            android:id="@+id/reportIcon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/events"
+            app:tint="@color/secondary_color" />
+
+        <TextView
+            android:id="@+id/reportText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:gravity="center_vertical"
+            android:text="Report an event on this place"
+            android:textColor="@color/secondary_color"
+            android:textSize="18sp" />
+    </LinearLayout>
+
 </LinearLayout>

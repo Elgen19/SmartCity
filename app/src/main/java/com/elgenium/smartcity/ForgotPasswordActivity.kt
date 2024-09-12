@@ -5,7 +5,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.elgenium.smartcity.databinding.ActivityForgotPasswordBinding
-import com.elgenium.smartcity.helpers.NavigationBarColorCustomizerHelper
+import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.google.firebase.auth.FirebaseAuth
 
 class ForgotPasswordActivity : AppCompatActivity() {

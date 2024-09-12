@@ -18,7 +18,7 @@
     import androidx.recyclerview.widget.DividerItemDecoration
     import androidx.recyclerview.widget.LinearLayoutManager
     import com.elgenium.smartcity.databinding.ActivitySearchBinding
-    import com.elgenium.smartcity.helpers.NavigationBarColorCustomizerHelper
+    import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
     import com.elgenium.smartcity.models.Search
     import com.elgenium.smartcity.recyclerview_adapter.AutocompleteAdapter
     import com.elgenium.smartcity.recyclerview_adapter.RecentSearchAdapter
