@@ -18,8 +18,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.elgenium.smartcity.helpers.GoogleSignInClientProvider
-import com.elgenium.smartcity.helpers.NavigationBarColorCustomizerHelper
+import com.elgenium.smartcity.singletons.GoogleSignInClientProvider
+import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.sharedpreferences.PreferencesManager
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.firebase.auth.FirebaseAuth

@@ -4,7 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.elgenium.smartcity.databinding.ActivityNotificationHistoryBinding
-import com.elgenium.smartcity.helpers.NavigationBarColorCustomizerHelper
+import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 
 class NotificationHistoryActivity : AppCompatActivity() {
 
