@@ -8,9 +8,9 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <!-- Call Option -->
+    <!-- View Option -->
     <LinearLayout
-        android:id="@+id/callOptionLayout"
+        android:id="@+id/viewOptionLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -21,20 +21,21 @@
         tools:ignore="UseCompoundDrawables">
 
         <ImageView
-            android:id="@+id/callIcon"
+            android:id="@+id/viewIcon"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:src="@drawable/phone" />
+            android:src="@drawable/view"
+            app:tint="@color/secondary_color" />
 
         <TextView
-            android:id="@+id/callText"
+            android:id="@+id/viewText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Call"
+            android:text="View Image"
             android:textColor="@color/gray"
             android:textSize="18sp"
             android:layout_marginStart="16dp"
-        android:gravity="center_vertical" />
+            android:gravity="center_vertical" />
     </LinearLayout>
 
     <!-- Separator -->
@@ -47,7 +48,7 @@
 
     <!-- Share Option -->
     <LinearLayout
-        android:id="@+id/shareOptionLayout"
+        android:id="@+id/deleteOptionLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -58,54 +59,17 @@
         tools:ignore="UseCompoundDrawables">
 
         <ImageView
-            android:id="@+id/shareIcon"
+            android:id="@+id/deleteIcon"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:src="@drawable/share"
+            android:src="@drawable/delete"
             app:tint="@color/secondary_color" />
 
         <TextView
-            android:id="@+id/shareText"
+            android:id="@+id/deleteText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Share"
-            android:textColor="@color/secondary_color"
-            android:textSize="18sp"
-            android:layout_marginStart="16dp"
-        android:gravity="center_vertical" />
-    </LinearLayout>
-
-    <!-- Separator -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@color/dark_gray"
-        android:layout_marginVertical="8dp" />
-
-    <!-- Report an Event Option -->
-    <LinearLayout
-        android:id="@+id/reportOptionLayout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:clickable="true"
-        android:focusable="true"
-        android:padding="16dp"
-        tools:ignore="UseCompoundDrawables">
-
-        <ImageView
-            android:id="@+id/reportIcon"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/events"
-            app:tint="@color/secondary_color" />
-
-        <TextView
-            android:id="@+id/reportText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Report an Event"
+            android:text="Delete Image"
             android:textColor="@color/secondary_color"
             android:textSize="18sp"
             android:layout_marginStart="16dp"

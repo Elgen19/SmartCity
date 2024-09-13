@@ -2,6 +2,7 @@ package com.elgenium.smartcity
 
 import PlacesClientSingleton
 import android.Manifest
+import android.app.ActivityOptions
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -344,13 +345,12 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
                         name = placeName,
                         address = placeAddress,
                         phoneNumber = placePhoneNumber,
-                        latLng = place.latLng,
+                        latLngString = place.latLng.toString(),
                         openingDaysAndTime = "$placeOpeningDays==$placeOpeningHours",
                         rating = placeRating,
                         websiteUri = placeWebsite,
                         distance = placeDistance,
                         openingStatus = placeStatus,
-                        photoMetadataList = place.photoMetadataList
                     )
                 }
 
@@ -533,6 +533,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
                 val intent = Intent(Intent.ACTION_DIAL).apply {
                     data = Uri.parse("tel:${phoneNumber.text}")
                 }
+                bottomSheetDialogMoreOptions.dismiss()
                 startActivity(intent)
             }
         }
@@ -553,6 +554,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
                 putExtra(Intent.EXTRA_TEXT, shareText)
                 type = "text/plain"
             }
+            bottomSheetDialogMoreOptions.dismiss()
             startActivity(Intent.createChooser(shareIntent, "Share via"))
         }
 
@@ -560,7 +562,16 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
         // Set up report an event option
         reportOptionLayout.setOnClickListener {
             // Handle report an event option click
-           navigateToActivity(this, ReportEventActivity::class.java, false)
+            val intent = Intent(this, ReportEventActivity::class.java)
+            intent.putExtra("PLACE_NAME", savedPlace.name)
+            intent.putExtra("PLACE_ADDRESS", savedPlace.address)
+            val options = ActivityOptions.makeCustomAnimation(
+                this,
+                R.anim.fade_in,
+                R.anim.fade_out
+            )
+            bottomSheetDialogMoreOptions.dismiss()
+            this.startActivity(intent, options.toBundle())
         }
 
         // Show the bottom sheet dialog
@@ -904,6 +915,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
                     val photoBitmap = response.bitmap
                     photoBitmap.let {
                         photoBitmaps.add(it)
+                        Log.d("PlacesActivity", "Bitmaps: $photoBitmap")
                         // Only set the adapter once, when all photos are loaded
                         if (photoBitmaps.size == photoMetadatas.size) {
                             viewPager.adapter = PhotoPagerAdapter(photoBitmaps) // Pass Bitmap list directly

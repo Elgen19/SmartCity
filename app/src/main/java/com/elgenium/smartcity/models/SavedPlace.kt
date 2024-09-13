@@ -8,11 +8,12 @@ data class SavedPlace(
     val name: String? = "",
     val address: String? = "",
     val phoneNumber: String? = "",
-    val latLng: LatLng? = null, // Use LatLng object directly
+    val latLng: LatLng? = null, // LatLng object
+    val latLngString: String? = "", // LatLng String for firebase realtime db storaga
     val openingDaysAndTime: String? = "",
     val rating: String? = "",
     val websiteUri: String? = "",
     val distance: String? = "",
     val openingStatus: String? = "",
-    val photoMetadataList: List<PhotoMetadata> = emptyList() // List of photo metadata
+    val photoMetadataList: List<PhotoMetadata> = emptyList(), // List of photo metadata
 )

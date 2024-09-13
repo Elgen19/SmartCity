@@ -1,0 +1,8 @@
+<!-- Layout for each image item -->
+<ImageView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/imgAttachment"
+    android:layout_width="100dp"
+    android:layout_height="100dp"
+    android:layout_margin="4dp"
+    android:scaleType="centerCrop" />
