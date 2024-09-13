@@ -1,44 +1,44 @@
     package com.elgenium.smartcity
 
     import PlacesClientSingleton
-    import android.Manifest
-    import android.content.Intent
-    import android.content.pm.PackageManager
-    import android.graphics.drawable.ColorDrawable
-    import android.location.Location
-    import android.os.Bundle
-    import android.util.Log
-    import android.view.View
-    import android.widget.EditText
-    import android.widget.ImageView
-    import android.widget.SearchView
-    import androidx.appcompat.app.AppCompatActivity
-    import androidx.core.app.ActivityCompat
-    import androidx.core.content.ContextCompat
-    import androidx.recyclerview.widget.DividerItemDecoration
-    import androidx.recyclerview.widget.LinearLayoutManager
-    import com.elgenium.smartcity.databinding.ActivitySearchBinding
-    import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
-    import com.elgenium.smartcity.models.Search
-    import com.elgenium.smartcity.recyclerview_adapter.AutocompleteAdapter
-    import com.elgenium.smartcity.recyclerview_adapter.RecentSearchAdapter
-    import com.google.android.gms.location.FusedLocationProviderClient
-    import com.google.android.gms.location.LocationServices
-    import com.google.android.gms.maps.model.LatLng
-    import com.google.android.libraries.places.api.model.AutocompletePrediction
-    import com.google.android.libraries.places.api.model.RectangularBounds
-    import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
-    import com.google.firebase.auth.FirebaseAuth
-    import com.google.firebase.database.DatabaseReference
-    import com.google.firebase.database.FirebaseDatabase
-    import kotlinx.coroutines.CoroutineScope
-    import kotlinx.coroutines.Dispatchers
-    import kotlinx.coroutines.Job
-    import kotlinx.coroutines.delay
-    import kotlinx.coroutines.launch
-    import java.text.SimpleDateFormat
-    import java.util.Date
-    import java.util.Locale
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.drawable.ColorDrawable
+import android.location.Location
+import android.os.Bundle
+import android.util.Log
+import android.view.View
+import android.widget.EditText
+import android.widget.ImageView
+import android.widget.SearchView
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.elgenium.smartcity.databinding.ActivitySearchBinding
+import com.elgenium.smartcity.models.Search
+import com.elgenium.smartcity.recyclerview_adapter.AutocompleteAdapter
+import com.elgenium.smartcity.recyclerview_adapter.RecentSearchAdapter
+import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.libraries.places.api.model.AutocompletePrediction
+import com.google.android.libraries.places.api.model.RectangularBounds
+import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
     class SearchActivity : AppCompatActivity() {
 
@@ -99,13 +99,22 @@
             binding.autocompleteRecyclerView.addItemDecoration(dividerItemDecoration)
 
             autocompleteAdapter = AutocompleteAdapter(emptyList()) { selectedPrediction ->
-                // Handle item click
+                // save recent search
                 saveRecentSearch(selectedPrediction.getPrimaryText(null).toString())
 
-                val intent = Intent(this, PlacesActivity::class.java).apply {
-                    putExtra("PLACE_ID", selectedPrediction.placeId)
+                val placeId = selectedPrediction.placeId
+                val placeName = selectedPrediction.getPrimaryText(null).toString()
+                val placeAddress = selectedPrediction.getSecondaryText(null).toString()
+
+                // Create an intent to send the result back
+                val resultIntent = Intent().apply {
+                    putExtra("PLACE_ID", placeId)
+                    putExtra("PLACE_NAME", placeName)
+                    putExtra("PLACE_ADDRESS", placeAddress)
                 }
-                startActivity(intent)
+
+                // Set result and finish the activity to return to ReportEventActivity
+                setResult(RESULT_OK, resultIntent)
                 finish()
             }
             binding.autocompleteRecyclerView.adapter = autocompleteAdapter

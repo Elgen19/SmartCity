@@ -1,5 +1,6 @@
 package com.elgenium.smartcity
 
+import PlacesClientSingleton
 import android.app.ActivityOptions
 import android.content.Intent
 import android.graphics.Bitmap
@@ -15,16 +16,14 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
 import com.elgenium.smartcity.databinding.ActivityFavoritesBinding
 import com.elgenium.smartcity.models.SavedPlace
-import com.elgenium.smartcity.singletons.ActivityNavigationUtils
+import com.elgenium.smartcity.singletons.BottomNavigationManager
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.viewpager_adapter.FavoritesViewPagerAdapter
 import com.elgenium.smartcity.viewpager_adapter.PhotoPagerAdapter
-import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.PhotoMetadata
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.net.FetchPhotoRequest
 import com.google.android.libraries.places.api.net.FetchPlaceRequest
-import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.auth.FirebaseAuth
@@ -39,7 +38,7 @@ class FavoritesActivity : AppCompatActivity() {
     private lateinit var binding: ActivityFavoritesBinding
     private lateinit var database: DatabaseReference
     private lateinit var savedPlaces: MutableList<SavedPlace>
-    private lateinit var placesClient: PlacesClient
+    private val placesClient by lazy { PlacesClientSingleton.getClient(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,14 +52,8 @@ class FavoritesActivity : AppCompatActivity() {
         // Set the color of the navigation bar making it more personalized
         NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
 
-        // Get Google Maps API key in the secrets.properties
-        val apiKey = BuildConfig.MAPS_API_KEY
-
-        if (!Places.isInitialized()) {
-            Log.d("FavoritesActivity", "Initializing Places API")
-            Places.initializeWithNewPlacesApiEnabled(applicationContext, apiKey)
-        }
-        placesClient = Places.createClient(this)
+        // Singleton object that will handle bottom navigation functionality
+        BottomNavigationManager.setupBottomNavigation(this, binding.bottomNavigation, FavoritesActivity::class.java)
 
         savedPlaces = mutableListOf()
 
@@ -113,7 +106,6 @@ class FavoritesActivity : AppCompatActivity() {
             tab.text = "Saved Places" // Only one tab for now
         }.attach()
 
-        setupActivityNavigation()
     }
 
     private fun getPhotoMetadatas(placeId: String, bottomSheetView: View) {
@@ -138,53 +130,6 @@ class FavoritesActivity : AppCompatActivity() {
             }
     }
 
-    private fun setupActivityNavigation() {
-        binding.bottomNavigation.selectedItemId = R.id.navigation_favorites
-        binding.bottomNavigation.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.navigation_home -> {
-                    val intent = Intent(this, DashboardActivity::class.java)
-                    val options = ActivityOptions.makeCustomAnimation(
-                        this,
-                        R.anim.fade_in,
-                        R.anim.fade_out
-                    )
-                    startActivity(intent, options.toBundle())
-                    finish()
-                    true
-                }
-                R.id.navigation_places -> {
-                    val intent = Intent(this, PlacesActivity::class.java)
-                    val options = ActivityOptions.makeCustomAnimation(
-                        this,
-                        R.anim.fade_in,
-                        R.anim.fade_out
-                    )
-                    startActivity(intent, options.toBundle())
-                    finish()
-                    true
-                }
-                R.id.navigation_favorites -> {
-                    true
-                }
-                R.id.navigation_events -> {
-                    true
-                }
-                R.id.navigation_settings -> {
-                    val intent = Intent(this, SettingsActivity::class.java)
-                    val options = ActivityOptions.makeCustomAnimation(
-                        this,
-                        R.anim.fade_in,
-                        R.anim.fade_out
-                    )
-                    startActivity(intent, options.toBundle())
-                    finish()
-                    true
-                }
-                else -> false
-            }
-        }
-    }
 
     private fun showBottomSheetForActions(place: SavedPlace) {
         val bottomSheetDialog = BottomSheetDialog(this)
@@ -236,7 +181,15 @@ class FavoritesActivity : AppCompatActivity() {
 
         reportOptionLayout.setOnClickListener{
             // navigate to ReportEventActivity
-            ActivityNavigationUtils.navigateToActivity(this, ReportEventActivity::class.java, false)
+            val intent = Intent(this, ReportEventActivity::class.java)
+            intent.putExtra("PLACE_NAME", place.name)
+            intent.putExtra("PLACE_ADDRESS", place.address)
+            val options = ActivityOptions.makeCustomAnimation(
+                this,
+                R.anim.fade_in,
+                R.anim.fade_out
+            )
+            this.startActivity(intent, options.toBundle())
             bottomSheetDialog.dismiss()
         }
 
@@ -310,7 +263,7 @@ class FavoritesActivity : AppCompatActivity() {
         }
 
         // Update the UI based on the open/closed status.
-        if (openStatus.equals("Open")) {
+        if ((openStatus.text as String?).equals("Open", ignoreCase = true)) {
             openStatus.text = getString(R.string.open_status)
             openStatus.setBackgroundResource(R.drawable.open_pill_background)
         } else {
@@ -318,8 +271,25 @@ class FavoritesActivity : AppCompatActivity() {
             openStatus.setBackgroundResource(R.drawable.closed_pill_background)
         }
 
+        // Split the openingDaysAndTime string into days and times
+        val daysAndTimes = place.openingDaysAndTime?.split("==") ?: listOf("", "")
+
+        // Ensure that the splitting results in the expected format
+        if (daysAndTimes.size == 2) {
+            val days = daysAndTimes[0]
+            val times = daysAndTimes[1]
+
+            // Populate the TextViews with days and times
+            placeHoursDays.text = days
+            placeHoursTime.text = times
+        } else {
+            // Handle cases where data might be incorrectly formatted
+            placeHoursDays.text = "No data available"
+            placeHoursTime.text = "No data available"
+        }
+
         // Check opening hours availability and determine if the indicator be visible or not
-        if (placeHoursDays.text.isNullOrEmpty() || placeHoursTime.text.isNullOrEmpty()){
+        if (placeHoursDays.text.isNullOrEmpty() || placeHoursTime.text.isNullOrEmpty()) {
             // Hide the open status if no opening hours information is available.
             openStatus.visibility = View.GONE
             // Adjust margin for placeDistance TextView.

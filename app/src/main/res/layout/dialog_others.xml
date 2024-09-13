@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/primary_color"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Label -->
+    <TextView
+        android:id="@+id/tvLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="What is the event all about?"
+        android:textSize="16sp"
+        android:textColor="@color/secondary_color"
+        android:layout_marginBottom="8dp" />
+
+    <!-- EditText -->
+    <EditText
+        android:id="@+id/etEventDescription"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter event details"
+        android:background="@drawable/border_drawable"
+        android:padding="12dp"
+        android:textSize="14sp"
+        android:textColor="@color/gray"
+        android:textColorHint="@color/dark_gray"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end">
+
+        <!-- Cancel Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cancel"
+            app:strokeColor="@color/gray"
+            app:cornerRadius="8dp"
+            android:textColor="@color/gray"
+            style="@style/Widget.MaterialComponents.Button.TextButton" />
+
+        <!-- Confirm Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnConfirm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Confirm"
+            android:textColor="@color/white"
+            app:cornerRadius="8dp"
+            android:layout_marginStart="16dp"
+            android:backgroundTint="@color/secondary_color" />
+    </LinearLayout>
+
+</LinearLayout>

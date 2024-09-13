@@ -106,6 +106,10 @@
     <string name="open_status">Open</string>
     <string name="no_available_opening_day_or_time_information">No available opening day or time information</string>
     <string name="empty" />
+    <string name="others">Others: %1$s</string>
+    <string name="address_not_found">Address not found</string>
+    <string name="date_amp_time_nstarted"><![CDATA[Date & Time \nStarted]]></string>
+    <string name="date_amp_time_nended"><![CDATA[Date & Time \nEnded]]></string>
 
 
 </resources>
