@@ -731,6 +731,9 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
         placeHoursDays.text = daysList.joinToString("\n")
         placeHoursTime.text = timesList.joinToString("\n")
 
+        // check if the place is open 24 hours
+        val isOpen24Hours = timesList.getOrNull(0) == "Open 24 hours"
+
         // Determine if the place is currently open
         val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
         val calendar = Calendar.getInstance()
@@ -787,9 +790,10 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
                 }
             }
         }
+        Log.e("PlacesActivity", "Error parsing time string: ${placeHoursTime.text}")
 
         // Update the UI based on the open/closed status
-        if (isOpen) {
+        if (isOpen || isOpen24Hours) {
             openStatus.text = getString(R.string.open_status)
             openStatus.setBackgroundResource(R.drawable.open_pill_background)
         } else {

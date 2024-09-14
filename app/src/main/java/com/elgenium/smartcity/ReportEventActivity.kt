@@ -56,14 +56,16 @@ class ReportEventActivity : AppCompatActivity() {
     private lateinit var placeAddress: String
     private var currentPhotoPath: String? = null
     private val imageList = mutableListOf<ReportImages>()
+    private lateinit var placeLatLng: String
 
     private val searchActivityLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val data = result.data
             val placeName = data?.getStringExtra("PLACE_NAME")
             val placeAddress = data?.getStringExtra("PLACE_ADDRESS")
+
             binding.tvLocation.visibility = View.VISIBLE
-            Log.d("ReportEventActivity", "Place name from intent: $placeName and $placeAddress")
+            Log.d("ReportEventActivity", "Place name from intent: $placeName and $placeAddress and $placeLatLng")
             binding.tvLocation.text = placeName
             binding.tvAdditionalInfo.text = placeAddress
         } else {
@@ -92,9 +94,7 @@ class ReportEventActivity : AppCompatActivity() {
             } else {
                 Log.d("ReportEventActivity", "Photo taking failed")
             }
-
         }
-
 
     companion object {
         private const val REQUEST_CAMERA_PERMISSION = 1
@@ -107,9 +107,11 @@ class ReportEventActivity : AppCompatActivity() {
 
         placeName = intent.getStringExtra("PLACE_NAME").toString()
         placeAddress = intent.getStringExtra("PLACE_ADDRESS").toString()
+        placeLatLng = intent.getStringExtra("PLACE_LATLNG").toString()
 
         Log.d("ReportEventActivity", "place name: $placeName")
         Log.d("ReportEventActivity", "place address: $placeAddress")
+        Log.d("ReportEventActivity", "place latlng: $placeLatLng")
 
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
@@ -432,7 +434,8 @@ class ReportEventActivity : AppCompatActivity() {
                     "endedDateTime" to endedDateTime,
                     "eventDescription" to eventDescription,
                     "location" to location,
-                    "additionalInfo" to additionalInfo
+                    "additionalInfo" to additionalInfo,
+                    "placeLatLng" to placeLatLng
                 )
 
                 showLoadingLayout()

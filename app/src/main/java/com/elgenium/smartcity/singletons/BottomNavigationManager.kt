@@ -2,6 +2,7 @@ package com.elgenium.smartcity.singletons
 
 import androidx.appcompat.app.AppCompatActivity
 import com.elgenium.smartcity.DashboardActivity
+import com.elgenium.smartcity.EventsActivity
 import com.elgenium.smartcity.FavoritesActivity
 import com.elgenium.smartcity.PlacesActivity
 import com.elgenium.smartcity.R
@@ -21,6 +22,7 @@ object BottomNavigationManager {
             PlacesActivity::class.java -> bottomNavigationView.selectedItemId = R.id.navigation_places
             FavoritesActivity::class.java -> bottomNavigationView.selectedItemId = R.id.navigation_favorites
             SettingsActivity::class.java -> bottomNavigationView.selectedItemId = R.id.navigation_settings
+            EventsActivity::class.java -> bottomNavigationView.selectedItemId = R.id.navigation_events
             // Add more cases as needed
         }
 
@@ -45,7 +47,12 @@ object BottomNavigationManager {
                     }
                     true
                 }
-                R.id.navigation_events -> true // Implement logic if needed
+                R.id.navigation_events -> {
+                    if (currentActivityClass != EventsActivity::class.java) {
+                        navigateToActivity(activity, EventsActivity::class.java, true)
+                    }
+                    true
+                }
                 R.id.navigation_settings -> {
                     if (currentActivityClass != SettingsActivity::class.java) {
                         navigateToActivity(activity, SettingsActivity::class.java, true)

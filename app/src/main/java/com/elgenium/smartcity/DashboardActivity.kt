@@ -362,17 +362,22 @@ class DashboardActivity : AppCompatActivity() {
                         binding.cityNameText.text = cityName
                         binding.locationText.text = preciseAddress
 
-                        // Load the weather icon into the ImageView
-                        Glide.with(this@DashboardActivity)
-                            .load(iconUrl)
-                            .placeholder(R.drawable.cloud) // Optional placeholder
-                            .into(binding.weatherIcon)
+                        // Check if the activity is still alive before loading the image
+                        if (!isFinishing && !isDestroyed) {
+                            Glide.with(this@DashboardActivity)
+                                .load(iconUrl)
+                                .placeholder(R.drawable.cloud) // Optional placeholder
+                                .into(binding.weatherIcon)
+                        } else {
+                            Log.w("DashboardActivity", "Activity is destroyed or finishing, not loading image.")
+                        }
                     }
                 } else {
                     Log.e("DashboardActivity", "Failed to get weather data: ${response.message()}")
                     Toast.makeText(this@DashboardActivity, "Failed to get weather data", Toast.LENGTH_SHORT).show()
                 }
             }
+
 
             override fun onFailure(call: Call<WeatherResponse>, t: Throwable) {
                 Log.e("DashboardActivity", "Error fetching weather data", t)
@@ -416,11 +421,13 @@ class DashboardActivity : AppCompatActivity() {
                 val firstName = fullName?.split(" ")?.firstOrNull() ?: "User"
 
                 if (photoUrl != null) {
-                    // Load the profile picture using Glide or Picasso
-                    Glide.with(this)
-                        .load(photoUrl)
-                        .placeholder(R.drawable.female) // Use a placeholder if needed
-                        .into(binding.profileImage)
+                    // Ensure the activity is not finishing or destroyed before loading the image
+                    if (!isDestroyed && !isFinishing) {
+                        Glide.with(this)  // Use lifecycle-aware Glide
+                            .load(photoUrl)
+                            .placeholder(R.drawable.female) // Placeholder if needed
+                            .into(binding.profileImage)
+                    }
                 }
                 // Set the first name in the user name text view
                 binding.userNameText.text = firstName
@@ -432,4 +439,5 @@ class DashboardActivity : AppCompatActivity() {
             Toast.makeText(this, "Failed to load profile picture", Toast.LENGTH_SHORT).show()
         }
     }
+
 }

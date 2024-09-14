@@ -184,6 +184,7 @@ class FavoritesActivity : AppCompatActivity() {
             val intent = Intent(this, ReportEventActivity::class.java)
             intent.putExtra("PLACE_NAME", place.name)
             intent.putExtra("PLACE_ADDRESS", place.address)
+            intent.putExtra("PLACE_LATLNG", place.latLngString)
             val options = ActivityOptions.makeCustomAnimation(
                 this,
                 R.anim.fade_in,
@@ -263,7 +264,8 @@ class FavoritesActivity : AppCompatActivity() {
         }
 
         // Update the UI based on the open/closed status.
-        if ((openStatus.text as String?).equals("Open", ignoreCase = true)) {
+        if ((openStatus.text as String?).equals("Open", ignoreCase = true) ||
+            (openStatus.text as String?).equals("Open 24 hours", ignoreCase = true) ) {
             openStatus.text = getString(R.string.open_status)
             openStatus.setBackgroundResource(R.drawable.open_pill_background)
         } else {

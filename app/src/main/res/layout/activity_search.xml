@@ -11,7 +11,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:orientation="horizontal"
-        android:background="@color/secondary_color"
+            android:background="@color/secondary_color"
         android:padding="16dp">
 
         <!-- Search View -->

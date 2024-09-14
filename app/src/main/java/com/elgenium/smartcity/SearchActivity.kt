@@ -106,15 +106,10 @@ import java.util.Locale
                 val placeName = selectedPrediction.getPrimaryText(null).toString()
                 val placeAddress = selectedPrediction.getSecondaryText(null).toString()
 
-                // Create an intent to send the result back
-                val resultIntent = Intent().apply {
-                    putExtra("PLACE_ID", placeId)
-                    putExtra("PLACE_NAME", placeName)
-                    putExtra("PLACE_ADDRESS", placeAddress)
+                val intent = Intent(this, PlacesActivity::class.java).apply {
+                    putExtra("PLACE_ID", selectedPrediction.placeId)
                 }
-
-                // Set result and finish the activity to return to ReportEventActivity
-                setResult(RESULT_OK, resultIntent)
+                startActivity(intent)
                 finish()
             }
             binding.autocompleteRecyclerView.adapter = autocompleteAdapter
