@@ -13,6 +13,7 @@ data class Leg(
 )
 
 data class Distance(
-    val text: String
+    val text: String,
+    val value: Int
 )
 

@@ -1,10 +1,195 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".EventsActivity">
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="@color/primary_color"
+    android:layout_height="match_parent">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <!-- Search SearchView with drawable icon and filter ImageButton -->
+    <RelativeLayout
+        android:id="@+id/search_layout"
+        android:layout_width="match_parent"
+        android:background="@color/secondary_color"
+        android:padding="16dp"
+        android:layout_height="wrap_content">
+
+        <androidx.appcompat.widget.SearchView
+            android:id="@+id/search_event"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_toStartOf="@id/filter_button"
+            android:layout_alignParentStart="true"
+            android:layout_marginEnd="8dp"
+            app:iconifiedByDefault="false"
+            app:queryHint="Search for an event"
+            app:queryBackground="@android:color/transparent"
+            app:submitBackground="@android:color/transparent"
+            android:background="@drawable/search_bar_bg" />
+
+        <ImageButton
+            android:id="@+id/filter_button"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:scaleType="fitCenter"
+            app:tint="@color/primary_color"
+            android:src="@drawable/tune"
+            android:layout_alignParentEnd="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Filter Events"
+            android:layout_centerVertical="true"/>
+    </RelativeLayout>
+
+
+    <!-- Horizontal ScrollView for event categories -->
+    <HorizontalScrollView
+        android:id="@+id/category_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/search_layout"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonFestival"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Festival"
+                app:icon="@drawable/festival"
+                app:iconTint="@color/secondary_color"
+                app:iconGravity="textStart"
+                android:textAllCaps="false"
+                android:textColor="@color/gray"
+                app:strokeColor="@color/gray"
+                app:cornerRadius="8dp"
+                android:layout_marginEnd="8dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonTrafficAccidents"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Traffic Accidents"
+                app:icon="@drawable/traffic_accident"
+                app:iconTint="@color/secondary_color"
+                app:iconGravity="textStart"
+                android:textAllCaps="false"
+                android:textColor="@color/gray"
+                app:strokeColor="@color/gray"
+                app:cornerRadius="8dp"
+                android:layout_marginEnd="8dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/buttonFlooding"
+                android:text="Flooding"
+                app:icon="@drawable/flooding"
+                app:iconTint="@color/secondary_color"
+                app:iconGravity="textStart"
+                android:textAllCaps="false"
+                android:textColor="@color/gray"
+                app:strokeColor="@color/gray"
+                app:cornerRadius="8dp"
+                android:layout_marginEnd="8dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:layout_width="wrap_content"
+                android:id="@+id/buttonConcert"
+                android:layout_height="wrap_content"
+                android:text="Concert"
+                app:icon="@drawable/concert"
+                app:iconTint="@color/secondary_color"
+                app:iconGravity="textStart"
+                android:textAllCaps="false"
+                android:textColor="@color/gray"
+                app:strokeColor="@color/gray"
+                app:cornerRadius="8dp"
+                android:layout_marginEnd="8dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:layout_width="wrap_content"
+                android:id="@+id/buttonOthers"
+                android:layout_height="wrap_content"
+                android:text="Others"
+                app:icon="@drawable/more"
+                app:iconTint="@color/secondary_color"
+                app:iconGravity="textStart"
+                android:textAllCaps="false"
+                android:textColor="@color/gray"
+                app:strokeColor="@color/gray"
+                app:cornerRadius="8dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <LinearLayout
+        android:id="@+id/labelLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_below="@+id/category_scroll"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="16dp"
+        android:clickable="true"
+        android:focusable="true"
+
+        tools:ignore="UseCompoundDrawables">
+
+        <ImageView
+            android:id="@+id/labelIcon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            app:tint="@color/secondary_color"
+            android:src="@drawable/search" />
+
+        <TextView
+            android:id="@+id/displayingLabelText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Displaying..."
+            android:textColor="@color/gray"
+            android:layout_marginStart="8dp"
+            android:textSize="18sp"
+            android:gravity="center_vertical" />
+    </LinearLayout>
+
+    <!-- RecyclerView for list of events -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/events_recycler_view"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/labelLayout"
+        android:layout_above="@id/bottom_navigation" />
+
+    <!-- Bottom Navigation View -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        app:activeIndicatorLabelPadding="4dp"
+        app:backgroundTint="@color/secondary_color"
+        app:itemActiveIndicatorStyle="@style/App.Custom.Indicator"
+        app:itemIconTint="@color/bottom_nav_item_color"
+        app:itemTextColor="@color/bottom_nav_item_color"
+        app:labelVisibilityMode="labeled"
+        app:menu="@menu/bottom_nav_menu" />
+
+</RelativeLayout>

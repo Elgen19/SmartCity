@@ -18,9 +18,9 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.elgenium.smartcity.sharedpreferences.PreferencesManager
 import com.elgenium.smartcity.singletons.GoogleSignInClientProvider
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
-import com.elgenium.smartcity.sharedpreferences.PreferencesManager
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.firebase.auth.FirebaseAuth
 
@@ -29,6 +29,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     private val LOCATION_PERMISSION_REQUEST_CODE = 1000
     private lateinit var googleSignInClient: GoogleSignInClient
+    private var alertDialog: AlertDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,18 +46,26 @@ class MainActivity : AppCompatActivity() {
 
         // Initial check for location services and permissions
         checkLocationAndPermissions()
+
     }
 
     override fun onResume() {
         super.onResume()
-        // Check again when the user returns to the app
-        checkLocationAndPermissions()
+        Toast.makeText(this, "YES IT SHOWS", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "IS LOCATION ENABLED: ${isLocationEnabled()}", Toast.LENGTH_SHORT).show()
+
+        if (isLocationEnabled())
+            proceedWithAppLogic()
+
     }
+
 
     private fun checkLocationAndPermissions() {
         if (isLocationEnabled()) {
             if (isLocationPermissionGranted()) {
+                alertDialog?.dismiss()
                 proceedWithAppLogic()
+                Toast.makeText(this, "YES IT SHOWS", Toast.LENGTH_SHORT).show()
             } else {
                 requestLocationPermissions()
             }
@@ -93,31 +102,35 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun promptEnableLocationAndPermissions() {
-        val dialogView: View = LayoutInflater.from(this).inflate(R.layout.location_permission_dialog, null)
 
+
+    private fun promptEnableLocationAndPermissions() {
+        if (isFinishing || isDestroyed) return
+
+        val dialogView: View = LayoutInflater.from(this).inflate(R.layout.location_permission_dialog, null)
         val dialogBuilder = AlertDialog.Builder(this)
         dialogBuilder.setView(dialogView)
-        val alertDialog = dialogBuilder.create()
+        alertDialog = dialogBuilder.create()
 
-        // Set up custom view buttons
         val positiveButton: Button = dialogView.findViewById(R.id.positive_button)
         val negativeButton: Button = dialogView.findViewById(R.id.negative_button)
 
         positiveButton.setOnClickListener {
             val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
             startActivity(intent)
-            alertDialog.dismiss()
+            alertDialog?.dismiss()
         }
 
         negativeButton.setOnClickListener {
-            alertDialog.dismiss()
-            finish() // Close the app if the user doesn't want to enable location services
+            alertDialog?.dismiss()
+            finish()
         }
 
-        alertDialog.setCancelable(false) // Disable outside touch to dismiss
-        alertDialog.show()
+        alertDialog?.setCancelable(false)
+        alertDialog?.show()
     }
+
+
 
     private fun proceedWithAppLogic() {
         Handler(Looper.getMainLooper()).postDelayed({
