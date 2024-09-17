@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/primary_color"
+    tools:context=".FeedbackActivity"
+    android:padding="16dp">
+
+    <!-- Feedback Form Title -->
+    <TextView
+        android:id="@+id/tv_feedback_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="We Value Your Feedback!"
+        android:textColor="@color/brand_color"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentTop="true"/>
+
+    <!-- Explanation Text -->
+    <TextView
+        android:id="@+id/tv_feedback_explanation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Your feedback helps us improve. Please rate your experience and provide additional comments."
+        android:textSize="16sp"
+        android:textAlignment="center"
+        android:textColor="@color/gray"
+        android:layout_below="@id/tv_feedback_title"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- Rating Bar -->
+    <RatingBar
+        android:id="@+id/rb_feedback_rating"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:stepSize="1"
+        android:numStars="5"
+        android:layout_marginBottom="16dp"
+        android:progressTint="@color/brand_color"
+        android:layout_below="@id/tv_feedback_explanation"
+        android:layout_centerHorizontal="true"/>
+
+    <!-- Feedback Type Label -->
+    <TextView
+        android:id="@+id/tv_feedback_type_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Feedback Type"
+        android:textSize="16sp"
+        android:textColor="@color/gray"
+        android:layout_below="@id/rb_feedback_rating"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- Feedback Type Dropdown -->
+    <Spinner
+        android:id="@+id/sp_feedback_type"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:popupBackground="@color/white"
+        android:background="@drawable/spinner_border"
+        android:entries="@array/feedback_type_options"
+        android:layout_below="@id/tv_feedback_type_label"
+        android:layout_marginBottom="16dp"/>
+
+
+    <!-- Comment Text Area -->
+    <EditText
+        android:id="@+id/et_feedback_comment"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Tell us more (Optional)"
+        android:inputType="textMultiLine"
+        android:textColorHint="@color/dark_gray"
+        android:minHeight="100dp"
+        android:textColor="@color/gray"
+        android:gravity="top"
+        android:padding="8dp"
+        android:layout_below="@id/sp_feedback_type"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- Optional Email Input -->
+    <EditText
+        android:id="@+id/et_feedback_email"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Your email (Optional)"
+        android:textColor="@color/gray"
+        android:textColorHint="@color/dark_gray"
+        android:inputType="textEmailAddress"
+        android:layout_below="@id/et_feedback_comment"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- Submit Button -->
+    <Button
+        android:id="@+id/btn_submit_feedback"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Submit Feedback"
+        android:layout_below="@id/et_feedback_email"
+        android:backgroundTint="@color/secondary_color"
+        android:textColor="@color/primary_color"
+        android:layout_centerHorizontal="true"
+        app:cornerRadius="8dp"
+        android:layout_marginBottom="4dp"/>
+
+    <!-- Cancel Button -->
+    <Button
+        android:id="@+id/btn_cancel_feedback"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/btn_submit_feedback"
+        android:layout_centerHorizontal="true"
+        android:backgroundTint="@color/primary_color"
+        android:text="Cancel"
+        android:textColor="@color/gray"
+        app:cornerRadius="8dp"
+        app:strokeWidth="1dp"
+        app:strokeColor="@color/gray" />
+
+</RelativeLayout>

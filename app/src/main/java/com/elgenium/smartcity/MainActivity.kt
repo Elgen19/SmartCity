@@ -51,8 +51,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        Toast.makeText(this, "YES IT SHOWS", Toast.LENGTH_SHORT).show()
-        Toast.makeText(this, "IS LOCATION ENABLED: ${isLocationEnabled()}", Toast.LENGTH_SHORT).show()
 
         if (isLocationEnabled())
             proceedWithAppLogic()
@@ -65,7 +63,6 @@ class MainActivity : AppCompatActivity() {
             if (isLocationPermissionGranted()) {
                 alertDialog?.dismiss()
                 proceedWithAppLogic()
-                Toast.makeText(this, "YES IT SHOWS", Toast.LENGTH_SHORT).show()
             } else {
                 requestLocationPermissions()
             }

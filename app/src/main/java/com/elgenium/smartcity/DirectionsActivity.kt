@@ -3,6 +3,7 @@ package com.elgenium.smartcity
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -31,6 +32,13 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
+
+
+        val origin = intent.getStringExtra("ORIGIN")
+        val destination = intent.getStringExtra("DESTINATION")
+        Log.d("DirectionsActivity", "ORIGIN: ${origin}")
+        Log.d("DirectionsActivity", "DESTINATION: ${destination}")
+
     }
 
     override fun onMapReady(googleMap: GoogleMap) {

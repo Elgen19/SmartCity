@@ -1,0 +1,41 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/primary_color"
+    android:padding="16dp">
+
+    <!-- Title TextView -->
+    <TextView
+        android:id="@+id/faq_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Frequently Asked Questions"
+        android:textColor="@color/brand_color"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:paddingBottom="8dp"/>
+
+    <!-- Supporting TextView -->
+    <TextView
+        android:id="@+id/faq_supporting_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Below are some common questions and their answers."
+        android:textColor="@color/gray"
+        android:textSize="16sp"
+        android:paddingBottom="16dp"/>
+
+    <!-- ExpandableListView for FAQs -->
+    <ExpandableListView
+        android:id="@+id/faq_expandable_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:divider="@android:color/darker_gray"
+        android:dividerHeight="1dp"
+        android:groupIndicator="@null"/>
+
+
+
+</LinearLayout>

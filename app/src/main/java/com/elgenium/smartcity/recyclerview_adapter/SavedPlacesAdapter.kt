@@ -50,11 +50,6 @@ class SavedPlacesAdapter(
         private val placeName: TextView = itemView.findViewById(R.id.placeName)
         private val placeAddress: TextView = itemView.findViewById(R.id.placeAddress)
 
-        init {
-            Log.d(TAG, "PlaceViewHolder: ViewHolder initialized")
-            Log.d(TAG, "SAVED PLACES: $savedPlaces")
-        }
-
         fun bind(place: SavedPlace) {
             Log.d(TAG, "bind: Binding place ${place.name}")
             placeName.text = place.name

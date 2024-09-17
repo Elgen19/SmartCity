@@ -110,6 +110,14 @@
     <string name="address_not_found">Address not found</string>
     <string name="date_amp_time_nstarted"><![CDATA[Date & Time \nStarted]]></string>
     <string name="date_amp_time_nended"><![CDATA[Date & Time \nEnded]]></string>
+    <string name="location_not_available">Location not available</string>
+    <string name="no_data_available">No data available</string>
+
+    <string-array name="feedback_type_options">
+        <item>Bug Report</item>
+        <item>Feature Suggestion</item>
+        <item>General Feedback</item>
+    </string-array>
 
 
 </resources>

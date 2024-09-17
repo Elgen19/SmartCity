@@ -10,7 +10,10 @@ import com.elgenium.smartcity.models.Event
 
 
 
-class EventAdapter(private var events: List<Event>) :
+class EventAdapter(
+    private var events: List<Event>,
+    private val onItemClick: (Event) -> Unit
+) :
     RecyclerView.Adapter<EventAdapter.EventViewHolder>() {
 
     private var allEvents: List<Event> = events
@@ -45,6 +48,14 @@ class EventAdapter(private var events: List<Event>) :
 
     inner class EventViewHolder(private val binding: ItemEventDetailBinding) :
         RecyclerView.ViewHolder(binding.root) {
+
+        init {
+            // Set up click listener on the whole item view
+            itemView.setOnClickListener {
+                val event = events[adapterPosition]
+                onItemClick(event) // Trigger the click event
+            }
+        }
 
         fun bind(event: Event) {
             binding.eventName.text = event.eventName

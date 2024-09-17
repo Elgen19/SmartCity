@@ -22,7 +22,7 @@
         android:gravity="center"
         android:layout_below="@+id/error_animation"
         android:text="Something went wrong. Please check your connection or try again."
-        android:textSize="16sp"
+        android:textSize="18sp"
         android:layout_marginTop="16dp" />
 
     <Button
@@ -33,5 +33,6 @@
         android:layout_alignParentBottom="true"
         android:backgroundTint="@color/secondary_color"
         android:textColor="@color/primary_color"
+        android:padding="16dp"
         android:layout_marginTop="16dp" />
 </RelativeLayout>

@@ -1,20 +1,25 @@
 package com.elgenium.smartcity
 
-import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.CheckBox
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.elgenium.smartcity.databinding.ActivityPreferencesBinding
+import com.elgenium.smartcity.singletons.ActivityNavigationUtils
+import com.elgenium.smartcity.singletons.LayoutStateManager
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import kotlin.properties.Delegates
 
 class PreferencesActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityPreferencesBinding
     private lateinit var userRef: DatabaseReference
+    private var isNewUser by Delegates.notNull<Boolean>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,12 +31,28 @@ class PreferencesActivity : AppCompatActivity() {
         // sets the color of the navigation bar making it more personalized
         NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
 
+        isNewUser = intent.getBooleanExtra("IS_NEW_USER", false)
+
+        if (!isNewUser) {
+            binding.backButton.visibility = View.VISIBLE
+        } else {
+            val layoutParams = binding.preferencesTitle.layoutParams as LinearLayout.LayoutParams
+            layoutParams.marginStart = 0
+            binding.preferencesTitle.layoutParams = layoutParams
+        }
+
         val user = FirebaseAuth.getInstance().currentUser
         if (user == null) {
             Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show()
             return
         } else {
             userRef = FirebaseDatabase.getInstance().getReference("Users").child(user.uid)
+
+            loadPreferences()
+        }
+
+        binding.backButton.setOnClickListener { 
+            ActivityNavigationUtils.navigateToActivity(this, SettingsActivity::class.java, true)
         }
 
         binding.buttonSave.setOnClickListener {
@@ -42,6 +63,28 @@ class PreferencesActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun loadPreferences() {
+        userRef.get().addOnSuccessListener { dataSnapshot ->
+            val preferredTransport = dataSnapshot.child("preferredTransport").children.map { it.value.toString() }
+            val preferredEvents = dataSnapshot.child("preferredEvents").children.map { it.value.toString() }
+
+            // Pre-fill transport checkboxes
+            binding.checkboxPublicTransport.isChecked = preferredTransport.contains("Public Transport")
+            binding.checkboxCar.isChecked = preferredTransport.contains("Car")
+            binding.checkboxWalking.isChecked = preferredTransport.contains("Walking")
+            binding.checkboxMotor.isChecked = preferredTransport.contains("Motor")
+
+            // Pre-fill event checkboxes
+            binding.checkboxWeatherAdvisories.isChecked = preferredEvents.contains("Weather Advisories")
+            binding.checkboxFoodHubs.isChecked = preferredEvents.contains("Food Hubs")
+            binding.checkboxHealthFitness.isChecked = preferredEvents.contains("Health & Fitness")
+            binding.checkboxFestivalsConcerts.isChecked = preferredEvents.contains("Festivals & Concerts")
+            binding.checkboxTrafficAlerts.isChecked = preferredEvents.contains("Traffic Alerts")
+            binding.checkboxPublicTransits.isChecked = preferredEvents.contains("Public Transits")
+        }
+    }
+
 
     private fun collectPreferences(): Map<String, Any>? {
         val selectedTransport = getSelectedOptions(
@@ -76,17 +119,20 @@ class PreferencesActivity : AppCompatActivity() {
     }
 
     private fun savePreferences(preferences: Map<String, Any>) {
+        // Update the user's preferences in Firebase
         userRef.updateChildren(preferences).addOnCompleteListener { task ->
             if (task.isSuccessful) {
                 // Mark preferences as set
                 userRef.child("preferencesSet").setValue(true)
 
-                Toast.makeText(this, "Preferences saved successfully", Toast.LENGTH_SHORT).show()
-                val intent = Intent(this, DashboardActivity::class.java)
-                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                startActivity(intent)
+                if (!isNewUser) {
+                    LayoutStateManager.showSuccessLayout(this, "Preferences Updated!", "Your preferences was successfully updated.")
+                } else {
+                    ActivityNavigationUtils.navigateToActivity(this, DashboardActivity::class.java, true)
+                }
+
             } else {
-                Toast.makeText(this, "Failed to save preferences. Please try again.", Toast.LENGTH_SHORT).show()
+                LayoutStateManager.showFailureLayout(this, "Failed to update preferences. Please tru again.", "Return to Settings")
             }
         }
     }

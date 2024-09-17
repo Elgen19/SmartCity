@@ -5,53 +5,73 @@
     android:layout_height="match_parent"
     android:background="@color/primary_color">
 
-    <!-- Content LinearLayout -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_above="@+id/button_save"
-        android:orientation="vertical">
 
         <!-- Title Section -->
+    <!-- Title Section -->
+    <LinearLayout
+        android:id="@+id/titleSection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/secondary_color"
+        android:orientation="vertical"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        android:layout_marginBottom="8dp">
+
+        <!-- Row with Back Button and Title -->
         <LinearLayout
-            android:id="@+id/titleSection"
             android:layout_width="match_parent"
-            android:background="@drawable/background2"
-            android:layout_height="200dp"
-            android:orientation="vertical"
-            android:layout_marginBottom="32dp">
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
+
+            <!-- Back Image Button -->
+            <ImageButton
+                android:id="@+id/backButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/baseline_arrow_back_24"
+                android:layout_gravity="start"
+                android:padding="8dp"
+                android:visibility="gone"
+                app:tint="@color/primary_color" />
 
             <!-- Title TextView -->
             <TextView
                 android:id="@+id/preferencesTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
                 android:text="@string/personalize_your_experience"
-                android:layout_marginTop="40dp"
                 android:textColor="@color/brand_color"
-                android:textSize="40sp"
-                android:textStyle="bold" />
-
-            <!-- Subtitle TextView -->
-            <TextView
-                android:id="@+id/signinSubtitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@color/white"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:text="@string/supporting_text_pref"
-                android:textSize="16sp" />
+                android:textSize="32sp"
+                android:textStyle="bold"
+                android:layout_marginStart="16dp"/>
         </LinearLayout>
 
-        <!-- First Card for Preferred Mode of Transport -->
+        <!-- Subtitle TextView -->
+        <TextView
+            android:id="@+id/signinSubtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:text="@string/supporting_text_pref"
+            android:textSize="16sp" />
+
+    </LinearLayout>
+
+    <!-- First Card for Preferred Mode of Transport -->
         <androidx.cardview.widget.CardView
+            android:id="@+id/transportCard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             app:cardBackgroundColor="@color/white"
+            android:layout_below="@id/titleSection"
             android:elevation="4dp"
             android:padding="16dp"
             android:layout_marginStart="16dp"
@@ -131,6 +151,7 @@
 
         <!-- Third Card for Preferred Events and Notifications -->
         <androidx.cardview.widget.CardView
+            android:layout_below="@id/transportCard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
@@ -248,7 +269,6 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-    </LinearLayout>
 
     <!-- Save Button -->
     <com.google.android.material.button.MaterialButton
