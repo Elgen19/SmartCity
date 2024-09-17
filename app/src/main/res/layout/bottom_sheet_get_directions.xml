@@ -1,0 +1,206 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:padding="16dp">
+
+    <!-- Row: Routes TextView and Close Button -->
+    <TextView
+        android:id="@+id/routesTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Routes (n)"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <ImageButton
+        android:id="@+id/closeButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/baseline_close_24"
+        app:tint="@color/red"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Close"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true" />
+
+    <!-- RecyclerView: Origin and Destination -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/originDestinationRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/routesTextView"
+        android:layout_marginTop="8dp" />
+
+    <!-- Line Separator -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?android:attr/listDivider"
+        android:layout_below="@id/originDestinationRecyclerView"
+        android:layout_marginTop="8dp" />
+
+    <!-- Transport Mode Label -->
+    <TextView
+        android:id="@+id/transportModeLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Transport Mode"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:layout_below="@id/originDestinationRecyclerView"
+        android:layout_marginTop="16dp" />
+
+    <!-- Transport Mode Buttons -->
+    <LinearLayout
+        android:id="@+id/transportModeLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="fill_horizontal"
+        android:layout_below="@id/transportModeLabel"
+        android:layout_marginTop="8dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/carButton"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:text="20 min"
+            android:layout_marginEnd="4dp"
+            app:cornerRadius="8dp"
+            app:icon="@drawable/car"
+            app:iconGravity="top" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/motorButton"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            app:cornerRadius="8dp"
+            android:text="15 min"
+            android:layout_marginEnd="4dp"
+            app:icon="@drawable/motor"
+            app:iconGravity="top" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/walkingButton"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:text="1h 5min"
+            app:cornerRadius="8dp"
+            android:layout_marginEnd="4dp"
+            app:icon="@drawable/walk"
+            app:iconGravity="top" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/transportButton"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:text="30 min"
+            app:cornerRadius="8dp"
+            app:icon="@drawable/transit"
+            app:iconGravity="top" />
+    </LinearLayout>
+
+    <!-- Trip Time (Single Row) -->
+    <ImageView
+        android:id="@+id/tripTimeIcon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/ic_time"
+        android:layout_marginEnd="4dp"
+        android:layout_below="@id/transportModeLayout"
+        android:layout_marginTop="16dp"
+        app:tint="@color/secondary_color" />
+
+    <TextView
+        android:id="@+id/tripTimeLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Trip Time: "
+        android:layout_toEndOf="@id/tripTimeIcon"
+        android:layout_toRightOf="@id/tripTimeIcon"
+        android:layout_alignTop="@id/tripTimeIcon" />
+
+    <TextView
+        android:id="@+id/tripTimeValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="25 min"
+        android:layout_toEndOf="@id/tripTimeLabel"
+        android:layout_toRightOf="@id/tripTimeLabel"
+        android:layout_alignTop="@id/tripTimeLabel" />
+
+    <!-- Trip Distance (New Row) -->
+    <ImageView
+        android:id="@+id/totalDistanceIcon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/distance"
+        android:layout_below="@id/tripTimeIcon"
+        android:layout_marginTop="16dp" />
+
+    <TextView
+        android:id="@+id/totalDistanceLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Total Distance: "
+        android:layout_toEndOf="@id/totalDistanceIcon"
+        android:layout_toRightOf="@id/totalDistanceIcon"
+        android:layout_alignTop="@id/totalDistanceIcon" />
+
+    <TextView
+        android:id="@+id/totalDistanceValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="10 km"
+        android:layout_toEndOf="@id/totalDistanceLabel"
+        android:layout_toRightOf="@id/totalDistanceLabel"
+        android:layout_alignTop="@id/totalDistanceLabel" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?android:attr/listDivider"
+        android:layout_below="@id/totalDistanceIcon"
+        android:layout_marginTop="8dp" />
+
+    <!-- RecyclerView for Steps -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/stepsRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/totalDistanceIcon"
+        android:layout_marginTop="16dp" />
+
+    <!-- Bottom App Bar with Start Button -->
+   <androidx.coordinatorlayout.widget.CoordinatorLayout
+       android:layout_width="match_parent"
+       android:layout_height="match_parent">
+
+       <com.google.android.material.bottomappbar.BottomAppBar
+           android:id="@+id/bottomAppBar"
+           android:layout_width="match_parent"
+           android:layout_height="wrap_content"
+           android:layout_below="@id/stepsRecyclerView"
+           android:layout_gravity="bottom">
+
+           <com.google.android.material.button.MaterialButton
+               android:id="@+id/startButton"
+               android:layout_width="match_parent"
+               android:layout_height="wrap_content"
+               android:text="Start"
+               app:icon="@drawable/directions"
+               android:textColor="@color/primary_color"
+               app:iconTint="@color/primary_color"
+               android:backgroundTint="@color/secondary_color"
+               app:cornerRadius="8dp"
+               app:iconGravity="start" />
+       </com.google.android.material.bottomappbar.BottomAppBar>
+   </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+</RelativeLayout>

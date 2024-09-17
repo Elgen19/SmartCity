@@ -6,9 +6,7 @@
     android:background="@drawable/bottom_sheet_round_corners"
     android:padding="16dp">
 
-    <!-- Existing components -->
-
-    <!-- Top Components: Place Name and Close Button -->
+    <!-- Top Components: Event Name and Close Button -->
     <LinearLayout
         android:id="@+id/topComponents"
         android:layout_width="match_parent"
@@ -16,12 +14,12 @@
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
-        <!-- Place Name TextView -->
+        <!-- Event Name TextView -->
         <TextView
-            android:id="@+id/placeName"
+            android:id="@+id/eventName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Place Name"
+            android:text="Event Name"
             android:textColor="@color/gray"
             android:textStyle="bold"
             android:textSize="20sp"
@@ -40,6 +38,17 @@
             android:layout_gravity="center_vertical" />
     </LinearLayout>
 
+    <!-- Place Name TextView -->
+    <TextView
+        android:id="@+id/placeName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Place Name"
+        android:textColor="@color/gray"
+        android:textSize="14sp"
+        android:layout_below="@id/topComponents"
+        android:layout_marginTop="8dp" />
+
     <!-- Address TextView -->
     <TextView
         android:id="@+id/placeAddress"
@@ -48,12 +57,13 @@
         android:text="Place Address"
         android:textColor="@color/gray"
         android:textSize="14sp"
-        android:layout_below="@id/topComponents"
-        android:layout_marginTop="8dp" />
+        android:textStyle="italic"
+        android:layout_below="@id/placeName"
+        android:layout_marginTop="4dp" />
 
-    <!-- Open Status and Distance Row -->
+    <!-- Event Category and Distance Row -->
     <LinearLayout
-        android:id="@+id/openStatusDistanceRow"
+        android:id="@+id/eventCategoryDistanceRow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -61,12 +71,12 @@
         android:layout_marginTop="8dp"
         android:gravity="center_vertical">
 
-        <!-- Open Status TextView (Rounded) -->
+        <!-- Event Category TextView -->
         <TextView
-            android:id="@+id/openStatus"
+            android:id="@+id/eventCategory"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Open"
+            android:text="Category"
             android:textColor="@color/primary_color"
             android:background="@drawable/open_pill_background"
             android:paddingTop="4dp"
@@ -78,7 +88,7 @@
 
         <!-- Distance with Icon -->
         <TextView
-            android:id="@+id/placeDistance"
+            android:id="@+id/eventDistance"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="48 km from location"
@@ -92,7 +102,7 @@
         android:id="@+id/viewPager"
         android:layout_width="match_parent"
         android:layout_height="200dp"
-        android:layout_below="@id/openStatusDistanceRow"
+        android:layout_below="@id/eventCategoryDistanceRow"
         android:layout_marginTop="16dp" />
 
     <!-- Buttons Row -->
@@ -144,11 +154,11 @@
 
         <!-- More Button -->
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnMore"
+            android:id="@+id/btnShare"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="More"
-            app:icon="@drawable/more"
+            android:text="Share"
+            app:icon="@drawable/share"
             app:iconTint="@color/secondary_color"
             app:iconGravity="top"
             app:iconPadding="8dp"
@@ -161,13 +171,10 @@
             android:layout_weight="1" />
     </LinearLayout>
 
-
-
-
-    <!-- Place Phone with Icon -->
+    <!-- Event Time Started -->
     <LinearLayout
-        android:id="@+id/placePhoneLayout"
-        android:layout_width="wrap_content"
+        android:id="@+id/eventTimeStartedLayout"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_below="@id/rowOfButtons"
@@ -176,115 +183,101 @@
         <ImageView
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:src="@drawable/phone" />
+            android:src="@drawable/time_start"
+            app:tint="@color/secondary_color" />
 
         <TextView
-            android:id="@+id/placePhone"
+            android:id="@+id/eventTimeStarted"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Place Phone Number"
+            android:text="Started: "
+            android:textColor="@color/secondary_color"
+            android:textSize="14sp"
+            android:layout_marginStart="8dp" />
+        <TextView
+            android:id="@+id/eventTimeStartedValue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="1:00 PM"
+            android:gravity="end"
             android:textColor="@color/gray"
             android:textSize="14sp"
             android:layout_marginStart="8dp" />
+
     </LinearLayout>
 
-    <!-- Additional Information: Website -->
+    <!-- Event Time Ended -->
     <LinearLayout
-        android:id="@+id/placeWebsiteLayout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_below="@id/placePhoneLayout"
-        android:layout_marginTop="8dp">
-
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/web" />
-
-        <TextView
-            android:id="@+id/placeWebsite"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Place Website"
-            android:textColor="@color/gray"
-            android:textSize="14sp"
-            android:layout_marginStart="8dp" />
-    </LinearLayout>
-
-    <!-- Additional Information: Rating -->
-    <LinearLayout
-        android:id="@+id/placeRatingLayout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_below="@id/placeWebsiteLayout"
-        android:layout_marginTop="8dp">
-
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/rating" />
-
-        <TextView
-            android:id="@+id/placeRating"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="4.5 star ratings"
-            android:textColor="@color/gray"
-            android:textSize="14sp"
-            android:layout_marginStart="8dp" />
-    </LinearLayout>
-
-    <TextView
-        android:id="@+id/openingHoursLabel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:layout_below="@+id/placeRatingLayout"
-        android:text="Opening Hours"
-        android:textColor="@color/gray"
-        android:textStyle="bold"
-        android:textSize="16sp" />
-
-    <!-- Additional Information: Opening Hours -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/placeHoursCard"
+        android:id="@+id/eventTimeEndedLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/openingHoursLabel"
-        android:backgroundTint="@color/white"
+        android:orientation="horizontal"
+        android:layout_below="@id/eventTimeStartedLayout"
+        android:layout_marginTop="8dp">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/time_end"
+            app:tint="@color/secondary_color" />
+
+        <TextView
+            android:id="@+id/eventTimeEnded"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ended:"
+            android:textColor="@color/gray"
+            android:textSize="14sp"
+            android:layout_marginStart="8dp" />
+
+        <TextView
+            android:id="@+id/eventTimeEndedValue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="10:00 PM"
+            android:gravity="end"
+            android:textColor="@color/gray"
+            android:textSize="14sp"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
+
+    <!-- Event Description -->
+    <TextView
+        android:id="@+id/eventDescriptionLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/eventTimeEndedLayout"
+        android:layout_marginTop="16dp"
+        android:text="Event Description"
+        android:textColor="@color/gray"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <!-- Event Description Details Card -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/eventDescriptionCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/eventDescriptionLabel"
         android:layout_marginTop="8dp"
         app:cardCornerRadius="8dp"
-        app:cardElevation="4dp">
+        app:cardElevation="4dp"
+        app:cardBackgroundColor="@color/white">
 
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp">
+            android:padding="16dp">
 
-            <!-- Days TextView aligned to the start -->
+            <!-- Description Details TextView -->
             <TextView
-                android:id="@+id/placeHoursDays"
+                android:id="@+id/eventDescriptionDetails"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Days"
+                android:text="Description Details"
                 android:textColor="@color/gray"
-                android:textSize="14sp"
-                android:layout_alignParentStart="true" />
+                android:textSize="14sp" />
 
-            <!-- Time TextView aligned to the end -->
-            <TextView
-                android:id="@+id/placeHoursTime"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Time"
-                android:textColor="@color/gray"
-                android:textSize="14sp"
-                android:layout_alignParentEnd="true" />
         </RelativeLayout>
     </com.google.android.material.card.MaterialCardView>
 

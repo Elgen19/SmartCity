@@ -1,0 +1,25 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:padding="16dp">
+
+    <!-- Group text -->
+    <TextView
+        android:id="@+id/faq_group_text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textSize="18sp"
+        android:textColor="@color/gray"/>
+
+    <!-- Indicator icon on the right -->
+    <ImageView
+        android:id="@+id/indicator_icon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/baseline_arrow_drop_down_24"
+        android:layout_gravity="end"
+        android:paddingStart="8dp"/>
+</LinearLayout>

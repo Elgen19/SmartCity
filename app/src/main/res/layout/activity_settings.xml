@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/backdraft2">
+    android:background="@color/primary_color">
 
     <ScrollView
         android:layout_width="match_parent"
@@ -14,30 +14,41 @@
 
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="16dp">
+            android:layout_height="wrap_content">
 
-            <!-- Title TextView -->
-            <TextView
-                android:id="@+id/titleTextView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/settings"
-                android:textStyle="bold"
-                android:textColor="@color/primary_color"
-                android:textSize="32sp"
-                android:layout_alignParentTop="true"
-                android:layout_centerHorizontal="true"
-                android:layout_marginStart="8dp"
-                android:layout_centerVertical="true" />
+          <LinearLayout
+              android:id="@+id/header"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:background="@color/secondary_color"
+              android:padding="16dp"
+              android:gravity="center">
+
+              <!-- Title TextView -->
+              <TextView
+                  android:id="@+id/titleTextView"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:text="@string/settings"
+                  android:textStyle="bold"
+                  android:textColor="@color/primary_color"
+                  android:textSize="32sp"
+                  android:layout_alignParentTop="true"
+                  android:layout_centerHorizontal="true"
+                  android:layout_marginStart="8dp"
+                  android:layout_centerVertical="true" />
+
+          </LinearLayout>
 
             <!-- App Settings Title -->
             <TextView
                 android:id="@+id/appSettingsTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/titleTextView"
-                android:layout_marginTop="56dp"
+                android:layout_below="@id/header"
+                android:layout_marginTop="16dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
                 android:text="@string/app_settings"
                 android:textColor="@color/brand_color"
                 android:textSize="20sp"
@@ -52,6 +63,8 @@
                 android:layout_below="@id/appSettingsTitle"
                 android:backgroundTint="@color/white"
                 android:layout_marginTop="8dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="4dp">
 
@@ -152,6 +165,8 @@
                 android:layout_height="wrap_content"
                 android:layout_below="@id/settingsCard"
                 android:layout_marginTop="16dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
                 android:text="@string/contextual_suggestions"
                 android:textColor="@color/brand_color"
                 android:textSize="20sp"
@@ -165,6 +180,8 @@
                 android:layout_height="wrap_content"
                 android:layout_below="@id/settingsCard"
                 android:backgroundTint="@color/white"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
                 android:layout_marginTop="48dp"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="4dp">
@@ -267,8 +284,10 @@
                 android:layout_below="@id/contextualSuggestionsCard"
                 android:layout_marginTop="16dp"
                 android:text="@string/app_feedback_rating"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
                 android:textColor="@color/brand_color"
-                android:textSize="16sp"
+                android:textSize="20sp"
                 android:textStyle="bold"
                 tools:ignore="TextContrastCheck" />
 
@@ -280,6 +299,8 @@
                 android:layout_below="@id/feedbackTitle"
                 android:layout_marginTop="8dp"
                 app:cardCornerRadius="8dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
                 app:cardElevation="4dp"
                 android:clickable="true"
                 android:focusable="true"
@@ -298,7 +319,7 @@
                         android:layout_centerVertical="true"
                         android:text="@string/create_application_feedback_rating"
                         android:textColor="@color/gray"
-                        android:textSize="18sp"
+                        android:textSize="16sp"
                         tools:ignore="RelativeOverlap" />
 
                     <!-- Arrow Icon (>) -->
@@ -323,6 +344,8 @@
                 android:layout_height="wrap_content"
                 android:layout_below="@id/feedbackCard"
                 android:layout_marginTop="16dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
                 android:text="@string/frequently_asked_questions"
                 android:textColor="@color/brand_color"
                 android:textSize="20sp"
@@ -336,10 +359,11 @@
                 android:layout_height="wrap_content"
                 android:layout_below="@id/feedbackCard"
                 android:layout_marginTop="48dp"
-                android:layout_marginBottom="16dp"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="4dp"
                 android:clickable="true"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
                 android:focusable="true"
                 app:cardBackgroundColor="@color/white">
 
@@ -373,6 +397,69 @@
                 </RelativeLayout>
 
             </androidx.cardview.widget.CardView>
+
+            <!-- Edit Preferences Title -->
+            <TextView
+                android:id="@+id/editPreferencesTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/FAQCard"
+                android:layout_marginTop="16dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:text="User Preferences"
+                android:textColor="@color/brand_color"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                tools:ignore="TextContrastCheck" />
+
+            <!-- Card for FAQ -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/editPreferencesCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/editPreferencesTitle"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="8dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                app:cardElevation="4dp"
+                android:clickable="true"
+                android:focusable="true"
+                app:cardBackgroundColor="@color/white">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="60dp"
+                    android:padding="16dp">
+
+                    <!-- TextView for FAQ -->
+                    <TextView
+                        android:id="@+id/editPreferencesText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:text="Edit user preferences settings"
+                        android:textColor="@color/gray"
+                        android:textSize="16sp"
+                        tools:ignore="RelativeOverlap" />
+
+                    <!-- Arrow Icon (>) -->
+                    <ImageView
+                        android:id="@+id/arrowIconForEditPreferences"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:contentDescription="@string/todo"
+                        android:src="@drawable/go"
+                        app:tint="@android:color/darker_gray"
+                        tools:ignore="ImageContrastCheck" />
+                </RelativeLayout>
+
+            </androidx.cardview.widget.CardView>
+
 
         </RelativeLayout>
 

@@ -29,9 +29,12 @@ import androidx.core.content.FileProvider
 import com.elgenium.smartcity.databinding.ActivityReportEventBinding
 import com.elgenium.smartcity.models.ReportImages
 import com.elgenium.smartcity.recyclerview_adapter.ImageAdapter
+import com.elgenium.smartcity.singletons.LayoutStateManager
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.CompletableDeferred
@@ -256,7 +259,6 @@ class ReportEventActivity : AppCompatActivity() {
         alertDialog.show()
     }
 
-
     private fun createImageFile(): File {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         val storageDir: File = getExternalFilesDir(Environment.DIRECTORY_PICTURES)!!
@@ -298,7 +300,6 @@ class ReportEventActivity : AppCompatActivity() {
     }
 
     private fun initListeners() {
-
         // Determine if placeName and placeAddress from intent is not empty
         // this only means that the user presses an option report an event of a specific place
         if (!placeName.isNullOrEmpty() && !placeAddress.isNullOrEmpty()) {
@@ -435,10 +436,11 @@ class ReportEventActivity : AppCompatActivity() {
                     "eventDescription" to eventDescription,
                     "location" to location,
                     "additionalInfo" to additionalInfo,
-                    "placeLatLng" to placeLatLng
+                    "placeLatLng" to placeLatLng,
+                    "checker" to "${eventName}_${location}"
                 )
 
-                showLoadingLayout()
+                LayoutStateManager.showLoadingLayout(this, "Please wait while we are saving your events")
                 uploadImagesAndSaveEvent(imageList.map { it.uri }, eventData)
             }
         }
@@ -467,11 +469,11 @@ class ReportEventActivity : AppCompatActivity() {
             uploadImageToFirebaseStorage(uri,
                 onSuccess = { url ->
                     promise.complete(url)
-                    showSuccessLayout()
+                    LayoutStateManager.showSuccessLayout(this, "Event saved successfully!", "Thank you for your valuable contribution! You've earned 5 points for your efforts.")
                 },
                 onFailure = { e ->
                     promise.completeExceptionally(e)
-                    showFailureLayout()
+                    LayoutStateManager.showFailureLayout(this, "Something went wrong. Please check your connection or try again.", "Return to Events")
                 }
             )
             promise
@@ -492,32 +494,18 @@ class ReportEventActivity : AppCompatActivity() {
         }
     }
 
-    private fun showLoadingLayout() {
-        setContentView(R.layout.status_saving_in_progress)
-    }
-
-    private fun showSuccessLayout() {
-        setContentView(R.layout.status_success)
-
-        findViewById<Button>(R.id.continue_button).setOnClickListener {
-            finish() // Close the current activity and return to the previous one
-        }
-    }
-
-    private fun showFailureLayout() {
-        setContentView(R.layout.status_failed_operation)
-
-        findViewById<Button>(R.id.return_button).setOnClickListener {
-            setContentView(binding.root)
-        }
-    }
-
-
-
-
     private fun saveEventToDatabase(eventData: Map<String, Any?>) {
         val database = FirebaseDatabase.getInstance()
         val eventsRef = database.getReference("Events")
+        val usersRef = database.getReference("Users")
+
+        // Get the current user's UID
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId == null) {
+            Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show()
+            return
+        }
+
 
         // Generate a unique key for the new event
         val newEventRef = eventsRef.push()
@@ -526,12 +514,35 @@ class ReportEventActivity : AppCompatActivity() {
         newEventRef.setValue(eventData)
             .addOnSuccessListener {
                 Log.d("ReportEventActivity", "Event data saved successfully")
-                Toast.makeText(this, "Event saved successfully", Toast.LENGTH_SHORT).show()
+                // Update the user's points
+                updateUserPoints(usersRef, userId)
             }
             .addOnFailureListener { e ->
                 Log.e("ReportEventActivity", "Failed to save event data", e)
                 Toast.makeText(this, "Failed to save event", Toast.LENGTH_SHORT).show()
             }
+    }
+
+    private fun updateUserPoints(usersRef: DatabaseReference, userId: String) {
+        val userPointsRef = usersRef.child(userId).child("points")
+
+        // Fetch the current points
+        userPointsRef.get().addOnSuccessListener { snapshot ->
+            val currentPoints = snapshot.getValue(Int::class.java) ?: 0
+            val newPoints = currentPoints + 5
+
+            // Update the points in the database
+            userPointsRef.setValue(newPoints)
+                .addOnSuccessListener {
+                    Log.d("ReportEventActivity", "User points updated successfully")
+                    Toast.makeText(this, "You've earned a total of $newPoints points!", Toast.LENGTH_SHORT).show()
+                }
+                .addOnFailureListener { e ->
+                    Log.e("ReportEventActivity", "Failed to update user points", e)
+                }
+        }.addOnFailureListener { e ->
+            Log.e("ReportEventActivity", "Failed to retrieve current points", e)
+        }
     }
 
 
@@ -601,7 +612,6 @@ class ReportEventActivity : AppCompatActivity() {
             }
         }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show()
     }
-
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)

@@ -14,6 +14,27 @@
         app:lottie_loop="true"
         app:lottie_rawRes="@raw/save_animation" />
 
+    <TextView
+        android:id="@+id/title_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/brand_color"
+        android:layout_below="@+id/success_animation"
+        android:gravity="center_horizontal"
+        android:text="Saved"
+        android:textSize="18sp"
+        android:layout_marginTop="16dp" />
+
+    <TextView
+        android:id="@+id/supporting_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/gray"
+        android:layout_below="@+id/title_text"
+        android:gravity="center_horizontal"
+        android:text="Event saved successfully"
+        android:textSize="14sp" />
+
     <Button
         android:id="@+id/continue_button"
         android:layout_width="match_parent"
@@ -21,6 +42,7 @@
         android:textColor="@color/primary_color"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
+        android:padding="16dp"
         android:text="Continue"
         android:layout_marginTop="16dp" />
 </RelativeLayout>

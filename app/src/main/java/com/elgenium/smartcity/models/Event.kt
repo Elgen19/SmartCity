@@ -9,5 +9,6 @@ data class Event(
     val eventDescription: String? = null,
     val startedDateTime: String? = null,
     val endedDateTime: String? = null,
-    val placeLatLng: String? = null
+    val placeLatLng: String? = null,
+    val checker: String? = null
 )

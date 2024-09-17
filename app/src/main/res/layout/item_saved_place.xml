@@ -2,10 +2,9 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/primary_color"
     android:orientation="vertical"
-    android:padding="16dp">
-
+    android:paddingTop="16dp"
+    android:paddingBottom="16dp">
 
         <TextView
             android:id="@+id/placeName"
@@ -17,7 +16,7 @@
 
         <TextView
             android:id="@+id/placeAddress"
-            android:textColor="@color/gray"
+            android:textColor="@color/gray2"
             android:layout_width="wrap_content"
             android:text="place address"
             android:layout_height="wrap_content" />
