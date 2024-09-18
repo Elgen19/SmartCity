@@ -1,0 +1,64 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/primary_color"
+    android:padding="16dp">
+
+    <!-- Row: Label Edit Course and Add Stops Button -->
+    <LinearLayout
+        android:id="@+id/topComponents"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <!-- Label: Edit Course -->
+        <TextView
+            android:id="@+id/editCourseLabel"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Edit Course"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/brand_color"
+            android:gravity="start" />
+
+        <!-- Button: Add Stops -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/addStopsButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add Stops"
+            android:textColor="@color/gray"
+            app:icon="@drawable/add"
+            app:iconGravity="start"
+            app:iconTint="@color/gray"
+            android:backgroundTint="@color/primary_color"
+            app:iconPadding="8dp"
+            android:textAllCaps="false" />
+    </LinearLayout>
+
+    <!-- RecyclerView: Edit Course -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/editCourseRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/topComponents"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Save Button -->
+    <Button
+        android:id="@+id/saveButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Save"
+        android:textColor="@color/primary_color"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:backgroundTint="@color/secondary_color"
+        android:layout_below="@id/editCourseRecyclerView" />
+
+</RelativeLayout>
