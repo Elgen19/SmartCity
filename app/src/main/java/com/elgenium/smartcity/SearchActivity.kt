@@ -2,7 +2,8 @@
 
     import PlacesClientSingleton
 import android.Manifest
-import android.content.Intent
+    import android.app.Activity
+    import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.drawable.ColorDrawable
 import android.location.Location
@@ -59,6 +60,7 @@ import java.util.Locale
             binding = ActivitySearchBinding.inflate(layoutInflater)
             setContentView(binding.root)
 
+
             // sets the color of the navigation bar making it more personalized
             NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
 
@@ -98,6 +100,8 @@ import java.util.Locale
             // Add the custom divider to the RecyclerView
             binding.autocompleteRecyclerView.addItemDecoration(dividerItemDecoration)
 
+            val fromDirectionsActivity = intent.getStringExtra("fromDirectionsActivity") ?: ""
+
             autocompleteAdapter = AutocompleteAdapter(emptyList()) { selectedPrediction ->
                 // save recent search
                 saveRecentSearch(selectedPrediction.getPrimaryText(null).toString())
@@ -106,12 +110,23 @@ import java.util.Locale
                 val placeName = selectedPrediction.getPrimaryText(null).toString()
                 val placeAddress = selectedPrediction.getSecondaryText(null).toString()
 
-                val intent = Intent(this, PlacesActivity::class.java).apply {
-                    putExtra("PLACE_ID", selectedPrediction.placeId)
+
+                if (fromDirectionsActivity == "yes") {
+                    // Create an intent to send data back
+                    val resultIntent = Intent().apply {
+                        putExtra("PLACE_ID", placeId)
+                        putExtra("PLACE_NAME", placeName)
+                        putExtra("PLACE_ADDRESS", placeAddress)
+                    }
+                    setResult(Activity.RESULT_OK, resultIntent)
+                    finish() // Close SearchActivity and return to StopManagementActivity
+                } else {
+                    val intent = Intent(this, PlacesActivity::class.java)
+                    intent.putExtra("PLACE_ID" , placeId)
+                    startActivity(intent)
                 }
-                startActivity(intent)
-                finish()
             }
+
             binding.autocompleteRecyclerView.adapter = autocompleteAdapter
 
             setupAutocomplete()
@@ -126,6 +141,7 @@ import java.util.Locale
                         val intent = Intent(this, PlacesActivity::class.java).apply {
                             putExtra("PLACE_ID", it)
                         }
+
                         startActivity(intent)
                         finish()
                     }

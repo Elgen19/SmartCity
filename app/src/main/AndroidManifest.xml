@@ -31,6 +31,9 @@
         android:theme="@style/Theme.SmartCity"
         tools:targetApi="31">
         <activity
+            android:name=".StopManagementActivity"
+            android:exported="false" />
+        <activity
             android:name=".FAQActivity"
             android:exported="false" />
         <activity

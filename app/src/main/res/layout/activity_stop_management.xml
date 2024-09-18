@@ -1,0 +1,95 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:padding="16dp"
+    android:background="@color/white">
+
+    <!-- Row: Back Button and Title -->
+    <LinearLayout
+        android:id="@+id/topComponents"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_alignParentTop="true"
+        android:layout_marginBottom="8dp">
+
+        <ImageButton
+            android:id="@+id/backButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/baseline_arrow_back_24"
+            android:background="?attr/selectableItemBackgroundBorderless" />
+
+        <TextView
+            android:id="@+id/titleTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Edit Course"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="@color/brand_color"
+            android:layout_marginStart="16dp"
+            android:layout_gravity="center_vertical" />
+    </LinearLayout>
+
+    <!-- Supporting Text -->
+    <TextView
+        android:id="@+id/supportingTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Manage and edit your stops for the course here."
+        android:textColor="@color/gray"
+        android:layout_below="@id/topComponents"
+        android:layout_marginBottom="16dp" />
+
+    <!-- RecyclerView: Stops List -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/stopsRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_below="@id/supportingTextView"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Button Container -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="8dp">
+
+        <!-- Add Stops Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/addStopsButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Add Stops"
+            android:icon="@drawable/add"
+            android:iconTint="@color/secondary_color"
+            app:iconGravity="textStart"
+            app:strokeColor="@color/gray"
+            android:textAllCaps="false"
+            android:textColor="@color/gray"
+            app:cornerRadius="8dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="16dp"
+            android:backgroundTint="@android:color/white"
+            android:layout_marginBottom="8dp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+        <!-- Save Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/saveButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Save"
+            android:paddingTop="16dp"
+            app:cornerRadius="8dp"
+            android:paddingBottom="16dp"
+            android:textColor="@color/primary_color"
+            android:backgroundTint="@color/secondary_color" />
+    </LinearLayout>
+
+</RelativeLayout>

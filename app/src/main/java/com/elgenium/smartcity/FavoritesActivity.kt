@@ -19,7 +19,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.elgenium.smartcity.databinding.ActivityFavoritesBinding
 import com.elgenium.smartcity.databinding.BottomSheetEventActionsBinding
 import com.elgenium.smartcity.databinding.BottomSheetFavoriteEventsBinding
-import com.elgenium.smartcity.databinding.BottomSheetPlaceDetailsBinding
+import com.elgenium.smartcity.databinding.BottomSheetFavoritePlaceBinding
 import com.elgenium.smartcity.models.Event
 import com.elgenium.smartcity.models.SavedPlace
 import com.elgenium.smartcity.network.PlaceDistanceService
@@ -87,6 +87,7 @@ class FavoritesActivity : AppCompatActivity() {
 
         savedPlaces = mutableListOf()
         savedEvents = mutableListOf()
+        userLocationLatLngStringed = "No location"
 
         database = FirebaseDatabase.getInstance().getReference("Users")
         val userId = FirebaseAuth.getInstance().currentUser?.uid
@@ -141,7 +142,6 @@ class FavoritesActivity : AppCompatActivity() {
             fusedLocationClient.lastLocation.addOnSuccessListener { location ->
                 if (location != null) {
                     val userLocation = LatLng(location.latitude, location.longitude)
-                    userLocationLatLngStringed = "${userLocation.latitude},${userLocation.longitude}"
                     Log.d("FavoritesActivity", "User Location: $userLocation")
                     callback(userLocation)
                 } else {
@@ -227,8 +227,6 @@ class FavoritesActivity : AppCompatActivity() {
         })
     }
 
-
-
     private fun loadSavedEvents(userId: String) {
         val currentUser = FirebaseAuth.getInstance().currentUser
         if (currentUser == null) {
@@ -256,9 +254,7 @@ class FavoritesActivity : AppCompatActivity() {
         })
     }
 
-
-
-    private fun getPhotoMetadatas(placeId: String, bottomSheetBinding: BottomSheetPlaceDetailsBinding) {
+    private fun getPhotoMetadatas(placeId: String, bottomSheetBinding: BottomSheetFavoritePlaceBinding) {
         Log.d("FavoritesActivity", "Fetching photo metadata for place ID: $placeId")
 
         val placePhotoMetadatas = listOf(
@@ -513,7 +509,7 @@ class FavoritesActivity : AppCompatActivity() {
     private fun showPlaceDetails(place: SavedPlace) {
         Log.d("FavoritesActivity", "Showing details for place: $place")
         val bottomSheetDialog = BottomSheetDialog(this)
-        val bottomSheetBinding = BottomSheetPlaceDetailsBinding.inflate(LayoutInflater.from(this))
+        val bottomSheetBinding = BottomSheetFavoritePlaceBinding.inflate(LayoutInflater.from(this))
         bottomSheetDialog.setContentView(bottomSheetBinding.root)
 
 
@@ -537,14 +533,30 @@ class FavoritesActivity : AppCompatActivity() {
             }
 
             bottomSheetBinding.btnGetDirections.setOnClickListener {
-                bottomSheetDialog.dismiss()
+                Log.d("FavoritesActivity", "Get Directions button clicked")
 
-                val intent = Intent(this@FavoritesActivity, DirectionsActivity::class.java)
-                intent.putExtra("DESTINATION", "${place.name}==${place.address}==${place.latLngString}")
-                intent.putExtra("ORIGIN", userLocationLatLngStringed)
-                startActivity(intent)
+                // Fetch user location asynchronously
+                getUserLocation { userLocation ->
+                    if (userLocation != null) {
+                        val origin = "${userLocation.latitude},${userLocation.longitude}"
+                        val destination = "${place.name}==${place.address}==${place.latLngString}"
+                        Log.d("FavoritesActivity", "Origin: $origin, Destination: $destination")
 
+                        if (destination.isNotBlank()) {
+                            val intent = Intent(this@FavoritesActivity, DirectionsActivity::class.java)
+                            intent.putExtra("DESTINATION", destination)
+                            intent.putExtra("ORIGIN", origin)
+                            startActivity(intent)
+                            bottomSheetDialog.dismiss()
+                        } else {
+                            Log.e("FavoritesActivity", "Destination is missing")
+                        }
+                    } else {
+                        Log.e("FavoritesActivity", "User location not available")
+                    }
+                }
             }
+
 
             // Update the UI based on the open/closed status.
             if ((bottomSheetBinding.openStatus.text as String?).equals("Open", ignoreCase = true) ||
@@ -620,7 +632,7 @@ class FavoritesActivity : AppCompatActivity() {
         }
     }
 
-    private fun getAndLoadPhotoMetadatasFromPlace(placeDetails: Place, bottomSheetBinding: BottomSheetPlaceDetailsBinding) {
+    private fun getAndLoadPhotoMetadatasFromPlace(placeDetails: Place, bottomSheetBinding: BottomSheetFavoritePlaceBinding) {
         Log.d("FavoritesActivity", "Extracting photo metadata from place details")
         val photoMetadatas = placeDetails.photoMetadatas
         val viewPager = bottomSheetBinding.viewPager

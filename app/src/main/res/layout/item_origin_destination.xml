@@ -1,7 +1,7 @@
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="horizontal"
     android:padding="8dp">
 
@@ -39,7 +39,44 @@
             android:layout_height="wrap_content"
             android:text="Place Address"
             android:textSize="14sp"
-            android:textColor="@android:color/darker_gray" />
+            android:textColor="@color/dark_gray" />
     </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/drag_handle_button"
+        android:layout_width="48dp"
+        android:layout_height="match_parent"
+        android:scaleType="fitCenter"
+        style="@style/Widget.AppCompat.Button.Borderless"
+        android:src="@drawable/drag"/>
+
+    <LinearLayout
+        android:id="@+id/swipe_confirmation_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <!-- Delete Button -->
+        <ImageButton
+            android:id="@+id/confirm_delete_button"
+            android:layout_width="48dp"
+            android:layout_height="match_parent"
+            android:scaleType="fitCenter"
+            android:visibility="gone"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:src="@drawable/delete2"
+   />
+        <!-- Cancel Button -->
+        <ImageButton
+            android:id="@+id/cancel_button"
+            android:layout_width="48dp"
+            android:layout_height="match_parent"
+            android:scaleType="fitCenter"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:visibility="gone"
+            android:src="@drawable/cancel" />
+    </LinearLayout>
+
 
 </LinearLayout>
