@@ -103,6 +103,23 @@ class StopManagementAdapter(
         }
     }
 
+    fun updateStopTypes() {
+        // Check if there are any items in the list
+        if (stopsList.isNotEmpty()) {
+            // Clear all types initially
+            stopsList.forEach { it.type = "Stop" }
+
+            // Set the type of the first item as Origin
+            stopsList[0].type = "Origin"
+
+            // Set the type of the last item as Destination
+            if (stopsList.size > 1) {
+                stopsList[stopsList.size - 1].type = "Destination"
+            }
+        }
+    }
+
+
     // Method to show delete confirmation and cancel buttons for a specific item
     fun showDeleteConfirmation(position: Int) {
         // Only one item can show the delete/cancel buttons at a time

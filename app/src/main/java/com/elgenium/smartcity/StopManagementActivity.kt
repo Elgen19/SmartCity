@@ -35,6 +35,7 @@ class StopManagementActivity : AppCompatActivity() {
                Log.d("StopManagementActivity", "STOPS AT SEARCH: $newStop" )
 
                 stopList.add(newStop)
+                adapter.updateStopTypes()
                 adapter.notifyDataSetChanged() // Notify the adapter about data change
             }
         }
@@ -82,6 +83,37 @@ class StopManagementActivity : AppCompatActivity() {
             }
             getPlaceResultLauncher.launch(intent)
         }
+
+        binding.saveButton.setOnClickListener {
+            // Convert the stopList into an ArrayList of OriginDestinationStops
+            val stopList = ArrayList<OriginDestinationStops>(stopList)
+
+            // Create an intent to hold the result
+            val resultIntent = Intent().apply {
+                putExtra("STOP_LIST", stopList)  // Use putExtra to pass the ArrayList
+            }
+
+            Log.d("StopManagementActivity", "STOP LIST: $stopList")
+
+
+            // Set the result and finish the activity
+            setResult(Activity.RESULT_OK, resultIntent)
+            finish()
+        }
+
     }
+
+    private fun saveAndReturnResults() {
+        // Create an intent to return the result
+        val resultIntent = Intent().apply {
+            // Put the list of stops as an extra
+            putExtra("ROUTES", ArrayList(stopList))
+        }
+
+        // Set the result and finish the activity
+        setResult(Activity.RESULT_OK, resultIntent)
+        finish()
+    }
+
 
 }
