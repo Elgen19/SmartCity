@@ -539,8 +539,15 @@ class FavoritesActivity : AppCompatActivity() {
                 getUserLocation { userLocation ->
                     if (userLocation != null) {
                         val origin = "${userLocation.latitude},${userLocation.longitude}"
-                        val destination = "${place.name}==${place.address}==${place.latLngString}"
-                        Log.d("FavoritesActivity", "Origin: $origin, Destination: $destination")
+                        val regex = """lat/lng: \((\-?\d+\.\d+),(\-?\d+\.\d+)\)""".toRegex()
+                        val destinationLatLng =
+                            place.latLngString?.let { it1 ->
+                                regex.find(it1)?.let { matchResult ->
+                                    "${matchResult.groupValues[1]},${matchResult.groupValues[2]}"
+                                }
+                            }
+                        val destination = "${place.name}==${place.address}==${destinationLatLng}"
+                        Log.d("FavoritesActivity", "Origin: $origin, Destination: $destinationLatLng")
 
                         if (destination.isNotBlank()) {
                             val intent = Intent(this@FavoritesActivity, DirectionsActivity::class.java)

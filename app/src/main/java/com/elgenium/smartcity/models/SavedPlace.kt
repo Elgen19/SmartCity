@@ -9,7 +9,7 @@ data class SavedPlace(
     val address: String? = "",
     val phoneNumber: String? = "",
     val latLng: LatLng? = null, // LatLng object
-    val latLngString: String? = "", // LatLng String for firebase realtime db storaga
+    val latLngString: String? = "", // LatLng String for firebase realtime db storage
     val openingDaysAndTime: String? = "",
     val rating: String? = "",
     val websiteUri: String? = "",

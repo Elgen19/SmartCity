@@ -21,10 +21,14 @@ class StopTouchHelperCallback(
             stopsList.removeAt(fromPosition)
             stopsList.add(toPosition, item)
             notifyItemMoved(fromPosition, toPosition)
+            updateStopTypes()
+
             refreshIcons()
         }
         return true
     }
+
+
 
     override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
         val position = viewHolder.adapterPosition

@@ -1,6 +1,7 @@
 package com.elgenium.smartcity.recyclerview_adapter
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.elgenium.smartcity.R
@@ -22,6 +23,7 @@ class OriginDestinationAdapter(
         val stop = items[position]
         holder.binding.placeName.text = stop.name
         holder.binding.placeAddress.text = stop.address
+        holder.binding.dragHandleButton.visibility = View.GONE
 
         // Update the icon based on the type
         holder.binding.placeIcon.setImageResource(
@@ -34,4 +36,11 @@ class OriginDestinationAdapter(
     }
 
     override fun getItemCount(): Int = items.size
+
+
+    fun updateStops(newStops: List<OriginDestinationStops>) {
+        items.clear()
+        items.addAll(newStops)
+        notifyDataSetChanged()
+    }
 }
