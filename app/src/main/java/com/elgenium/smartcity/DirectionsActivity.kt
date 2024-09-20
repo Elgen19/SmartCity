@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -15,8 +16,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.elgenium.smartcity.databinding.ActivityDirectionsBinding
 import com.elgenium.smartcity.models.OriginDestinationStops
 import com.elgenium.smartcity.network_reponses.RoutesResponse
+import com.elgenium.smartcity.network_reponses.TravelAdvisory
 import com.elgenium.smartcity.recyclerview_adapter.OriginDestinationAdapter
 import com.elgenium.smartcity.routes_network_request.Coordinates
+import com.elgenium.smartcity.routes_network_request.ExtraComputation
 import com.elgenium.smartcity.routes_network_request.LatLng
 import com.elgenium.smartcity.routes_network_request.Location
 import com.elgenium.smartcity.routes_network_request.RoutesRequest
@@ -47,7 +50,7 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var binding: ActivityDirectionsBinding
     private lateinit var adapter: OriginDestinationAdapter
     private val latLngList = mutableListOf<String>()
-    private var currentPolyline: Polyline? = null
+    private var polylines: MutableList<Polyline> = mutableListOf()
     private var destinationMarker: Marker? = null
     private var selectedTransportMode: String? = "Car"
     private var selectedButton: MaterialButton? = null
@@ -126,16 +129,17 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         val destination = Location(LatLng(Coordinates(latLngList.last().split(",")[0].toDouble(), latLngList.last().split(",")[1].toDouble())))
         val travelMode = getTravelMode(selectedTransportMode)
 
-        Log.e("DirectionsActivity", "TRAVEL MODE: ${getTravelMode(selectedTransportMode)}")
+        Log.e("DirectionsActivity", "TRAVEL MODE: $travelMode")
 
         val routingPreference = if (travelMode == "DRIVE" || travelMode == "TWO_WHEELER") "TRAFFIC_AWARE" else null
-
+        val extraComputations = if (travelMode == "DRIVE" || travelMode == "TWO_WHEELER") listOf(ExtraComputation.TRAFFIC_ON_POLYLINE, ExtraComputation.HTML_FORMATTED_NAVIGATION_INSTRUCTIONS) else null
         val request = RoutesRequest(
             origin = origin,
             destination = destination,
             travelMode = travelMode,
             routingPreference = routingPreference,
-            computeAlternativeRoutes = false
+            computeAlternativeRoutes = false,
+            extraComputations = extraComputations
         )
 
         Log.d("DirectionsActivity", "Request body: ${Gson().toJson(request)}")
@@ -143,21 +147,64 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         RetrofitClientRoutes.routesApi.getRoutes(request).enqueue(object : Callback<RoutesResponse> {
             override fun onResponse(call: Call<RoutesResponse>, response: Response<RoutesResponse>) {
                 if (response.isSuccessful) {
-                    Log.e("DirectionsActivity", "RESPONSE BODY IF: ${response.body()}}", )
-                    val route = response.body()?.routes?.firstOrNull()
-                    val polyline = route?.polyline?.encodedPolyline
-                    if (polyline != null) {
-                        plotPolyline(polyline)
-                    } else {
-                        Log.e("DirectionsActivity", "Polyline not found in response.")
+                    Log.e("DirectionsActivity", "RESPONSE BODY IF: ${response.body()}}")
+                    Log.e("DirectionsActivity", "RESPONSE BODY IF: ${response.raw()}}")
+
+
+                    // Select the best route based on distance or duration
+                    val bestRoute = response.body()?.routes?.firstOrNull()
+
+                    bestRoute?.let { route ->
+                        val polyline = route.polyline.encodedPolyline
+                        val travelAdvisories = route.travelAdvisory
+
+                        plotPolyline(polyline, travelAdvisories, travelMode)
+
+                        val durationString = route.duration // e.g., "1381s"
+                        val durationInSeconds = durationString.replace("s", "").toInt() // Remove 's' and convert to integer
+
+                        val hours = durationInSeconds / 3600
+                        val minutes = (durationInSeconds % 3600) / 60
+                        val seconds = durationInSeconds % 60
+
+                        // Format the output dynamically
+                        val formattedDuration = buildString {
+                            if (hours > 0) {
+                                append("$hours h ")
+                            }
+                            if (minutes > 0 || hours > 0) { // Include minutes if there are hours
+                                append("$minutes min ")
+                            }
+                            append("$seconds s")
+                        }.trim()
+
+                        binding.travelTimeValue.text = formattedDuration
+
+
+                       if (route.description == null) {
+                           binding.bestRouteText.visibility = View.GONE
+                           binding.bestRouteLabel.visibility = View.GONE
+                       } else {
+                           binding.bestRouteText.text = "Via ${route.description}"
+                           binding.bestRouteText.visibility = View.VISIBLE
+                           binding.bestRouteLabel.visibility = View.VISIBLE
+                       }
+
+                        val distanceInMeters = route.distanceMeters.toDouble() // Ensure it's a double for accurate division
+                        val distanceInKilometers = distanceInMeters / 1000 // Convert to kilometers
+                        binding.distanceValue.text = String.format("%.2f km", distanceInKilometers) // Format to 2 decimal places
+
+                        if (travelMode == "TWO_WHEELER" || travelMode == "DRIVE") {
+                            binding.trafficCondition.text = determineOverallTrafficCondition(travelAdvisories)
+                        } else {
+                            binding.trafficCondition.text = "A typical traffic"
+                            binding.trafficCondition.setTextColor(resources.getColor(R.color.dark_gray))
+                        }
+                    } ?: run {
+                        Log.e("DirectionsActivity", "No routes found in response.")
                     }
                 } else {
-                    Log.e("DirectionsActivity", "RESPONSE BODY ELSE: ${response.body()}}", )
-                    Log.e("DirectionsActivity", "Error fetching route: ${response.raw()}", )
-                    Log.e("DirectionsActivity", "Error fetching route: ${response.body()}", )
-                    Log.e("DirectionsActivity", "Error fetching route: ${response.errorBody()}", )
-
-
+                    Log.e("DirectionsActivity", "RESPONSE BODY ELSE: ${response.raw()}")
                 }
             }
 
@@ -167,28 +214,49 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         })
     }
 
-    private fun plotPolyline(encodedPolyline: String) {
+
+
+    private fun plotPolyline(encodedPolyline: String, travelAdvisory: TravelAdvisory?, travelMode: String) {
         // Decode the polyline points
         val polylinePoints: List<com.google.android.gms.maps.model.LatLng> = PolyUtil.decode(encodedPolyline)
 
-        // Remove the previous polyline and marker if they exist
-        currentPolyline?.remove()
-        destinationMarker?.remove()
+        // Clear previous polylines
+        clearPolylines()
 
-        // Create polyline options
-        val polylineOptions = PolylineOptions().apply {
+        // Draw the default polyline
+        val defaultPolylineOptions = PolylineOptions().apply {
             addAll(polylinePoints)
-            color(getColor(R.color.brand_color))
             width(10f)
+            color(getColor(R.color.brand_color)) // Default color
+        }
+        val defaultPolyline = mMap.addPolyline(defaultPolylineOptions)
+        polylines.add(defaultPolyline) // Store in the list
+
+        // Only overlay colored segments for DRIVE and TWO_WHEELER
+        if (travelMode == "DRIVE" || travelMode == "TWO_WHEELER") {
+            travelAdvisory?.speedReadingIntervals?.forEach { interval ->
+                val segmentPoints = polylinePoints.subList(interval.startPolylinePointIndex, interval.endPolylinePointIndex)
+
+                // Create polyline options based on speed
+                val polylineOptions = PolylineOptions().apply {
+                    addAll(segmentPoints)
+                    width(10f)
+                    color(when (interval.speed) {
+                        "NORMAL" -> getColor(R.color.traffic_light_color)
+                        "SLOW" -> getColor(R.color.traffic_moderate_color)
+                        "TRAFFIC_JAM" -> getColor(R.color.traffic_heavy_color)
+                        else -> getColor(R.color.brand_color)
+                    })
+                }
+
+
+                val trafficPolyline = mMap.addPolyline(polylineOptions) // Create colored polyline
+                polylines.add(trafficPolyline) // Store in the list
+            }
         }
 
-        // Add the polyline to the map and store the reference
-        currentPolyline = mMap.addPolyline(polylineOptions)
-
-        // Get the destination LatLng (last point in the polyline)
+        // Add a marker at the destination
         val destinationLatLng = polylinePoints.last()
-
-        // Add a marker at the destination and store the reference
         destinationMarker = mMap.addMarker(MarkerOptions().position(destinationLatLng).title("Destination"))
 
         // Create bounds to focus the camera on the polyline
@@ -205,6 +273,58 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         // Move the camera to fit the polyline bounds
         mMap.animateCamera(cameraUpdate)
     }
+
+    private fun clearPolylines() {
+        // Remove all polylines from the map
+        for (polyline in polylines) {
+            polyline.remove()
+        }
+        polylines.clear() // Clear the list after removing
+    }
+
+
+
+
+
+
+
+
+    private fun determineOverallTrafficCondition(travelAdvisory: TravelAdvisory?): String {
+        if (travelAdvisory == null) {
+            binding.trafficCondition.setTextColor(getColor(R.color.gray)) // Or any default color
+            return "No Traffic Data"
+        }
+
+        var normalCount = 0
+        var slowCount = 0
+        var trafficJamCount = 0
+
+        travelAdvisory.speedReadingIntervals.forEach { interval ->
+            when (interval.speed) {
+                "NORMAL" -> normalCount++
+                "SLOW" -> slowCount++
+                "TRAFFIC_JAM" -> trafficJamCount++
+            }
+        }
+
+        val overallCondition = when {
+            trafficJamCount > slowCount && trafficJamCount > normalCount -> {
+                binding.trafficCondition.setTextColor(getColor(R.color.traffic_heavy_color))
+                "Heavy Traffic"
+            }
+            slowCount > normalCount -> {
+                binding.trafficCondition.setTextColor(getColor(R.color.traffic_moderate_color))
+                "Moderate Traffic"
+            }
+            else -> {
+                binding.trafficCondition.setTextColor(getColor(R.color.traffic_light_color))
+                "Light Traffic"
+            }
+        }
+
+        return overallCondition
+    }
+
 
     private fun getTravelMode(modeOfTransport: String?): String {
         return when (modeOfTransport) {
@@ -295,18 +415,26 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         // Button click handlers
         binding.btnCar.setOnClickListener {
             handleButtonSelection(binding.btnCar)
+            binding.transportTitle.text = "Drive Mode"
+            binding.transportIcon.setImageResource(R.drawable.car)
             fetchRoute()
         }
         binding.btnTwoWheeler.setOnClickListener {
             handleButtonSelection(binding.btnTwoWheeler)
+            binding.transportTitle.text = "Cycling Mode"
+            binding.transportIcon.setImageResource(R.drawable.motor)
             fetchRoute()
         }
         binding.btnWalk.setOnClickListener {
             handleButtonSelection(binding.btnWalk)
+            binding.transportTitle.text = "Hiking Mode"
+            binding.transportIcon.setImageResource(R.drawable.walk)
             fetchRoute()
         }
         binding.btnTransit.setOnClickListener {
             handleButtonSelection(binding.btnTransit)
+            binding.transportTitle.text = "Commuter Mode"
+            binding.transportIcon.setImageResource(R.drawable.transit)
             fetchRoute()
         }
 

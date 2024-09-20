@@ -9,8 +9,8 @@ data class RoutesRequest(
     val computeAlternativeRoutes: Boolean = false,
     val routeModifiers: RouteModifiers = RouteModifiers(),
     val languageCode: String = "en-US",
-    val units: String = "IMPERIAL"
-)
+    val units: String = "IMPERIAL",
+    val extraComputations: List<ExtraComputation>? = null)
 
 data class Location(val location: LatLng)
 data class LatLng(val latLng: Coordinates)
@@ -21,4 +21,13 @@ data class RouteModifiers(
     val avoidHighways: Boolean = false,
     val avoidFerries: Boolean = false
 )
+
+enum class ExtraComputation {
+    EXTRA_COMPUTATION_UNSPECIFIED,
+    TOLLS,
+    FUEL_CONSUMPTION,
+    TRAFFIC_ON_POLYLINE,
+    HTML_FORMATTED_NAVIGATION_INSTRUCTIONS
+}
+
 
