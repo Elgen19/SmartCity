@@ -1,5 +1,6 @@
 package com.elgenium.smartcity
 
+
 import android.Manifest
 import android.app.Activity
 import android.content.Intent
@@ -199,6 +200,17 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
                         } else {
                             binding.trafficCondition.text = "A typical traffic"
                             binding.trafficCondition.setTextColor(resources.getColor(R.color.dark_gray))
+                        }
+
+                        binding.startNavigationButton.setOnClickListener {
+                            bestRoute.let { route ->
+                                val intent = Intent(this@DirectionsActivity, NavigationActivity::class.java)
+
+                                // Pass the entire bestRoute object as a Parcelable
+                                intent.putExtra("bestRoute", route)
+
+                                startActivity(intent)
+                            }
                         }
                     } ?: run {
                         Log.e("DirectionsActivity", "No routes found in response.")
@@ -456,6 +468,10 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         binding.closeButton.setOnClickListener {
             // Dismiss the bottom sheet
             behavior.state = BottomSheetBehavior.STATE_HIDDEN
+        }
+
+        binding.startNavigationButton.setOnClickListener {
+            // this is on a separate method that displays a bottom sheet
         }
     }
 
