@@ -37,7 +37,8 @@ class RecentSearchAdapter(
 
         fun bind(recentSearch: Search) {
             currentSearch = recentSearch
-            binding.locationTextView.text = recentSearch.location
+            binding.locationTextView.text = recentSearch.placeName
+            binding.placeAddressTextView.text = recentSearch.placeAddress
             binding.timestampTextView.text = recentSearch.timestamp
         }
     }

@@ -7,6 +7,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.location.Location
 import android.os.Bundle
+import android.speech.tts.TextToSpeech
 import android.text.Html
 import android.util.Log
 import android.view.animation.LinearInterpolator
@@ -14,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.elgenium.smartcity.databinding.ActivityNavigationBinding
 import com.elgenium.smartcity.network.RoadsApiService
+import com.elgenium.smartcity.network_reponses.RoadsResponse
 import com.elgenium.smartcity.network_reponses.Routes
 import com.elgenium.smartcity.network_reponses.Step
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -34,11 +36,18 @@ import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.PolylineOptions
 import com.google.maps.android.PolyUtil
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.concurrent.Executors
 import kotlin.math.abs
 
-class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
+class NavigationActivity : AppCompatActivity(), OnMapReadyCallback, TextToSpeech.OnInitListener {
 
     private lateinit var binding: ActivityNavigationBinding
     private var steps: List<Step> = listOf()
@@ -53,11 +62,18 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
     private var isFirstLocationUpdate = true
     private val MIN_ROTATION_ANGLE = 20
     private var currentMarkerRotation = 0f
+    private lateinit var textToSpeech: TextToSpeech
+    private var isTTSReady = false
+    private var hasSpokenCurrentStep = false
+
+
+
 
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
             locationResult.lastLocation?.let { location ->
                 updateMapForNavigation(location)
+                updateETA(location)
             }
         }
     }
@@ -67,6 +83,15 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
         binding = ActivityNavigationBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Initialize TextToSpeech
+        textToSpeech = TextToSpeech(this, this)
+
+        // Pre-load TextToSpeech in background
+        initializeTextToSpeech()
+
+        displayNextInstruction()
+
+
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
@@ -75,6 +100,8 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
         bestRoute = intent.getParcelableExtra("bestRoute")
         bestRoute?.let { route ->
             steps = route.legs.first().steps
+            val initialETA = calculateInitialETA()
+            updateETATextView(initialETA)
         } ?: run {
             Log.e("NavigationActivity", "No route found in intent.")
         }
@@ -91,12 +118,117 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
         roadsApiService = retrofit.create(RoadsApiService::class.java)
     }
 
+    private fun convertDurationToSeconds(duration: String): Int {
+        return duration.removeSuffix("s").toInt() // Convert duration string to Int
+    }
+
+    private fun calculateInitialETA(): Long {
+        val totalDurationSeconds = bestRoute?.legs?.sumOf { convertDurationToSeconds(it.duration) } ?: 0
+        val currentTimeMillis = System.currentTimeMillis()
+        return currentTimeMillis + (totalDurationSeconds * 1000L) // Convert seconds to milliseconds
+    }
+
+    private fun updateETA(location: Location) {
+        val currentLatLng = LatLng(location.latitude, location.longitude)
+        val totalDistance = bestRoute?.legs?.sumOf { it.distanceMeters }?.toFloat() ?: 0f
+        var distanceTraveled = 0f
+
+        // Calculate distance traveled for completed steps
+        for (i in 0 until currentStepIndex) {
+            distanceTraveled += steps[i].distanceMeters.toFloat()
+        }
+
+        // Add the distance traveled within the current step
+        if (currentStepIndex < steps.size) {
+            val currentStep = steps[currentStepIndex]
+            val stepEndLocation = LatLng(
+                currentStep.endLocation.latLng.latitude.toDouble(),
+                currentStep.endLocation.latLng.longitude.toDouble()
+            )
+            val distanceToStepEnd = FloatArray(1)
+            Location.distanceBetween(
+                currentLatLng.latitude,
+                currentLatLng.longitude,
+                stepEndLocation.latitude,
+                stepEndLocation.longitude,
+                distanceToStepEnd
+            )
+            distanceTraveled += currentStep.distanceMeters.toFloat() - distanceToStepEnd[0]
+        }
+
+        // Calculate remaining distance
+        val remainingDistance = totalDistance - distanceTraveled
+
+        // Check the user's speed
+        val speed = location.speed // Speed in m/s
+        val currentTime = System.currentTimeMillis()
+
+        // Update ETA based on speed
+        val newETA = if (speed > 0) {
+            val estimatedTimeInSeconds = (remainingDistance / speed).toLong() // time = distance / speed
+            currentTime + estimatedTimeInSeconds * 1000 // Convert seconds to milliseconds
+        } else {
+            // If stationary, add a fixed amount of time (e.g., 2 minutes) to ETA
+            val stationaryDelaySeconds = 120 // 2 minutes in seconds
+            currentTime + stationaryDelaySeconds * 1000
+        }
+
+        // Update the ETA TextView
+        updateETATextView(newETA)
+    }
+
+    private fun updateETATextView(etaInMillis: Long) {
+        val dateFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
+        val etaString = dateFormat.format(Date(etaInMillis))
+        binding.etaValueTextView.text = etaString
+    }
+
+
+
+
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            val result = textToSpeech.setLanguage(Locale.US) // Set the language to US English
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                Log.e("TTS", "The Language is not supported!")
+            } else {
+                isTTSReady = true // TextToSpeech is ready
+            }
+        } else {
+            Log.e("TTS", "Initialization failed!")
+        }
+    }
+
+    private fun stripHtml(html: String): String {
+        return Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY).toString()
+    }
+
+    private fun initializeTextToSpeech() {
+        // Run initialization in a background thread to avoid UI delay
+        Executors.newSingleThreadExecutor().execute {
+            textToSpeech = TextToSpeech(this) { status ->
+                if (status == TextToSpeech.SUCCESS) {
+                    val result = textToSpeech.setLanguage(Locale.US)
+                    if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                        Log.e("TTS", "The Language is not supported!")
+                    } else {
+                        isTTSReady = true
+                    }
+                } else {
+                    Log.e("TTS", "TextToSpeech initialization failed!")
+                }
+            }
+        }
+    }
+
     private fun updateMapForNavigation(location: Location) {
         val currentLatLng = LatLng(location.latitude, location.longitude)
 
         // Smooth out location updates
-        if (lastLocation == null || location.distanceTo(lastLocation!!) > 5) { // 5 meters threshold
+        if (lastLocation == null || location.distanceTo(lastLocation!!) > 2) { // 5 meters threshold
             lastLocation = location
+
+            snapToRoad(location)
 
             // Update camera position
             val cameraPosition = CameraPosition.Builder()
@@ -146,7 +278,10 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
 
             isFirstLocationUpdate = false
 
-            // Check for step end and update instructions
+            // display speedometer
+            showSpeed(location)
+
+            // Update the step logic
             if (currentStepIndex < steps.size) {
                 val currentStep = steps[currentStepIndex]
                 val stepEndLocation = LatLng(
@@ -163,63 +298,148 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
                     distanceToStepEnd
                 )
 
-                if (!hasDeparted && distanceToStepEnd[0] < 20) {
+                if (!hasDeparted && distanceToStepEnd[0] < 10) {
                     hasDeparted = true
                 }
 
-                if (hasDeparted && distanceToStepEnd[0] < 20) {
+                // Move to the next step if the user reaches the step's end location
+                if (hasDeparted && distanceToStepEnd[0] < 10) {
                     currentStepIndex++
+                    hasSpokenCurrentStep = false
                 }
 
                 displayNextInstruction()
             }
+
+            // Track total and remaining distance
+            val totalDistance = bestRoute?.legs?.sumOf { it.distanceMeters }?.toFloat() ?: 0f
+
+            // Track the distance covered so far by adding up completed steps
+            var distanceTraveled = 0f
+
+            // Add the distance of each completed step
+            for (i in 0 until currentStepIndex) {
+                distanceTraveled += steps[i].distanceMeters.toFloat()
+            }
+
+            // Add the distance traveled within the current step
+            if (currentStepIndex < steps.size) {
+                val currentStep = steps[currentStepIndex]
+                val stepEndLocation = LatLng(
+                    currentStep.endLocation.latLng.latitude.toDouble(),
+                    currentStep.endLocation.latLng.longitude.toDouble()
+                )
+
+                val distanceToStepEnd = FloatArray(1)
+                Location.distanceBetween(
+                    currentLatLng.latitude,
+                    currentLatLng.longitude,
+                    stepEndLocation.latitude,
+                    stepEndLocation.longitude,
+                    distanceToStepEnd
+                )
+
+                distanceTraveled += currentStep.distanceMeters.toFloat() - distanceToStepEnd[0]
+            }
+
+            // Calculate remaining distance
+            val remainingDistance = totalDistance - distanceTraveled
+
+            // Update distance TextView
+            val distanceText = String.format("%.1f m", remainingDistance)
+            binding.distanceValueTextView.text = distanceText
+
         }
+    }
+
+    private fun showSpeed(location: Location) {
+        // Update speed
+        val speedInKmh = (location.speed * 3.6).toInt()
+        binding.speedValueTextView.text = "$speedInKmh"
     }
 
     private fun displayNextInstruction() {
         if (currentStepIndex < steps.size) {
             val currentStep = steps[currentStepIndex]
+
+            // Format and display instructions in the TextView
             val formattedInstruction = Html.fromHtml(
                 currentStep.navigationInstruction.instructions,
                 Html.FROM_HTML_MODE_COMPACT
             )
-
             binding.instructionsTextView.text = formattedInstruction
 
+            // Set maneuver icon
             val maneuverIconResId = getManeuverIcon(currentStep.navigationInstruction.maneuver)
             binding.maneuverIcon.setImageResource(maneuverIconResId)
 
+            // Strip HTML tags before passing to TextToSpeech
+            val instructionToSpeak = stripHtml(currentStep.navigationInstruction.instructions)
+
+            // Speak the instruction only if it hasn't been spoken yet
+            if (isTTSReady && !hasSpokenCurrentStep) {
+                speakInstruction(instructionToSpeak)
+                hasSpokenCurrentStep = true // Set flag to prevent repeating the same instruction
+            }
+
         } else {
+            // Final destination logic
             binding.instructionsTextView.text = "You have reached your destination."
             binding.maneuverIcon.setImageResource(R.drawable.location)
+
+            // Speak final destination message
+            if (isTTSReady) {
+                speakInstruction("You have reached your destination.")
+            }
         }
     }
 
-//    private fun snapToRoad(location: Location) {
-//        val path = "${location.latitude},${location.longitude}"
-//        val apiKey = BuildConfig.MAPS_API_KEY
-//
-//        roadsApiService.getSnappedRoads(path, apiKey).enqueue(object : Callback<RoadsResponse> {
-//            override fun onResponse(call: Call<RoadsResponse>, response: Response<RoadsResponse>) {
-//                if (response.isSuccessful && response.body() != null) {
-//                    val snappedPoints = response.body()!!.snappedPoints
-//                    if (snappedPoints.isNotEmpty()) {
-//                        val snappedLocation = LatLng(snappedPoints[0].location.latitude, snappedPoints[0].location.longitude)
-//                        updateMapWithSnappedLocation(snappedLocation)
-//                    }
-//                } else {
-//                    Log.e("SnapToRoad", "Failed to snap to road: ${response.errorBody()?.string()}")
-//                }
-//            }
-//
-//            override fun onFailure(call: Call<RoadsResponse>, t: Throwable) {
-//                Log.e("SnapToRoad", "API call failed: ${t.message}")
-//            }
-//        })
-//    }
+    private fun speakInstruction(instruction: String) {
+        if (isTTSReady) {
+            textToSpeech.speak(instruction, TextToSpeech.QUEUE_FLUSH, null, null)
+        }
+    }
+
+    private fun snapToRoad(location: Location) {
+        val path = "${location.latitude},${location.longitude}"
+        val apiKey = BuildConfig.MAPS_API_KEY
+
+        roadsApiService.getSnappedRoads(path, apiKey).enqueue(object : Callback<RoadsResponse> {
+            override fun onResponse(call: Call<RoadsResponse>, response: Response<RoadsResponse>) {
+                if (response.isSuccessful && response.body() != null) {
+                    val snappedPoints = response.body()!!.snappedPoints
+                    if (snappedPoints.isNotEmpty()) {
+                        val snappedLocation = LatLng(snappedPoints[0].location.latitude, snappedPoints[0].location.longitude)
+                        updateMapWithSnappedLocation(snappedLocation)
+                    }
+                } else {
+                    Log.e("SnapToRoad", "Failed to snap to road: ${response.errorBody()?.string()}")
+                }
+            }
+
+            override fun onFailure(call: Call<RoadsResponse>, t: Throwable) {
+                Log.e("SnapToRoad", "API call failed: ${t.message}")
+            }
+        })
+    }
 
     private fun updateMapWithSnappedLocation(snappedLocation: LatLng) {
-        userMarker?.position = snappedLocation
+        // Update camera position to the snapped location
+        googleMap.animateCamera(CameraUpdateFactory.newLatLng(snappedLocation))
+
+        // Update user marker position to the snapped location
+        if (userMarker == null) {
+            val originalBitmap = BitmapFactory.decodeResource(resources, R.drawable.truck)
+            val scaledBitmap = Bitmap.createScaledBitmap(originalBitmap, 100, 100, false)
+
+            userMarker = googleMap.addMarker(MarkerOptions()
+                .position(snappedLocation)
+                .icon(BitmapDescriptorFactory.fromBitmap(scaledBitmap))
+                .anchor(0.5f, 0.5f)
+                .flat(true))
+        } else {
+            userMarker?.position = snappedLocation
+        }
     }
 
     override fun onMapReady(map: GoogleMap) {
@@ -305,9 +525,9 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
             return
         }
 
-        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000).apply {
-            setMinUpdateIntervalMillis(2000) // Minimum update interval in milliseconds
-            setGranularity(Granularity.GRANULARITY_FINE) // Fine accuracy
+        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 2000).apply {
+            setMinUpdateIntervalMillis(1000) // Set the desired update interval in milliseconds
+            setGranularity(Granularity.GRANULARITY_FINE)
         }.build()
 
 
@@ -360,7 +580,6 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    // Function to map maneuver types to drawable resources
     private fun getManeuverIcon(maneuver: String): Int {
         return when (maneuver) {
             "TURN_SHARP_LEFT" -> R.drawable.turn_sharp_left
@@ -386,9 +605,13 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onDestroy() {
         super.onDestroy()
         fusedLocationClient.removeLocationUpdates(locationCallback)
+
+        if (::textToSpeech.isInitialized) {
+            textToSpeech.stop()
+            textToSpeech.shutdown()
+        }
     }
 }
-
 
 
 

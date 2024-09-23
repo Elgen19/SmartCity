@@ -6,7 +6,9 @@ plugins {
     id("com.google.gms.google-services")
     id ("kotlin-parcelize")
     alias(libs.plugins.google.android.libraries.mapsplatform.secrets.gradle.plugin)
+
 }
+
 
 secrets {
     propertiesFileName = "secrets.properties"
@@ -28,12 +30,20 @@ android {
     defaultConfig {
         buildConfigField("String", "DEFAULT_CLIENT_ID", clientID)
         applicationId = "com.elgenium.smartcity"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        resConfigs("en")
+        multiDexEnabled = true
+    }
+
+    dexOptions {
+        // This increases the amount of memory available to the dexer. This is required to build
+        // apps using the Navigation SDK.
+        javaMaxHeapSize = "4g"
     }
 
     buildTypes {
@@ -48,6 +58,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
         jvmTarget = "1.8"
@@ -59,6 +70,8 @@ android {
     }
 }
 
+
+
 dependencies {
 
     implementation(libs.androidx.core.ktx)
@@ -69,9 +82,9 @@ dependencies {
     implementation(libs.firebase.storage.ktx)
     implementation(libs.core)
     implementation(libs.play.services.location)
-    implementation(libs.play.services.maps)
     implementation(libs.places)
     implementation(libs.androidx.cardview)
+    implementation(libs.androidx.navigation.runtime.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -90,6 +103,14 @@ dependencies {
     implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation ("com.squareup.okhttp3:okhttp:4.10.0")
     implementation("com.google.maps.android:android-maps-utils:3.8.2")
+    implementation ("com.google.android.libraries.navigation:navigation:5.2.1")
+    coreLibraryDesugaring ("com.android.tools:desugar_jdk_libs:1.1.9")
+    implementation ("androidx.fragment:fragment:1.8.3")
+    annotationProcessor (libs.androidx.annotation)
+
+
+
+
 
 
 

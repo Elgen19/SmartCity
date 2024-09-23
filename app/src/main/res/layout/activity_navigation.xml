@@ -10,33 +10,130 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 
-    <!-- Top instruction bar -->
-    <LinearLayout
-        android:id="@+id/navigation_instructions"
-        android:orientation="horizontal"
-        android:padding="16dp"
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/secondary_color"
-        android:gravity="center_vertical">
+        android:layout_height="wrap_content">
 
-        <ImageView
-            android:id="@+id/maneuverIcon"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@drawable/baseline_arrow_back_24"
-            app:tint="@color/primary_color" />
-
-        <TextView
-            android:id="@+id/instructionsTextView"
-            android:layout_width="wrap_content"
+        <!-- Top instruction bar -->
+        <LinearLayout
+            android:id="@+id/navigation_instructions"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Turn left to the Orion Street"
-            android:textSize="18sp"
-            android:textColor="@color/primary_color"
-            android:paddingStart="8dp"/>
+            android:background="@color/secondary_color"
+            android:gravity="center_vertical">
 
-    </LinearLayout>
+            <ImageView
+                android:id="@+id/maneuverIcon"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/baseline_arrow_back_24"
+                app:tint="@color/primary_color" />
+
+            <TextView
+                android:id="@+id/instructionsTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Turn left to the Orion Street"
+                android:textSize="18sp"
+                android:textColor="@color/primary_color"
+                android:paddingStart="8dp"/>
+        </LinearLayout>
+
+        <!-- Speedometer Layout -->
+        <LinearLayout
+            android:id="@+id/speedometerLayout"
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_below="@+id/navigation_instructions"
+            android:layout_height="wrap_content"
+            android:padding="16dp">
+
+
+            <TextView
+                android:id="@+id/speedValueTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Current Speed"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/gray"/>
+
+            <TextView
+                android:id="@+id/speedLabelTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="km/h"
+                android:textSize="14sp"
+                android:textColor="@color/gray"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/etaLayout"
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_below="@+id/navigation_instructions"
+            android:layout_toEndOf="@id/speedometerLayout"
+            android:layout_height="wrap_content"
+            android:padding="16dp">
+
+
+            <TextView
+                android:id="@+id/etaLabelTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="ETA"
+                android:textColor="@color/gray"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/etaValueTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1h 3min"
+                android:textSize="14sp"
+                android:textColor="@color/gray"/>
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:id="@+id/distanceLayout"
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_below="@+id/navigation_instructions"
+            android:layout_toEndOf="@id/etaLayout"
+            android:layout_height="wrap_content"
+            android:padding="16dp">
+
+
+            <TextView
+                android:id="@+id/distanceLabelTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Distance"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/gray"/>
+
+            <TextView
+                android:id="@+id/distanceValueTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="100 m"
+                android:textSize="14sp"
+                android:textColor="@color/gray"/>
+        </LinearLayout>
+
+    </RelativeLayout>
+
+
+
+
 
     <!-- Bottom app bar for navigation controls -->
     <com.google.android.material.bottomappbar.BottomAppBar
@@ -60,8 +157,5 @@
             android:layout_margin="16dp"
             android:contentDescription="Recenter"
             android:src="@drawable/location" />
-
-
     </com.google.android.material.bottomappbar.BottomAppBar>
-
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

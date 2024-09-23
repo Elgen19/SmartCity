@@ -77,10 +77,10 @@ class EventsActivity : AppCompatActivity() {
 
         val layoutManager = LinearLayoutManager(this)
         binding.eventsRecyclerView.layoutManager = layoutManager
-        eventAdapter = EventAdapter(eventList) { event ->
+        eventAdapter = EventAdapter(eventList, { event ->
             // Handle item click
             showEventDetailsBottomSheetDialog(event)
-        }
+        }, binding.lottieAnimation, binding.emptyDataLabel)
 
         // Create a custom drawable with your desired color
         val dividerDrawable = ColorDrawable(ContextCompat.getColor(this, R.color.dark_gray))
@@ -107,6 +107,8 @@ class EventsActivity : AppCompatActivity() {
         setupFilterButton()
 
         BottomNavigationManager.setupBottomNavigation(this, binding.bottomNavigation, EventsActivity::class.java)
+
+
     }
 
     private fun showEventDetailsBottomSheetDialog(event: Event) {
@@ -227,7 +229,7 @@ class EventsActivity : AppCompatActivity() {
                             if (snapshot.exists()) {
                                 // Event already exists
                                 bottomSheetDialog.dismiss()
-                                LayoutStateManager.showFailureLayout(this@EventsActivity, "The event has already been saved to Favorites. Please select another event.", "Return to Events")
+                                LayoutStateManager.showFailureLayout(this@EventsActivity, "The event has already been saved to Favorites. Please select another event.", "Return to Events", EventsActivity::class.java)
                             } else {
                                 // Event does not exist, proceed with saving
                                 val newEventRef = databaseReference.push() // Create a new child node
@@ -252,10 +254,10 @@ class EventsActivity : AppCompatActivity() {
                                 newEventRef.setValue(savedEventData).addOnCompleteListener { task ->
                                     if (task.isSuccessful) {
                                         Toast.makeText(bottomSheetBinding.root.context, "Event saved successfully!", Toast.LENGTH_SHORT).show()
-                                        LayoutStateManager.showSuccessLayout(this@EventsActivity, "Event saved successfully!", "You can now view this saved event in Favorites.")
+                                        LayoutStateManager.showSuccessLayout(this@EventsActivity, "Event saved successfully!", "You can now view this saved event in Favorites.", EventsActivity::class.java)
                                     } else {
                                         Toast.makeText(bottomSheetBinding.root.context, "Failed to save event.", Toast.LENGTH_SHORT).show()
-                                        LayoutStateManager.showFailureLayout(this@EventsActivity, "Something went wrong. Please check your connection or try again.", "Return to Events")
+                                        LayoutStateManager.showFailureLayout(this@EventsActivity, "Something went wrong. Please check your connection or try again.", "Return to Events", EventsActivity::class.java)
                                     }
                                 }
                             }
@@ -622,6 +624,7 @@ class EventsActivity : AppCompatActivity() {
 
                         event?.let { eventList.add(it) }
                     }
+                    eventAdapter.updateEvents(eventList)
                     eventAdapter.notifyDataSetChanged() // Notify adapter about data changes
                 }
 

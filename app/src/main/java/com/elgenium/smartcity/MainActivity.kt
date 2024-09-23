@@ -59,15 +59,10 @@ class MainActivity : AppCompatActivity() {
 
 
     private fun checkLocationAndPermissions() {
-        if (isLocationEnabled()) {
-            if (isLocationPermissionGranted()) {
-                alertDialog?.dismiss()
-                proceedWithAppLogic()
-            } else {
-                requestLocationPermissions()
-            }
+        if (isLocationEnabled() && isLocationPermissionGranted()) {
+           proceedWithAppLogic()
         } else {
-            promptEnableLocationAndPermissions()
+            requestLocationPermissions()
         }
     }
 
@@ -156,7 +151,7 @@ class MainActivity : AppCompatActivity() {
                 // Handle the specific error
                 if (task.exception?.message?.contains("BAD_AUTHENTICATION") == true) {
                     // Force sign-out and redirect to sign-in
-                   signOut()
+                    signOut()
                 } else {
                     // Handle other potential exceptions
                     Log.e("MainActivity", "FirebaseAuth token error: ${task.exception?.message}")
@@ -207,7 +202,7 @@ class MainActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-                proceedWithAppLogic()
+                promptEnableLocationAndPermissions()
             } else {
                 Toast.makeText(this, "Please enable location permission to use the app", Toast.LENGTH_LONG).show()
             }

@@ -440,4 +440,21 @@ class DashboardActivity : AppCompatActivity() {
         }
     }
 
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == locationRequestCode) {
+            if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+                fetchWeather()
+                fetchNearestRoad(apiServiceForRoads, apiServiceForTraffic)
+            } else {
+                Toast.makeText(this, "Please enable location permission to use the app", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+
 }
