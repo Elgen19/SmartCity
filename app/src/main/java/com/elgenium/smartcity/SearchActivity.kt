@@ -104,12 +104,11 @@ import java.util.Locale
 
             autocompleteAdapter = AutocompleteAdapter(emptyList()) { selectedPrediction ->
                 // save recent search
-                saveRecentSearch(selectedPrediction.getPrimaryText(null).toString())
-
                 val placeId = selectedPrediction.placeId
                 val placeName = selectedPrediction.getPrimaryText(null).toString()
                 val placeAddress = selectedPrediction.getSecondaryText(null).toString()
 
+                saveRecentSearch(placeName, placeAddress, placeId)
 
                 if (fromDirectionsActivity == "yes") {
                     // Create an intent to send data back
@@ -136,15 +135,24 @@ import java.util.Locale
 
             recentSearchAdapter = RecentSearchAdapter(recentSearches) { recentSearch ->
                 // Get the place ID using the place name
-                fetchPlaceId(recentSearch.location) { placeId ->
-                    placeId?.let {
-                        val intent = Intent(this, PlacesActivity::class.java).apply {
-                            putExtra("PLACE_ID", it)
-                        }
+                val placeId = recentSearch.placeId
+                val placeName = recentSearch.placeName
+                val placeAddress = recentSearch.placeAddress
 
-                        startActivity(intent)
-                        finish()
+
+                if (fromDirectionsActivity == "yes") {
+                    // Create an intent to send data back
+                    val resultIntent = Intent().apply {
+                        putExtra("PLACE_ID", placeId)
+                        putExtra("PLACE_NAME", placeName)
+                        putExtra("PLACE_ADDRESS", placeAddress)
                     }
+                    setResult(Activity.RESULT_OK, resultIntent)
+                    finish() // Close SearchActivity and return to StopManagementActivity
+                } else {
+                    val intent = Intent(this, PlacesActivity::class.java)
+                    intent.putExtra("PLACE_ID" , placeId)
+                    startActivity(intent)
                 }
             }
 
@@ -168,21 +176,6 @@ import java.util.Locale
             loadRecentSearches()
         }
 
-        private fun fetchPlaceId(placeName: String, callback: (String?) -> Unit) {
-            val request = FindAutocompletePredictionsRequest.builder()
-                .setQuery(placeName)
-                .build()
-
-            placesClient.findAutocompletePredictions(request)
-                .addOnSuccessListener { response ->
-                    val placeId = response.autocompletePredictions.firstOrNull()?.placeId
-                    callback(placeId)
-                }
-                .addOnFailureListener { exception ->
-                    Log.e("SearchActivity", "Error fetching place ID", exception)
-                    callback(null)
-                }
-        }
 
         private fun setupCategoryButtonListeners() {
             binding.btnHotels.setOnClickListener { launchCategoryIntent("hotel") }
@@ -224,14 +217,14 @@ import java.util.Locale
             closeIcon.setColorFilter(ContextCompat.getColor(this, R.color.red))
         }
 
-        private fun saveRecentSearch(query: String) {
+        private fun saveRecentSearch(placeName: String, placeAddress: String, placeId: String) {
             val timestamp = SimpleDateFormat("EEEE, MMMM d, yyyy 'at' h:mm a", Locale.getDefault()).format(Date())
 
             // Create a new Search object with the updated timestamp
-            val search = Search(query, timestamp)
+            val search = Search(placeName, placeAddress, timestamp, placeId )
 
             // Query the database to check if the search already exists
-            database.orderByChild("location").equalTo(query).get().addOnSuccessListener { dataSnapshot ->
+            database.orderByChild("location").equalTo(placeName).get().addOnSuccessListener { dataSnapshot ->
                 if (dataSnapshot.exists()) {
                     // If search exists, update the timestamp for all matching entries
                     for (snapshot in dataSnapshot.children) {

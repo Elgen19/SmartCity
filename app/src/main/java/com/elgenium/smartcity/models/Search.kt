@@ -1,6 +1,8 @@
 package com.elgenium.smartcity.models
 
 data class Search(
-    val location: String = "",
-    val timestamp: String = ""
+    val placeName: String = "",
+    val placeAddress: String = "",
+    val timestamp: String = "",
+    val placeId: String = ""
 )

@@ -11,12 +11,12 @@ data class RoutesResponse(
 
 @Parcelize
 data class Routes(
-    val legs: List<Legs>,
+    val legs: List<Legs> = emptyList(),
     val distanceMeters: Int,
     val duration: String,
     val polyline: Polyline,
     val description: String?,
-    val travelAdvisory: TravelAdvisory?
+    val travelAdvisory: TravelAdvisory? = null
 ) : Parcelable
 
 @Parcelize
@@ -24,8 +24,8 @@ data class Legs(
     val distanceMeters: Int,
     val duration: String,
     val polyline: Polyline,
-    val steps: List<Step>,
-    val travelAdvisory: TravelAdvisory?
+    val steps: List<Step> = emptyList(),
+    val travelAdvisory: TravelAdvisory? = null
 ) : Parcelable
 
 @Parcelize
@@ -51,7 +51,7 @@ data class Polyline(
 
 @Parcelize
 data class TravelAdvisory(
-    val speedReadingIntervals: List<SpeedReadingInterval>
+    val speedReadingIntervals: List<SpeedReadingInterval> = emptyList()
 ) : Parcelable
 
 @Parcelize

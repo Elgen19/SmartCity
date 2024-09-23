@@ -4,7 +4,6 @@ import PlacesClientSingleton
 import android.app.ActivityOptions
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -15,7 +14,6 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.viewpager2.widget.ViewPager2
 import com.elgenium.smartcity.databinding.ActivityFavoritesBinding
 import com.elgenium.smartcity.databinding.BottomSheetEventActionsBinding
 import com.elgenium.smartcity.databinding.BottomSheetFavoriteEventsBinding
@@ -28,14 +26,9 @@ import com.elgenium.smartcity.singletons.BottomNavigationManager
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.viewpager_adapter.EventImageAdapter
 import com.elgenium.smartcity.viewpager_adapter.FavoritesViewPagerAdapter
-import com.elgenium.smartcity.viewpager_adapter.PhotoPagerAdapter
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.libraries.places.api.model.PhotoMetadata
-import com.google.android.libraries.places.api.model.Place
-import com.google.android.libraries.places.api.net.FetchPhotoRequest
-import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.auth.FirebaseAuth
@@ -252,28 +245,6 @@ class FavoritesActivity : AppCompatActivity() {
                 Log.e("FavoritesActivity", "Failed to load saved events", error.toException())
             }
         })
-    }
-
-    private fun getPhotoMetadatas(placeId: String, bottomSheetBinding: BottomSheetFavoritePlaceBinding) {
-        Log.d("FavoritesActivity", "Fetching photo metadata for place ID: $placeId")
-
-        val placePhotoMetadatas = listOf(
-            Place.Field.PHOTO_METADATAS
-        )
-
-        // Build the request to fetch the place details
-        val request = FetchPlaceRequest.builder(placeId, placePhotoMetadatas).build()
-
-        // Fetch the place details using the Places API
-        placesClient.fetchPlace(request)
-            .addOnSuccessListener { response ->
-                Log.d("FavoritesActivity", "Place details fetched successfully")
-                val placeDetails = response.place
-                getAndLoadPhotoMetadatasFromPlace(placeDetails, bottomSheetBinding)
-            }
-            .addOnFailureListener { exception ->
-                Log.e("FavoritesActivity", "Error fetching place details for bottom sheet", exception)
-            }
     }
 
     private fun showEventDetailsBottomSheetDialog(event: Event) {
@@ -524,7 +495,7 @@ class FavoritesActivity : AppCompatActivity() {
 
 
             // gets the photo metadata for display in viewpager
-            place.id?.let { getPhotoMetadatas(it, bottomSheetBinding) }
+//            place.id?.let { getPhotoMetadatas(it, bottomSheetBinding) }
 
             // close button listener
             bottomSheetBinding.closeButton.setOnClickListener {
@@ -610,46 +581,4 @@ class FavoritesActivity : AppCompatActivity() {
         bottomSheetDialog.show()
     }
 
-    private fun loadPhotosIntoViewPager(photoMetadatas: List<PhotoMetadata>, viewPager: ViewPager2) {
-        Log.d("FavoritesActivity", "Loading ${photoMetadatas.size} photos into ViewPager")
-        val photoBitmaps = mutableListOf<Bitmap>()
-
-        // Fetch each photo
-        photoMetadatas.forEach { photoMetadata ->
-            Log.d("FavoritesActivity", "Fetching photo for metadata: $photoMetadata")
-            val photoRequest = FetchPhotoRequest.builder(photoMetadata)
-                .setMaxWidth(400)
-                .setMaxHeight(400)
-                .build()
-            placesClient.fetchPhoto(photoRequest)
-                .addOnSuccessListener { response ->
-                    Log.d("FavoritesActivity", "Photo fetched successfully")
-                    val photoBitmap = response.bitmap
-                    photoBitmap.let {
-                        photoBitmaps.add(it)
-                        if (photoBitmaps.size == photoMetadatas.size) {
-                            Log.d("FavoritesActivity", "All photos fetched, setting adapter")
-                            viewPager.adapter = PhotoPagerAdapter(photoBitmaps)
-                        }
-                    }
-                }
-                .addOnFailureListener { exception ->
-                    Log.e("FavoritesActivity", "Error fetching photo", exception)
-                }
-        }
-    }
-
-    private fun getAndLoadPhotoMetadatasFromPlace(placeDetails: Place, bottomSheetBinding: BottomSheetFavoritePlaceBinding) {
-        Log.d("FavoritesActivity", "Extracting photo metadata from place details")
-        val photoMetadatas = placeDetails.photoMetadatas
-        val viewPager = bottomSheetBinding.viewPager
-
-        if (photoMetadatas != null && photoMetadatas.isNotEmpty()) {
-            viewPager.visibility = View.VISIBLE
-            loadPhotosIntoViewPager(photoMetadatas, viewPager)
-        } else {
-            Log.d("FavoritesActivity", "No photo metadata available")
-            viewPager.visibility = View.GONE
-        }
-    }
 }

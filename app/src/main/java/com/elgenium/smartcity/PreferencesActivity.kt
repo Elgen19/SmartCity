@@ -77,9 +77,9 @@ class PreferencesActivity : AppCompatActivity() {
 
             // Pre-fill event checkboxes
             binding.checkboxWeatherAdvisories.isChecked = preferredEvents.contains("Weather Advisories")
-            binding.checkboxFoodHubs.isChecked = preferredEvents.contains("Food Hubs")
-            binding.checkboxHealthFitness.isChecked = preferredEvents.contains("Health & Fitness")
-            binding.checkboxFestivalsConcerts.isChecked = preferredEvents.contains("Festivals & Concerts")
+            binding.checkboxFoodHubs.isChecked = preferredEvents.contains("Popular Food Hubs/Stalls")
+            binding.checkboxHealthFitness.isChecked = preferredEvents.contains("Health and Fitness")
+            binding.checkboxFestivalsConcerts.isChecked = preferredEvents.contains("Festivals and Concerts")
             binding.checkboxTrafficAlerts.isChecked = preferredEvents.contains("Traffic Alerts")
             binding.checkboxPublicTransits.isChecked = preferredEvents.contains("Public Transits")
         }
@@ -126,7 +126,7 @@ class PreferencesActivity : AppCompatActivity() {
                 userRef.child("preferencesSet").setValue(true)
 
                 if (!isNewUser) {
-                    LayoutStateManager.showSuccessLayout(this, "Preferences Updated!", "Your preferences was successfully updated.")
+                    LayoutStateManager.showSuccessLayout(this, "Preferences Updated!", "Your preferences was successfully updated.",  DashboardActivity::class.java)
                 } else {
                     ActivityNavigationUtils.navigateToActivity(this, DashboardActivity::class.java, true)
                 }

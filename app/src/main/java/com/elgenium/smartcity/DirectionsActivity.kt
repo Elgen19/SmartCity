@@ -204,7 +204,7 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
 
                         binding.startNavigationButton.setOnClickListener {
                             bestRoute.let { route ->
-                                val intent = Intent(this@DirectionsActivity, NavigationActivity::class.java)
+                                val intent = Intent(this@DirectionsActivity, StartNavigationsActivity::class.java)
 
                                 // Pass the entire bestRoute object as a Parcelable
                                 intent.putExtra("bestRoute", route)

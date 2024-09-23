@@ -3,6 +3,7 @@ package com.elgenium.smartcity.viewpager_adapter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -51,38 +52,64 @@ class FavoritesViewPagerAdapter(
 
     private fun setupPlacesRecyclerView(holder: ViewHolder) {
         val recyclerView: RecyclerView = holder.itemView.findViewById(R.id.recyclerViewSavedPlaces)
+        val lottieAnimationView: View = holder.itemView.findViewById(R.id.lottieAnimation)
+        val emptyDataLabel: TextView = holder.itemView.findViewById(R.id.emptyDataLabel)
+
         val layoutManager = LinearLayoutManager(holder.itemView.context)
         recyclerView.layoutManager = layoutManager
 
         // Set a custom drawable divider
         val dividerDrawable = ContextCompat.getDrawable(holder.itemView.context, R.drawable.divider_drawable)
         val dividerItemDecoration = DividerItemDecoration(holder.itemView.context, layoutManager.orientation)
-
-        // Make sure the drawable is not null before setting it
         dividerDrawable?.let {
             dividerItemDecoration.setDrawable(it)
             recyclerView.addItemDecoration(dividerItemDecoration)
         }
 
-        recyclerView.adapter = SavedPlacesAdapter(savedPlaces, onPlaceClick, onPlaceLongClick)
+        val adapter = SavedPlacesAdapter(savedPlaces, onPlaceClick, onPlaceLongClick)
+        recyclerView.adapter = adapter
+
+        // Toggle visibility based on item count
+        if (adapter.itemCount > 0) {
+            recyclerView.visibility = View.VISIBLE
+            lottieAnimationView.visibility = View.GONE
+            emptyDataLabel.visibility = View.GONE
+        } else {
+            recyclerView.visibility = View.GONE
+            lottieAnimationView.visibility = View.VISIBLE
+            emptyDataLabel.visibility = View.VISIBLE
+        }
     }
 
     private fun setupEventsRecyclerView(holder: ViewHolder) {
         val recyclerView: RecyclerView = holder.itemView.findViewById(R.id.recyclerViewSavedEvents)
+        val lottieAnimationView: View = holder.itemView.findViewById(R.id.lottieAnimation)
+        val emptyDataLabel: TextView = holder.itemView.findViewById(R.id.emptyDataLabel)
+
         val layoutManager = LinearLayoutManager(holder.itemView.context)
         recyclerView.layoutManager = layoutManager
 
-        // Use the custom divider drawable
+        // Set a custom drawable divider
         val dividerDrawable = ContextCompat.getDrawable(recyclerView.context, R.drawable.divider_drawable)
         val dividerItemDecoration = DividerItemDecoration(recyclerView.context, layoutManager.orientation)
-
-        // Set the divider drawable if available
         dividerDrawable?.let {
             dividerItemDecoration.setDrawable(it)
             recyclerView.addItemDecoration(dividerItemDecoration)
         }
 
-        recyclerView.adapter = SavedEventsAdapter(savedEvents, onEventClick, onEventLongClick)
+        val adapter = SavedEventsAdapter(savedEvents, onEventClick, onEventLongClick)
+        recyclerView.adapter = adapter
+
+        // Toggle visibility based on item count
+        if (adapter.itemCount > 0) {
+            recyclerView.visibility = View.VISIBLE
+            lottieAnimationView.visibility = View.GONE
+            emptyDataLabel.visibility = View.GONE
+        } else {
+            recyclerView.visibility = View.GONE
+            lottieAnimationView.visibility = View.VISIBLE
+            emptyDataLabel.visibility = View.VISIBLE
+        }
     }
 
     fun updateSavedPlaces(newSavedPlaces: List<SavedPlace>) {

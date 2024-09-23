@@ -1,6 +1,7 @@
 [versions]
 agp = "8.5.0"
 android = "11.6.0"
+annotation = "1.8.2"
 circleimageview = "3.1.0"
 firebaseAuth = "23.0.0"
 firebaseBom = "33.1.2"
@@ -27,9 +28,11 @@ playServicesLocation = "21.3.0"
 googleAndroidLibrariesMapsplatformSecretsGradlePlugin = "2.0.1"
 playServicesMaps = "19.0.0"
 cardview = "1.0.0"
+navigationRuntimeKtx = "2.8.1"
 
 [libraries]
 android = { module = "com.mapbox.maps:android", version.ref = "android" }
+androidx-annotation = { module = "androidx.annotation:annotation", version.ref = "annotation" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-transition = { module = "androidx.transition:transition", version.ref = "transition" }
 androidx-viewpager2 = { module = "androidx.viewpager2:viewpager2", version.ref = "viewpager2" }
@@ -55,6 +58,7 @@ core = { group = "com.google.ar", name = "core", version.ref = "core" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 play-services-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "playServicesMaps" }
 androidx-cardview = { group = "androidx.cardview", name = "cardview", version.ref = "cardview" }
+androidx-navigation-runtime-ktx = { group = "androidx.navigation", name = "navigation-runtime-ktx", version.ref = "navigationRuntimeKtx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
