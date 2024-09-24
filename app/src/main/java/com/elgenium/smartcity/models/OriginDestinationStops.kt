@@ -5,7 +5,8 @@ import java.io.Serializable
 data class OriginDestinationStops(
     val name: String,
     val address: String,
-    var type: String
+    var type: String,
+    val latlng: String
 ): Serializable
 
 

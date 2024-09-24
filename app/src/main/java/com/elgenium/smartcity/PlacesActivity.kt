@@ -2,6 +2,7 @@ package com.elgenium.smartcity
 
 import PlacesClientSingleton
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.ActivityOptions
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -33,6 +34,7 @@ import com.elgenium.smartcity.network_reponses.PlaceDistanceResponse
 import com.elgenium.smartcity.network_reponses.PlacesResponse
 import com.elgenium.smartcity.singletons.ActivityNavigationUtils.navigateToActivity
 import com.elgenium.smartcity.singletons.BottomNavigationManager
+import com.elgenium.smartcity.singletons.LayoutStateManager
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.viewpager_adapter.PhotoPagerAdapter
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -60,13 +62,16 @@ import com.google.android.material.button.MaterialButton
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.storage.FirebaseStorage
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.io.ByteArrayOutputStream
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -253,6 +258,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
+    @SuppressLint("PotentialBehaviorOverride")
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
 
@@ -330,13 +336,9 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
                 val placeName = bottomSheetView.findViewById<TextView>(R.id.placeName).text.toString()
                 val placeAddress = bottomSheetView.findViewById<TextView>(R.id.placeAddress).text.toString()
                 val placePhoneNumber = bottomSheetView.findViewById<TextView>(R.id.placePhone).text.toString()
-                val placeOpeningDays = bottomSheetView.findViewById<TextView>(R.id.placeHoursDays).text.toString()
-                val placeOpeningHours = bottomSheetView.findViewById<TextView>(R.id.placeHoursTime).text.toString()
                 val placeRating = bottomSheetView.findViewById<TextView>(R.id.placeRating).text.toString()
                 val placeWebsite = bottomSheetView.findViewById<TextView>(R.id.placeWebsite).text.toString()
                 val placeDistance = bottomSheetView.findViewById<TextView>(R.id.placeDistance).text.toString()
-                val placeStatus = bottomSheetView.findViewById<TextView>(R.id.openStatus).text.toString()
-
 
                 // Prepare place data
                 val placeData = placeIDFromIntent?.let {
@@ -346,48 +348,107 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
                         address = placeAddress,
                         phoneNumber = placePhoneNumber,
                         latLngString = place.latLng.toString(),
-                        openingDaysAndTime = "$placeOpeningDays==$placeOpeningHours",
+                        openingDaysAndTime = place.openingDaysAndTime ?: "No opening days available",
                         rating = placeRating,
                         websiteUri = placeWebsite,
                         distance = placeDistance,
-                        openingStatus = placeStatus,
                     )
                 }
 
                 Log.d("PlacesActivity", "Inside of place data:  $placeData")
 
-                // Check for existing records
-                userRef.orderByChild("id").equalTo(placeIDFromIntent).addListenerForSingleValueEvent(object :
-                    ValueEventListener {
-                    override fun onDataChange(snapshot: DataSnapshot) {
-                        if (snapshot.exists()) {
-                            // Place already exists, show a message or handle accordingly
-                            Toast.makeText(this@PlacesActivity, "Place is already saved!", Toast.LENGTH_SHORT).show()
-                        } else {
-                            // Save the place data
-                            val newPlaceRef = userRef.push()
-                            newPlaceRef.setValue(placeData)
-                                .addOnSuccessListener {
-                                    // Successfully saved the place data
-                                    Toast.makeText(this@PlacesActivity, "Place saved successfully!", Toast.LENGTH_SHORT).show()
-                                }
-                                .addOnFailureListener { exception ->
-                                    // Handle any errors
-                                    Log.e("PlacesActivity", "Error saving place data", exception)
-                                    Toast.makeText(this@PlacesActivity, "Failed to save place. Please try again.", Toast.LENGTH_SHORT).show()
-                                }
-                        }
-                    }
-
-                    override fun onCancelled(error: DatabaseError) {
-                        // Handle possible errors
-                        Log.e("PlacesActivity", "Database error", error.toException())
-                    }
-                })
+                LayoutStateManager.showLoadingLayout(this, "Please wait while we are saving your place")
+                // Function to upload images to Firebase Storage
+                uploadPlaceImagesAndSaveData(userRef, placeData, place)
             } else {
                 // Handle case where user is not authenticated
                 Toast.makeText(this, "User not authenticated. Please log in.", Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+    private fun uploadPlaceImagesAndSaveData(userRef: DatabaseReference, placeData: SavedPlace?, place: SavedPlace) {
+        val storageRef = FirebaseStorage.getInstance().reference.child("places")
+        val photoMetadatas = place.photoMetadataList
+        val imageUrls = mutableListOf<String>()
+
+        if (photoMetadatas.isEmpty()) {
+            // Save place data without images if no images exist
+            savePlaceToDatabase(userRef, placeData, imageUrls)
+            return
+        }
+
+        photoMetadatas.forEachIndexed { index, photoMetadata ->
+            val photoRequest = FetchPhotoRequest.builder(photoMetadata)
+                .setMaxWidth(400)
+                .setMaxHeight(400)
+                .build()
+
+            placesClient.fetchPhoto(photoRequest)
+                .addOnSuccessListener { response ->
+                    val photoBitmap = response.bitmap
+
+                    // Convert Bitmap to ByteArray for Firebase Storage upload
+                    val baos = ByteArrayOutputStream()
+                    photoBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos)
+                    val data = baos.toByteArray()
+
+                    // Upload the photo to Firebase Storage
+                    val photoRef = storageRef.child("image_$index.jpg")
+                    val uploadTask = photoRef.putBytes(data)
+
+                    uploadTask.addOnSuccessListener {
+                        // Get the download URL of the uploaded image
+                        photoRef.downloadUrl.addOnSuccessListener { uri ->
+                            imageUrls.add(uri.toString())
+
+                            // Once all images are uploaded, save place data with image URLs
+                            if (imageUrls.size == photoMetadatas.size) {
+                                savePlaceToDatabase(userRef, placeData, imageUrls)
+                            }
+                        }
+                    }.addOnFailureListener { exception ->
+                        Log.e("PlacesActivity", "Error uploading image", exception)
+                    }
+                }.addOnFailureListener { exception ->
+                    Log.e("PlacesActivity", "Error fetching photo", exception)
+                }
+        }
+    }
+
+    // Save place data with image URLs to Firebase Realtime Database
+    private fun savePlaceToDatabase(userRef: DatabaseReference, placeData: SavedPlace?, imageUrls: List<String>) {
+        placeData?.let { place ->
+            // Add the image URLs to the place data
+            val updatedPlaceData = place.copy(imageUrls = imageUrls)
+
+            // Check for existing records
+            userRef.orderByChild("id").equalTo(place.id).addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.exists()) {
+                        // Place already exists, show a message or handle accordingly
+                        Toast.makeText(this@PlacesActivity, "Place is already saved!", Toast.LENGTH_SHORT).show()
+                    } else {
+                        // Save the place data
+                        val newPlaceRef = userRef.push()
+                        newPlaceRef.setValue(updatedPlaceData)
+                            .addOnSuccessListener {
+                                // Successfully saved the place data
+                                LayoutStateManager.showSuccessLayout(this@PlacesActivity, "Place saved successfully!", "You can now view your saved place under Favorites menu.", PlacesActivity::class.java)
+                            }
+                            .addOnFailureListener { exception ->
+                                // Handle any errors
+                                Log.e("PlacesActivity", "Error saving place data", exception)
+                                LayoutStateManager.showFailureLayout(this@PlacesActivity, "Something went wrong. Please check your connection or try again.", "Return to Places", PlacesActivity::class.java)
+                            }
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    // Handle possible errors
+                    Log.e("PlacesActivity", "Database error", error.toException())
+                }
+            })
         }
     }
 

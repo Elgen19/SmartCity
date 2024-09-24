@@ -4,6 +4,7 @@ package com.elgenium.smartcity.routes_network_request
 data class RoutesRequest(
     val origin: Location,
     val destination: Location,
+    val intermediates: List<Waypoint>? = null,  // Use 'intermediates' for waypoints
     val travelMode: String = "DRIVE",
     val routingPreference: String? = null, // Nullable
     val computeAlternativeRoutes: Boolean = false,
@@ -11,6 +12,14 @@ data class RoutesRequest(
     val languageCode: String = "en-US",
     val units: String = "IMPERIAL",
     val extraComputations: List<ExtraComputation>? = null)
+
+data class Waypoint(
+    val location: LatLng, // Directly using LatLng here
+    val via: Boolean = false,
+    val vehicleStopover: Boolean = false,
+    val sideOfRoad: Boolean = false
+)
+
 
 data class Location(val location: LatLng)
 data class LatLng(val latLng: Coordinates)

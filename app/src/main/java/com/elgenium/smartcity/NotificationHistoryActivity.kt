@@ -69,6 +69,8 @@ class NotificationHistoryActivity : AppCompatActivity() {
                 }
                 adapter.notifyDataSetChanged()
                 binding.lotifyAnimation.visibility = if (notifications.isEmpty()) View.VISIBLE else View.GONE
+                binding.emptyDataLabel.visibility = if (notifications.isEmpty()) View.VISIBLE else View.GONE
+                binding.btnClearAll.visibility = if (notifications.isNotEmpty()) View.VISIBLE else View.GONE
                 binding.notificationRecyclerView.visibility = if (notifications.isNotEmpty()) View.VISIBLE else View.GONE
             }
 
@@ -86,7 +88,9 @@ class NotificationHistoryActivity : AppCompatActivity() {
             notifications.clear()
             adapter.notifyDataSetChanged()
             binding.lotifyAnimation.visibility = View.VISIBLE
+            binding.emptyDataLabel.visibility = View.VISIBLE
             binding.notificationRecyclerView.visibility = View.GONE
+            binding.btnClearAll.visibility = View.GONE
         }.addOnFailureListener { e ->
             Log.e("NotificationHistoryActivity", "Error loading notifications: $e")
         }
