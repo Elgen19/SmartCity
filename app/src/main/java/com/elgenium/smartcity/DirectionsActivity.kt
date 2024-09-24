@@ -13,17 +13,16 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.elgenium.smartcity.databinding.ActivityDirectionsBinding
 import com.elgenium.smartcity.models.OriginDestinationStops
 import com.elgenium.smartcity.network_reponses.RoutesResponse
 import com.elgenium.smartcity.network_reponses.TravelAdvisory
-import com.elgenium.smartcity.recyclerview_adapter.OriginDestinationAdapter
 import com.elgenium.smartcity.routes_network_request.Coordinates
 import com.elgenium.smartcity.routes_network_request.ExtraComputation
 import com.elgenium.smartcity.routes_network_request.LatLng
 import com.elgenium.smartcity.routes_network_request.Location
 import com.elgenium.smartcity.routes_network_request.RoutesRequest
+import com.elgenium.smartcity.routes_network_request.Waypoint
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.singletons.RetrofitClientRoutes
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -49,39 +48,44 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var mMap: GoogleMap
     private lateinit var binding: ActivityDirectionsBinding
-    private lateinit var adapter: OriginDestinationAdapter
     private val latLngList = mutableListOf<String>()
     private var polylines: MutableList<Polyline> = mutableListOf()
     private var destinationMarker: Marker? = null
     private var selectedTransportMode: String? = "Car"
     private var selectedButton: MaterialButton? = null
+    private var isUpdated: Boolean = false
+    private  var stopList: MutableList<OriginDestinationStops> = mutableListOf()
     private val stopResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val data = result.data
-            val stopList: MutableList<OriginDestinationStops>? = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            stopList = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
                 data?.getSerializableExtra("STOP_LIST", ArrayList::class.java)?.let {
                     @Suppress("UNCHECKED_CAST")
                     it as? ArrayList<OriginDestinationStops>
-                }
+                } ?: mutableListOf()
             } else {
                 @Suppress("DEPRECATION")
                 (data?.getSerializableExtra("STOP_LIST") as? ArrayList<*>)?.let {
                     @Suppress("UNCHECKED_CAST")
                     it as? ArrayList<OriginDestinationStops>
-                }
+                } ?: mutableListOf()
             }
 
-            Log.d("DirectionsActivity", "STOP LIST: $stopList")
+            isUpdated = data?.getBooleanExtra("IS_UPDATED", false) ?: false
 
-            // Handle the stopList here
-            stopList?.let {
-                adapter.updateStops(it)
-                updateLatLngList(it)
-                adapter.notifyDataSetChanged() // Notify the adapter about data changes
 
-            }
+            Log.e("DirectionsActivity", "STOP LIST: $stopList")
+            Log.e("DirectionsActivity", "IS UPDATED: $isUpdated")
+
+            updateLatLngList(stopList)
+            updateCourseCard(stopList)
+            fetchRoute()
+
+            Log.e("DirectionsActivity", "LAT LNG LIST: $latLngList")
+
         }
     }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -110,7 +114,13 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         val destinationData = destination.split("==").takeIf { it.size == 3 }
             ?: listOf("Unknown Destination", "Unknown Address", "")
 
-        setupBottomSheet(originAddressFormatted, destinationData)
+        setupBottomSheet(originAddressFormatted, originLatLngString, destinationData)
+
+        binding.originName.text = getString(R.string.your_location)
+        binding.originAddress.text = originAddressFormatted
+
+        binding.destinationName.text = destinationData[0]
+        binding.destinationAddress.text = destinationData[1]
 
 
         latLngList.add(originLatLngString)
@@ -128,6 +138,39 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         val origin = Location(LatLng(Coordinates(latLngList[0].split(",")[0].toDouble(), latLngList[0].split(",")[1].toDouble())))
         val destination = Location(LatLng(Coordinates(latLngList.last().split(",")[0].toDouble(), latLngList.last().split(",")[1].toDouble())))
+        // Create intermediates for intermediate stops (if any)
+        val intermediates: List<Waypoint> = if (latLngList.size > 2) {
+            latLngList.subList(1, latLngList.size - 1).map { latLngString ->
+                val latLng = latLngString.split(",")
+                // Ensure correct parsing with error handling
+                if (latLng.size == 2) {
+                    val latitude = latLng[0].toDoubleOrNull()
+                    val longitude = latLng[1].toDoubleOrNull()
+
+                    // Ensure valid latitude and longitude
+                    if (latitude != null && longitude != null &&
+                        latitude in -90.0..90.0 &&
+                        longitude in -180.0..180.0) {
+                        Waypoint(
+                            location = LatLng(Coordinates(latitude, longitude)),
+                            via = false, // Set to false for stopover
+                            vehicleStopover = false, // Set to true if it is a stopover
+                            sideOfRoad = false // Adjust as needed
+                        )
+                    } else {
+                        // Log invalid coordinates
+                        Log.e("DirectionsActivity", "Invalid coordinates: $latLngString")
+                        null // Return null for invalid waypoint
+                    }
+                } else {
+                    Log.e("DirectionsActivity", "Invalid latLng format: $latLngString")
+                    null // Return null for invalid waypoint
+                }
+            }.filterNotNull() // Filter out any null entries
+        } else {
+            emptyList() // Return an empty list if there are no intermediates
+        }
+
         val travelMode = getTravelMode(selectedTransportMode)
 
         Log.e("DirectionsActivity", "TRAVEL MODE: $travelMode")
@@ -137,6 +180,7 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         val request = RoutesRequest(
             origin = origin,
             destination = destination,
+            intermediates = intermediates, // Use intermediates here
             travelMode = travelMode,
             routingPreference = routingPreference,
             computeAlternativeRoutes = false,
@@ -202,16 +246,7 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
                             binding.trafficCondition.setTextColor(resources.getColor(R.color.dark_gray))
                         }
 
-                        binding.startNavigationButton.setOnClickListener {
-                            bestRoute.let { route ->
-                                val intent = Intent(this@DirectionsActivity, StartNavigationsActivity::class.java)
 
-                                // Pass the entire bestRoute object as a Parcelable
-                                intent.putExtra("bestRoute", route)
-
-                                startActivity(intent)
-                            }
-                        }
                     } ?: run {
                         Log.e("DirectionsActivity", "No routes found in response.")
                     }
@@ -225,8 +260,6 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         })
     }
-
-
 
     private fun plotPolyline(encodedPolyline: String, travelAdvisory: TravelAdvisory?, travelMode: String) {
         // Decode the polyline points
@@ -268,6 +301,7 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
 
         // Add a marker at the destination
+        destinationMarker?.remove()
         val destinationLatLng = polylinePoints.last()
         destinationMarker = mMap.addMarker(MarkerOptions().position(destinationLatLng).title("Destination"))
 
@@ -293,13 +327,6 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
         polylines.clear() // Clear the list after removing
     }
-
-
-
-
-
-
-
 
     private fun determineOverallTrafficCondition(travelAdvisory: TravelAdvisory?): String {
         if (travelAdvisory == null) {
@@ -337,7 +364,6 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         return overallCondition
     }
 
-
     private fun getTravelMode(modeOfTransport: String?): String {
         return when (modeOfTransport) {
             "Car" -> "DRIVE"
@@ -348,37 +374,61 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
+    private fun updateCourseCard(stopList: List<OriginDestinationStops>) {
+        // Ensure there are at least two items in the stopList (origin and destination)
+        if (stopList.isNotEmpty()) {
+            // Set the Origin using View Binding
+            val origin = stopList.first() // index 0 is the origin
+            binding.originName.text = origin.name
+            binding.originAddress.text = origin.address
+
+            // Set the Destination using View Binding
+            val destination = stopList.last() // last index is the destination
+            binding.destinationName.text = destination.name
+            binding.destinationAddress.text = destination.address
+
+            // Check for stops between the origin and destination
+            val stopCount = stopList.size - 2 // number of stops excluding origin and destination
+            if (stopCount > 0) {
+                // Display the number of stops in the stopNameTextView
+                binding.stopName.text = "$stopCount stop(s) along the route"
+                // Make stops layout visible
+                binding.stopsLayout.visibility = View.VISIBLE
+            } else {
+                // Hide stops layout if there are no stops
+                binding.stopsLayout.visibility = View.GONE
+            }
+        }
+    }
+
     private fun updateLatLngList(stops: List<OriginDestinationStops>) {
         latLngList.clear() // Clear the existing list
 
-        // Loop through each stop and convert its address/name to lat-lng
+        // Counter to track how many requests have been made
+        var requestsInProgress = 0
+
         for (stop in stops) {
-            val latLng = convertAddressToLatLng(stop.address)
-            if (latLng != null) {
-                latLngList.add(latLng)
+            requestsInProgress++ // Increment for each request
+
+            // Assuming latlng is in the format "latitude,longitude"
+            val latLng = stop.latlng // Directly use the latlng property from the stop
+
+            // Check if the latLng is not empty
+            if (latLng.isNotEmpty()) {
+                latLngList.add(latLng) // Add the latLng string to the list
+            } else {
+                Log.e("DirectionsActivity", "LatLng for stop ${stop.name} is empty.")
+            }
+
+            requestsInProgress-- // Decrement the counter after processing
+
+            // Log the updated list only when all requests are completed
+            if (requestsInProgress == 0) {
+                Log.e("DirectionsActivity", "Final latLngList: $latLngList")
             }
         }
-
-        Log.d("DirectionsActivity", "Updated latLngList: $latLngList")
     }
 
-    private fun convertAddressToLatLng(address: String): String? {
-        // Use geocoding to convert the address to lat-lng (or handle this in your own way)
-        val geocoder = Geocoder(this, Locale.getDefault())
-        return try {
-            val addresses = geocoder.getFromLocationName(address, 1)
-            if (addresses?.isNotEmpty() == true) {
-                val location = addresses[0]
-                Log.e("DirectionsActivity", "ADDRESS: $address")
-                Log.e("DirectionsActivity", "GEOCODED UPDATE: $location")
-                "${location.latitude},${location.longitude}"
-
-            } else null
-        } catch (e: Exception) {
-            Log.e("DirectionsActivity", "Geocoding failed for address: $address", e)
-            null
-        }
-    }
 
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
@@ -398,7 +448,7 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    private fun setupBottomSheet(originAddress: String, destinationData: List<String>) {
+    private fun setupBottomSheet(originAddress: String, originLatLng: String, destinationData: List<String>) {
         // Find the bottom sheet view from the activity layout using binding
         val bottomSheet = binding.bottomsheet
 
@@ -417,12 +467,9 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Set up UI elements using binding
         val places = mutableListOf(
-            OriginDestinationStops(name = "Your Location", address = originAddress, type = "Origin"),
-            OriginDestinationStops(name = destinationData[0], address = destinationData[1], type = "Destination")
+            OriginDestinationStops(name = "Your Location", address = originAddress, type = "Origin", latlng = originLatLng),
+            OriginDestinationStops(name = destinationData[0], address = destinationData[1], type = "Destination", latlng = destinationData[2])
         )
-        adapter = OriginDestinationAdapter(places)
-        binding.originDestinationRecyclerView.adapter = adapter
-        binding.originDestinationRecyclerView.layoutManager = LinearLayoutManager(this)
 
         // Button click handlers
         binding.btnCar.setOnClickListener {
@@ -450,28 +497,30 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
             fetchRoute()
         }
 
-        binding.btnEdit.setOnClickListener {
-            val stopList = ArrayList<OriginDestinationStops>()
+        binding.editCourseButton.setOnClickListener {
+            if (!isUpdated) {
+                for (place in places) {
+                    val (name, address, type, latlng) = place
+                    val stop = OriginDestinationStops(name = name, address = address, type = type, latlng = latlng)
+                    stopList.add(stop)
+                }
+                val intent = Intent(this, StopManagementActivity::class.java).apply {
+                    putExtra("ROUTES", ArrayList(stopList)) // Ensure stopList is passed as an ArrayList
+                }
+                stopResultLauncher.launch(intent)
 
-            for (place in places) {
-                val (name, address, type) = place
-                val stop = OriginDestinationStops(name = name, address = address, type = type)
-                stopList.add(stop)
             }
-
-            val intent = Intent(this, StopManagementActivity::class.java).apply {
-                putExtra("ROUTES", stopList)
+            else {
+                val intent = Intent(this, StopManagementActivity::class.java).apply {
+                    putExtra("ROUTES", ArrayList(stopList)) // Ensure stopList is passed as an ArrayList
+                }
+                stopResultLauncher.launch(intent)
             }
-            stopResultLauncher.launch(intent)
         }
 
         binding.closeButton.setOnClickListener {
             // Dismiss the bottom sheet
             behavior.state = BottomSheetBehavior.STATE_HIDDEN
-        }
-
-        binding.startNavigationButton.setOnClickListener {
-            // this is on a separate method that displays a bottom sheet
         }
     }
 
@@ -534,6 +583,4 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1
     }
-
-
 }

@@ -10,10 +10,11 @@ data class SavedPlace(
     val phoneNumber: String? = "",
     val latLng: LatLng? = null, // LatLng object
     val latLngString: String? = "", // LatLng String for firebase realtime db storage
-    val openingDaysAndTime: String? = "",
+    var openingDaysAndTime: String? = "",
     val rating: String? = "",
     val websiteUri: String? = "",
     val distance: String? = "",
     val openingStatus: String? = "",
     val photoMetadataList: List<PhotoMetadata> = emptyList(), // List of photo metadata
+    val imageUrls: List<String> = emptyList()
 )

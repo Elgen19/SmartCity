@@ -10,8 +10,13 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.elgenium.smartcity.databinding.ActivityStopManagementBinding
 import com.elgenium.smartcity.models.OriginDestinationStops
+import com.elgenium.smartcity.network_reponses.PlusCodeResponse
 import com.elgenium.smartcity.recyclerview_adapter.StopManagementAdapter
 import com.elgenium.smartcity.recyclerview_helpers.StopTouchHelperCallback
+import com.elgenium.smartcity.singletons.PlusCodesSingleton
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class StopManagementActivity : AppCompatActivity() {
 
@@ -24,22 +29,35 @@ class StopManagementActivity : AppCompatActivity() {
             val placeId = data?.getStringExtra("PLACE_ID")
             val placeName = data?.getStringExtra("PLACE_NAME")
             val placeAddress = data?.getStringExtra("PLACE_ADDRESS")
+            val address = "$placeName $placeAddress"
+            if (placeName != null && placeAddress != null) {
+                fetchLatLng(address) { latLngString ->
+                    if (latLngString != null) {
+                        Log.d("StopManagementActivity", "Fetched LatLng: $latLngString")
 
-            if (placeId != null && placeName != null && placeAddress != null) {
-                val newStop = OriginDestinationStops(
-                    name = placeName,
-                    address = placeAddress,
-                    type = "Stop" // or any other type you prefer
-                )
+                        // Create a new stop with the fetched latLng value
+                        val newStop = OriginDestinationStops(
+                            name = placeName,
+                            address = placeAddress,
+                            type = "Stop", // or any other type you prefer
+                            latlng = latLngString // Assigning the fetched latLng value here
+                        )
 
-               Log.d("StopManagementActivity", "STOPS AT SEARCH: $newStop" )
+                        // Now you can add the newStop to your stopList and notify the adapter
+                        stopList.add(newStop)
+                        adapter.updateStopTypes()
+                        adapter.notifyDataSetChanged() // Notify the adapter about data change
 
-                stopList.add(newStop)
-                adapter.updateStopTypes()
-                adapter.notifyDataSetChanged() // Notify the adapter about data change
+                    } else {
+                        Log.e("StopManagementActivity", "Failed to fetch LatLng for address: $placeName")
+                    }
+                }
             }
+
         }
     }
+
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -91,6 +109,7 @@ class StopManagementActivity : AppCompatActivity() {
             // Create an intent to hold the result
             val resultIntent = Intent().apply {
                 putExtra("STOP_LIST", stopList)  // Use putExtra to pass the ArrayList
+                putExtra("IS_UPDATED", true)
             }
 
             Log.d("StopManagementActivity", "STOP LIST: $stopList")
@@ -103,17 +122,41 @@ class StopManagementActivity : AppCompatActivity() {
 
     }
 
-    private fun saveAndReturnResults() {
-        // Create an intent to return the result
-        val resultIntent = Intent().apply {
-            // Put the list of stops as an extra
-            putExtra("ROUTES", ArrayList(stopList))
-        }
+    private fun fetchLatLng(address: String, onResult: (String?) -> Unit) {
+        val apiKey = BuildConfig.MAPS_API_KEY // Replace with your actual API key
 
-        // Set the result and finish the activity
-        setResult(Activity.RESULT_OK, resultIntent)
-        finish()
+        val call = PlusCodesSingleton.instance.getPlusCode(address, apiKey)
+
+        call.enqueue(object : Callback<PlusCodeResponse> {
+            override fun onResponse(call: Call<PlusCodeResponse>, response: Response<PlusCodeResponse>) {
+                if (response.isSuccessful && response.body() != null) {
+                    val plusCodeResponse = response.body()
+
+                    // Extract latitude and longitude
+                    val latitude = plusCodeResponse?.plus_code?.geometry?.location?.lat
+                    val longitude = plusCodeResponse?.plus_code?.geometry?.location?.lng
+
+                    if (latitude != null && longitude != null) {
+                        val latLngString = "$latitude,$longitude" // Format as "lat,lng"
+                        Log.d("LatLng", "LatLng: $latLngString")
+                        onResult(latLngString) // Pass the formatted string to the callback
+                    } else {
+                        Log.e("LatLng", "Latitude or longitude is null")
+                        onResult(null) // Return null if lat/lng is not found
+                    }
+                } else {
+                    Log.e("Plus Code", "Error in response: ${response.message()}")
+                    onResult(null) // Return null in case of an error
+                }
+            }
+
+            override fun onFailure(call: Call<PlusCodeResponse>, t: Throwable) {
+                Log.e("Plus Code", "Error fetching Plus Code", t)
+                onResult(null) // Return null in case of failure
+            }
+        })
     }
+
 
 
 }

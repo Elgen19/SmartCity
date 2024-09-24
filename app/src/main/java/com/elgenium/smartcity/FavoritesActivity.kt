@@ -1,6 +1,5 @@
 package com.elgenium.smartcity
 
-import PlacesClientSingleton
 import android.app.ActivityOptions
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -26,6 +25,7 @@ import com.elgenium.smartcity.singletons.BottomNavigationManager
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.viewpager_adapter.EventImageAdapter
 import com.elgenium.smartcity.viewpager_adapter.FavoritesViewPagerAdapter
+import com.elgenium.smartcity.viewpager_adapter.PlaceImageAdapter
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.LatLng
@@ -47,6 +47,7 @@ import retrofit2.await
 import retrofit2.converter.gson.GsonConverterFactory
 import java.text.ParseException
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Locale
 
 class FavoritesActivity : AppCompatActivity() {
@@ -59,7 +60,6 @@ class FavoritesActivity : AppCompatActivity() {
     private lateinit var userLocationLatLngStringed: String
     @Suppress("PrivatePropertyName")
     private val LOCATION_PERMISSION_REQUEST_CODE = 1
-    private val placesClient by lazy { PlacesClientSingleton.getClient(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -293,6 +293,43 @@ class FavoritesActivity : AppCompatActivity() {
             eventTimeEndedValue.text = formatDate(event.endedDateTime, inputFormat, outputFormat)
             eventDescriptionDetails.text = event.eventDescription
 
+            bottomSheetBinding.btnGetDirections.setOnClickListener {
+                Log.d("FavoritesActivity", "Get Directions button clicked")
+
+                // Fetch user location asynchronously
+                getUserLocation { userLocation ->
+                    if (userLocation != null) {
+                        val origin = "${userLocation.latitude},${userLocation.longitude}"
+                        val regex = """lat/lng: \((\-?\d+\.\d+),(\-?\d+\.\d+)\)""".toRegex()
+                        val destinationLatLng =
+                            event.placeLatLng?.let { it1 ->
+                                regex.find(it1)?.let { matchResult ->
+                                    "${matchResult.groupValues[1]},${matchResult.groupValues[2]}"
+                                }
+                            }
+                        val destination = "${event.location}==${event.additionalInfo}==${destinationLatLng}"
+                        Log.d(
+                            "FavoritesActivity",
+                            "Origin: $origin, Destination: $destinationLatLng"
+                        )
+
+                        if (destination.isNotBlank()) {
+                            val intent =
+                                Intent(this@FavoritesActivity, DirectionsActivity::class.java)
+                            intent.putExtra("DESTINATION", destination)
+                            intent.putExtra("ORIGIN", origin)
+                            startActivity(intent)
+                            bottomSheetDialog.dismiss()
+                        } else {
+                            Log.e("FavoritesActivity", "Destination is missing")
+                        }
+                    } else {
+                        Log.e("FavoritesActivity", "User location not available")
+                    }
+                }
+            }
+
+
             // close button
             bottomSheetBinding.closeButton.setOnClickListener {
                 bottomSheetDialog.dismiss()
@@ -484,101 +521,177 @@ class FavoritesActivity : AppCompatActivity() {
         bottomSheetDialog.setContentView(bottomSheetBinding.root)
 
 
-        with (bottomSheetBinding) {
-            bottomSheetBinding.placeName.text = place.name
-            bottomSheetBinding.placeAddress.text = place.address
-            bottomSheetBinding.openStatus.text = place.openingStatus
-            bottomSheetBinding.placeDistance.text = place.distance
-            bottomSheetBinding.placePhone.text = place.phoneNumber ?: "No phone number available"
-            bottomSheetBinding.placeWebsite.text = place.websiteUri ?: "No website available"
-            bottomSheetBinding.placeRating.text = place.rating ?: "N/A"
+        bottomSheetBinding.placeName.text = place.name
+        bottomSheetBinding.placeAddress.text = place.address
+        bottomSheetBinding.openStatus.text = place.openingStatus
+        bottomSheetBinding.placeDistance.text = place.distance
+        bottomSheetBinding.placePhone.text = place.phoneNumber ?: "No phone number available"
+        bottomSheetBinding.placeWebsite.text = place.websiteUri ?: "No website available"
+        bottomSheetBinding.placeRating.text = place.rating ?: "N/A"
 
+        // Set up ViewPager2 with images
+        val imageUrls = place.imageUrls
+        val imageAdapter = PlaceImageAdapter(imageUrls)
+        bottomSheetBinding.viewPager.adapter = imageAdapter
 
-            // gets the photo metadata for display in viewpager
-//            place.id?.let { getPhotoMetadatas(it, bottomSheetBinding) }
+        // close button listener
+        bottomSheetBinding.closeButton.setOnClickListener {
+            // Dismiss the bottom sheet dialog
+            bottomSheetDialog.dismiss()
+        }
 
-            // close button listener
-            bottomSheetBinding.closeButton.setOnClickListener {
-                // Dismiss the bottom sheet dialog
-                bottomSheetDialog.dismiss()
-            }
+        bottomSheetBinding.btnGetDirections.setOnClickListener {
+            Log.d("FavoritesActivity", "Get Directions button clicked")
 
-            bottomSheetBinding.btnGetDirections.setOnClickListener {
-                Log.d("FavoritesActivity", "Get Directions button clicked")
-
-                // Fetch user location asynchronously
-                getUserLocation { userLocation ->
-                    if (userLocation != null) {
-                        val origin = "${userLocation.latitude},${userLocation.longitude}"
-                        val regex = """lat/lng: \((\-?\d+\.\d+),(\-?\d+\.\d+)\)""".toRegex()
-                        val destinationLatLng =
-                            place.latLngString?.let { it1 ->
-                                regex.find(it1)?.let { matchResult ->
-                                    "${matchResult.groupValues[1]},${matchResult.groupValues[2]}"
-                                }
+            // Fetch user location asynchronously
+            getUserLocation { userLocation ->
+                if (userLocation != null) {
+                    val origin = "${userLocation.latitude},${userLocation.longitude}"
+                    val regex = """lat/lng: \((\-?\d+\.\d+),(\-?\d+\.\d+)\)""".toRegex()
+                    val destinationLatLng =
+                        place.latLngString?.let { it1 ->
+                            regex.find(it1)?.let { matchResult ->
+                                "${matchResult.groupValues[1]},${matchResult.groupValues[2]}"
                             }
-                        val destination = "${place.name}==${place.address}==${destinationLatLng}"
-                        Log.d("FavoritesActivity", "Origin: $origin, Destination: $destinationLatLng")
-
-                        if (destination.isNotBlank()) {
-                            val intent = Intent(this@FavoritesActivity, DirectionsActivity::class.java)
-                            intent.putExtra("DESTINATION", destination)
-                            intent.putExtra("ORIGIN", origin)
-                            startActivity(intent)
-                            bottomSheetDialog.dismiss()
-                        } else {
-                            Log.e("FavoritesActivity", "Destination is missing")
                         }
+                    val destination = "${place.name}==${place.address}==${destinationLatLng}"
+                    Log.d(
+                        "FavoritesActivity",
+                        "Origin: $origin, Destination: $destinationLatLng"
+                    )
+
+                    if (destination.isNotBlank()) {
+                        val intent =
+                            Intent(this@FavoritesActivity, DirectionsActivity::class.java)
+                        intent.putExtra("DESTINATION", destination)
+                        intent.putExtra("ORIGIN", origin)
+                        startActivity(intent)
+                        bottomSheetDialog.dismiss()
                     } else {
-                        Log.e("FavoritesActivity", "User location not available")
+                        Log.e("FavoritesActivity", "Destination is missing")
                     }
+                } else {
+                    Log.e("FavoritesActivity", "User location not available")
                 }
             }
-
-
-            // Update the UI based on the open/closed status.
-            if ((bottomSheetBinding.openStatus.text as String?).equals("Open", ignoreCase = true) ||
-                (openStatus.text as String?).equals("Open 24 hours", ignoreCase = true) ) {
-                bottomSheetBinding.openStatus.text = getString(R.string.open_status)
-                bottomSheetBinding.openStatus.setBackgroundResource(R.drawable.open_pill_background)
-            } else {
-                bottomSheetBinding.openStatus.text = getString(R.string.closed)
-                bottomSheetBinding.openStatus.setBackgroundResource(R.drawable.closed_pill_background)
-            }
-
-            // Split the openingDaysAndTime string into days and times
-            val daysAndTimes = place.openingDaysAndTime?.split("==") ?: listOf("", "")
-
-            // Ensure that the splitting results in the expected format
-            if (daysAndTimes.size == 2) {
-                val days = daysAndTimes[0]
-                val times = daysAndTimes[1]
-
-                // Populate the TextViews with days and times
-                bottomSheetBinding.placeHoursDays.text = days
-                bottomSheetBinding.placeHoursTime.text = times
-            } else {
-                // Handle cases where data might be incorrectly formatted
-                bottomSheetBinding.placeHoursDays.text = getString(R.string.no_data_available)
-                bottomSheetBinding.placeHoursTime.text = getString(R.string.no_data_available)
-            }
-
-            // Check opening hours availability and determine if the indicator be visible or not
-            if (bottomSheetBinding.placeHoursDays.text.isNullOrEmpty() || bottomSheetBinding.placeHoursTime.text.isNullOrEmpty()) {
-                // Hide the open status if no opening hours information is available.
-                bottomSheetBinding.openStatus.visibility = View.GONE
-                // Adjust margin for placeDistance TextView.
-                val layoutParams = bottomSheetBinding.placeDistance.layoutParams as ViewGroup.MarginLayoutParams
-                layoutParams.marginStart = 0
-                bottomSheetBinding.placeDistance.layoutParams = layoutParams
-            } else {
-                bottomSheetBinding.openStatus.visibility = View.VISIBLE
-            }
-
-
         }
+
+        handleOpeningHours(place, bottomSheetBinding)
 
         bottomSheetDialog.show()
     }
+
+    private fun handleOpeningHours(place: SavedPlace, bottomSheetBinding: BottomSheetFavoritePlaceBinding) {
+        // Retrieve the opening hours and days from the place object.
+        val openingDaysAndTime = place.openingDaysAndTime
+        Log.d("FavoritesActivity", "Opening days and time: $openingDaysAndTime")
+
+
+
+        if (openingDaysAndTime == "No opening days available") {
+            // Hide the open status if no opening hours information is available.
+            bottomSheetBinding.openStatus.visibility = View.GONE
+
+            // Adjust margin for placeDistance TextView.
+            val layoutParams = bottomSheetBinding.placeDistance.layoutParams as ViewGroup.MarginLayoutParams
+            layoutParams.marginStart = 0
+            bottomSheetBinding.placeDistance.layoutParams = layoutParams
+
+            // Clear text for hours and days if not available.
+            bottomSheetBinding.placeHoursDays.text = getString(R.string.no_available_opening_day_or_time_information)
+            bottomSheetBinding.placeHoursTime.text = getString(R.string.empty)
+            return
+        }
+
+        // Split the openingDaysAndTime string into lines
+        val daysList = mutableListOf<String>()
+        val timesList = mutableListOf<String>()
+
+        // Process each line in the string
+        openingDaysAndTime?.split(", ")?.forEach { dayInfo ->
+            val parts = dayInfo.split(": ")
+            if (parts.size == 2) {
+                daysList.add(parts[0])
+                timesList.add(parts[1].replace("–", "-").replace("\u202F", " ")) // Replace non-standard dash and non-breaking space
+            }
+        }
+
+        // Update the UI elements
+        bottomSheetBinding.placeHoursDays.text = daysList.joinToString("\n")
+        bottomSheetBinding.placeHoursTime.text = timesList.joinToString("\n")
+
+        // check if the place is open 24 hours
+        val isOpen24Hours = timesList.getOrNull(0) == "Open 24 hours"
+
+        // Determine if the place is currently open
+        val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+        val calendar = Calendar.getInstance()
+        val currentDay = calendar.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.LONG, Locale.getDefault())
+        val currentTime = calendar.time
+        val currentTimeFormatted = timeFormat.format(currentTime)
+
+        Log.d("FavoritesActivity", "Current day: $currentDay")
+        Log.d("FavoritesActivity", "Current time formatted: $currentTimeFormatted")
+
+        var isOpen = false
+
+        // Check the opening hours for the current day
+        daysList.forEachIndexed { index, day ->
+            Log.d("PlacesActivity", "Checking day: $day")
+
+            if (day.equals(currentDay, ignoreCase = true)) {
+                val times = timesList[index].split("-")
+
+                Log.d("FavoritesActivity", "Time List : $timesList")
+                Log.d("FavoritesActivity", "Time split : $times")
+
+                if (times.size == 2) {
+                    try {
+                        val openTime = timeFormat.parse(times[0].trim())
+                        val closeTime = timeFormat.parse(times[1].trim())
+                        val currentFormattedTime = timeFormat.parse(currentTimeFormatted)
+
+                        Log.d("FavoritesActivity", "Open time: $openTime")
+                        Log.d("FavoritesActivity", "Close time: $closeTime")
+                        Log.d("FavoritesActivity", "Current time: $currentFormattedTime")
+
+                        // Handle cases where closing time is the next day
+                        if (closeTime != null) {
+                            if (closeTime.before(openTime)) {
+                                // The place is open overnight
+                                if (currentFormattedTime != null) {
+                                    if (currentFormattedTime.after(openTime) || currentFormattedTime.before(closeTime)) {
+                                        isOpen = true
+                                    }
+                                }
+                            } else {
+                                // The place is open during the day
+                                if (currentFormattedTime != null) {
+                                    if (currentFormattedTime.after(openTime) && currentFormattedTime.before(closeTime)) {
+                                        isOpen = true
+                                    }
+                                }
+                            }
+                        }
+                    } catch (e: ParseException) {
+                        Log.e("FavoritesActivity", "Error parsing time string: ${e.message}")
+                    }
+                }
+            }
+        }
+        Log.e("FavoritesActivity", "Error parsing time string: ${bottomSheetBinding.placeHoursTime.text}")
+
+        // Update the UI based on the open/closed status
+        if (isOpen || isOpen24Hours) {
+            bottomSheetBinding.openStatus.text = getString(R.string.open_status)
+            bottomSheetBinding.openStatus.setBackgroundResource(R.drawable.open_pill_background)
+        } else {
+            bottomSheetBinding.openStatus.text = getString(R.string.closed)
+            bottomSheetBinding.openStatus.setBackgroundResource(R.drawable.closed_pill_background)
+        }
+
+        bottomSheetBinding.openStatus.visibility = View.VISIBLE
+    }
+
 
 }

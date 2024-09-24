@@ -2,14 +2,21 @@ package com.elgenium.smartcity
 
 import android.Manifest
 import android.app.ActivityOptions
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.location.Location
+import android.location.LocationManager
 import android.os.Bundle
 import android.os.Looper
+import android.provider.Settings
 import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.widget.Button
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
@@ -455,6 +462,47 @@ class DashboardActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun isLocationEnabled(): Boolean {
+        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+                locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+    }
+
+    private fun checkLocationSettings() {
+        if (!isLocationEnabled()) {
+            val dialogView: View = LayoutInflater.from(this).inflate(R.layout.location_permission_dialog, null)
+            val dialogBuilder = AlertDialog.Builder(this)
+            dialogBuilder.setView(dialogView)
+
+            // Create the AlertDialog instance
+            val alertDialog = dialogBuilder.create()
+
+            val positiveButton: Button = dialogView.findViewById(R.id.positive_button)
+            val negativeButton: Button = dialogView.findViewById(R.id.negative_button)
+
+            positiveButton.setOnClickListener {
+                val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                startActivity(intent)
+                alertDialog.dismiss()
+            }
+
+            negativeButton.setOnClickListener {
+                alertDialog.dismiss()
+                finish()
+            }
+
+            alertDialog.setCancelable(false)
+            alertDialog.show()
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        checkLocationSettings()
+    }
+
+
 
 
 }

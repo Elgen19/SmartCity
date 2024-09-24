@@ -30,7 +30,8 @@ interface RoutesService {
                 "routes.legs.steps.polyline," +
                 "routes.legs.steps.navigationInstruction," +
                 "routes.legs.steps.startLocation," +
-                "routes.legs.steps.endLocation"
+                "routes.legs.steps.endLocation," +
+                "routes.legs"
 
 
 
