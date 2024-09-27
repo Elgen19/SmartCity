@@ -19,8 +19,10 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.elgenium.smartcity.databinding.ActivityDashboardBinding
+import com.elgenium.smartcity.models.Leaderboard
 import com.elgenium.smartcity.network.OpenWeatherApiService
 import com.elgenium.smartcity.network.RoadsApiService
 import com.elgenium.smartcity.network.TomTomApiService
@@ -28,6 +30,7 @@ import com.elgenium.smartcity.network_reponses.RoadLocation
 import com.elgenium.smartcity.network_reponses.RoadsResponse
 import com.elgenium.smartcity.network_reponses.TrafficResponse
 import com.elgenium.smartcity.network_reponses.WeatherResponse
+import com.elgenium.smartcity.recyclerview_adapter.LeaderboardAdapter
 import com.elgenium.smartcity.singletons.BottomNavigationManager
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -36,8 +39,11 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -59,8 +65,7 @@ class DashboardActivity : AppCompatActivity() {
     private lateinit var geocoder: Geocoder
     private val apiKey = BuildConfig.OPEN_WEATHER_API
     private lateinit var locationCallback: LocationCallback
-
-
+    private lateinit var leaderboardAdapter: LeaderboardAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -95,19 +100,12 @@ class DashboardActivity : AppCompatActivity() {
         // Singleton object that will handle bottom navigation functionality
         BottomNavigationManager.setupBottomNavigation(this, binding.bottomNavigation, DashboardActivity::class.java)
 
-
-
-
-
-
         // Initialize location services
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         geocoder = Geocoder(this, Locale.getDefault())
 
-
-
         auth = FirebaseAuth.getInstance()
-        database = FirebaseDatabase.getInstance().getReference("Users")
+        database = FirebaseDatabase.getInstance().reference.child("Users")
 
         binding.notificationButton.setOnClickListener {
             val intent = Intent(this, NotificationHistoryActivity::class.java)
@@ -128,6 +126,54 @@ class DashboardActivity : AppCompatActivity() {
 
         // Call methods to get data
         fetchNearestRoad(apiServiceForRoads, apiServiceForTraffic)
+
+        fetchLeaderboardData()
+    }
+
+    private fun fetchLeaderboardData() {
+        val currentUser = auth.currentUser
+        if (currentUser == null) {
+            Toast.makeText(this, "User not authenticated", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // Query Users node and order by points to get leaderboard data
+        database.orderByChild("points").addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val leaderboardList = mutableListOf<Leaderboard>()
+
+                // Collect user data into the leaderboard list
+                for (userSnapshot in snapshot.children) {
+                    val userId = userSnapshot.key ?: continue
+                    val name = userSnapshot.child("fullName").getValue(String::class.java) ?: "Unknown"
+                    val profileImageUrl = userSnapshot.child("profilePicUrl").getValue(String::class.java)
+                    val points = userSnapshot.child("points").getValue(Int::class.java) ?: 0
+
+                    // Only add users with points greater than 0
+                    if (points > 0) {
+                        leaderboardList.add(Leaderboard(userId, name, profileImageUrl, points))
+                    }
+                }
+
+                // Sort by points descending and then by userId for tiebreaking
+                val sortedLeaderboardList = leaderboardList.sortedWith(
+                    compareByDescending<Leaderboard> { it.points }
+                        .thenBy { it.userId } // Use userId as a tiebreaker
+                )
+
+                // Limit to top 5 users
+                val limitedLeaderboardData = sortedLeaderboardList.take(5)
+
+                binding.leaderboardRecyclerView.layoutManager = LinearLayoutManager(this@DashboardActivity)
+                leaderboardAdapter = LeaderboardAdapter(limitedLeaderboardData)
+                binding.leaderboardRecyclerView.adapter = leaderboardAdapter
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("DashboardActivity", "Failed to load leaderboard", error.toException())
+                Toast.makeText(this@DashboardActivity, "Failed to load leaderboard", Toast.LENGTH_SHORT).show()
+            }
+        })
     }
 
     private val locationRequest = LocationRequest.create().apply {
@@ -135,7 +181,6 @@ class DashboardActivity : AppCompatActivity() {
         fastestInterval = 5000 // 5 seconds
         priority = LocationRequest.PRIORITY_HIGH_ACCURACY
     }
-
 
     private fun fetchNearestRoad(roadsApiService: RoadsApiService, trafficApiService: TomTomApiService) {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -501,8 +546,4 @@ class DashboardActivity : AppCompatActivity() {
         super.onResume()
         checkLocationSettings()
     }
-
-
-
-
 }

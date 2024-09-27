@@ -20,7 +20,6 @@ import com.elgenium.smartcity.databinding.BottomSheetFavoritePlaceBinding
 import com.elgenium.smartcity.models.Event
 import com.elgenium.smartcity.models.SavedPlace
 import com.elgenium.smartcity.network.PlaceDistanceService
-import com.elgenium.smartcity.singletons.ActivityNavigationUtils
 import com.elgenium.smartcity.singletons.BottomNavigationManager
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.viewpager_adapter.EventImageAdapter
@@ -302,15 +301,15 @@ class FavoritesActivity : AppCompatActivity() {
                         val origin = "${userLocation.latitude},${userLocation.longitude}"
                         val regex = """lat/lng: \((\-?\d+\.\d+),(\-?\d+\.\d+)\)""".toRegex()
                         val destinationLatLng =
-                            event.placeLatLng?.let { it1 ->
-                                regex.find(it1)?.let { matchResult ->
+                            event.placeLatLng?.let {
+                                regex.find(it)?.let { matchResult ->
                                     "${matchResult.groupValues[1]},${matchResult.groupValues[2]}"
                                 }
                             }
-                        val destination = "${event.location}==${event.additionalInfo}==${destinationLatLng}"
+                        val destination = "${event.location}==${event.additionalInfo}==${destinationLatLng}==${event.placeId}"
                         Log.d(
                             "FavoritesActivity",
-                            "Origin: $origin, Destination: $destinationLatLng"
+                            "Origin: $origin, Destination: $destination"
                         )
 
                         if (destination.isNotBlank()) {
@@ -334,8 +333,6 @@ class FavoritesActivity : AppCompatActivity() {
             bottomSheetBinding.closeButton.setOnClickListener {
                 bottomSheetDialog.dismiss()
             }
-
-            setupGetDirectionsButton(bottomSheetBinding, bottomSheetDialog)
         }
 
         bottomSheetDialog.show()
@@ -383,15 +380,6 @@ class FavoritesActivity : AppCompatActivity() {
         }
 
         bottomSheetDialog.show()
-    }
-
-    private fun setupGetDirectionsButton(bottomSheetBinding: BottomSheetFavoriteEventsBinding, bottomSheetDialog: BottomSheetDialog) {
-
-        bottomSheetBinding.btnGetDirections.setOnClickListener{
-            bottomSheetDialog.dismiss()
-
-            ActivityNavigationUtils.navigateToActivity(this, DirectionsActivity::class.java, false)
-        }
     }
 
     private fun formatDate(dateString: String?, inputFormat: SimpleDateFormat, outputFormat: SimpleDateFormat): String {
@@ -442,6 +430,7 @@ class FavoritesActivity : AppCompatActivity() {
             intent.putExtra("PLACE_NAME", place.name)
             intent.putExtra("PLACE_ADDRESS", place.address)
             intent.putExtra("PLACE_LATLNG", place.latLngString)
+            intent.putExtra("PLACE_ID", place.id)
             val options = ActivityOptions.makeCustomAnimation(
                 this,
                 R.anim.fade_in,
@@ -554,7 +543,7 @@ class FavoritesActivity : AppCompatActivity() {
                                 "${matchResult.groupValues[1]},${matchResult.groupValues[2]}"
                             }
                         }
-                    val destination = "${place.name}==${place.address}==${destinationLatLng}"
+                    val destination = "${place.name}==${place.address}==${destinationLatLng}==${place.id}"
                     Log.d(
                         "FavoritesActivity",
                         "Origin: $origin, Destination: $destinationLatLng"

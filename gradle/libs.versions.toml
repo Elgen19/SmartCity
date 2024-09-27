@@ -17,6 +17,7 @@ lottie = "6.0.0"
 material = "1.10.0"
 activity = "1.8.0"
 constraintlayout = "2.1.4"
+materialVersion = "1.12.0"
 places = "3.5.0"
 placesVersion = "18.0.0"
 playServicesAuth = "21.2.0"
@@ -50,6 +51,7 @@ lottie = { module = "com.airbnb.android:lottie", version.ref = "lottie" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+material-v1120 = { module = "com.google.android.material:material", version.ref = "materialVersion" }
 places = { module = "com.google.android.libraries.places:places", version.ref = "places" }
 places-v1800 = { module = "com.google.android.libraries.places:places", version.ref = "placesVersion" }
 play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }

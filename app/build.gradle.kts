@@ -107,6 +107,8 @@ dependencies {
     coreLibraryDesugaring ("com.android.tools:desugar_jdk_libs:1.1.9")
     implementation ("androidx.fragment:fragment:1.8.3")
     annotationProcessor (libs.androidx.annotation)
+    implementation(libs.material.v1120)
+
 
 
 

@@ -16,7 +16,8 @@ data class Routes(
     val duration: String,
     val polyline: Polyline,
     val description: String?,
-    val travelAdvisory: TravelAdvisory? = null
+    val travelAdvisory: TravelAdvisory? = null,
+    val routeToken: String
 ) : Parcelable
 
 @Parcelize

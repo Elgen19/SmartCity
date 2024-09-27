@@ -15,7 +15,6 @@ data class RoutesRequest(
 
 data class Waypoint(
     val location: LatLng, // Directly using LatLng here
-    val via: Boolean = false,
     val vehicleStopover: Boolean = false,
     val sideOfRoad: Boolean = false
 )

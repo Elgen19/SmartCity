@@ -298,6 +298,7 @@
                 android:textStyle="bold" />
 
             <androidx.cardview.widget.CardView
+                android:id="@+id/trafficCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_below="@+id/traffic_updates_title"
@@ -496,6 +497,33 @@
 
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
+
+
+            <!-- Title Bar -->
+            <TextView
+                android:id="@+id/leaderboardTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Leaderboard"
+                android:textSize="18sp"
+                android:layout_below="@+id/trafficCard"
+                android:textStyle="bold"
+                android:layout_marginTop="16dp"
+                android:layout_marginStart="16dp"
+                android:layout_gravity="center"
+                android:textColor="@color/gray" />
+
+            <!-- RecyclerView to display leaderboard items -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/leaderboardRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_below="@id/leaderboardTitle"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:layout_marginTop="8dp"
+                android:scrollbars="vertical" />
 
 
         </RelativeLayout>

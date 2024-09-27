@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.Location
 import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -17,14 +18,21 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.google.android.gms.maps.GoogleMap.CameraPerspective
+import com.google.android.libraries.navigation.CustomRoutesOptions
+import com.google.android.libraries.navigation.DisplayOptions
 import com.google.android.libraries.navigation.ForceNightMode.FORCE_NIGHT
 import com.google.android.libraries.navigation.NavigationApi
 import com.google.android.libraries.navigation.Navigator
+import com.google.android.libraries.navigation.Navigator.ArrivalListener
+import com.google.android.libraries.navigation.Navigator.RemainingTimeOrDistanceChangedListener
+import com.google.android.libraries.navigation.Navigator.RouteChangedListener
+import com.google.android.libraries.navigation.RoadSnappedLocationProvider
 import com.google.android.libraries.navigation.RoutingOptions
 import com.google.android.libraries.navigation.SimulationOptions
 import com.google.android.libraries.navigation.StylingOptions
 import com.google.android.libraries.navigation.SupportNavigationFragment
 import com.google.android.libraries.navigation.Waypoint
+
 
 class StartNavigationsActivity : AppCompatActivity() {
 
@@ -32,6 +40,12 @@ class StartNavigationsActivity : AppCompatActivity() {
     private lateinit var navigator: Navigator
     private lateinit var navFragment: SupportNavigationFragment
     private lateinit var routingOptions: RoutingOptions
+    private var mArrivalListener: ArrivalListener? = null
+    private var mRouteChangedListener: RouteChangedListener? = null
+    private var mRemainingTimeOrDistanceChangedListener: RemainingTimeOrDistanceChangedListener? = null
+    private var mLocationListener: RoadSnappedLocationProvider.LocationListener? = null
+    private var mRoadSnappedLocationProvider: RoadSnappedLocationProvider? = null
+
 
     // Define the Sydney Opera House by specifying its place ID.
     private val SYDNEY_OPERA_HOUSE = "ChIJ616SM-GYqTMRMNepa3oD2v4"
@@ -43,11 +57,19 @@ class StartNavigationsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_start_navigations)
-        requestLocationPermissions()
+
+        val routeToken = intent.getStringExtra("ROUTE_TOKEN")
+        val placeIds = intent.getStringArrayListExtra("PLACE_IDS")
+
+        // Use the placeIds and routeToken for further navigation logic
+        if (placeIds != null && routeToken != null) {
+            requestLocationPermissions(routeToken, placeIds)
+        }
+
 
     }
 
-    private fun initializeNavigationSdk() {
+    private fun initializeNavigationSdk(routeToken: String, placeIds: ArrayList<String>) {
         // Request location permission.
         if (ContextCompat.checkSelfPermission(
                 applicationContext, Manifest.permission.ACCESS_FINE_LOCATION
@@ -99,27 +121,8 @@ class StartNavigationsActivity : AppCompatActivity() {
                         }
                     }
 
-                    // Set the travel mode (DRIVING, WALKING, CYCLING, or TWO_WHEELER).
-                    routingOptions = RoutingOptions().apply {
-                        travelMode(RoutingOptions.TravelMode.DRIVING)
-                    }
-
-//                    try {
-//                        navigateToPlace(SYDNEY_OPERA_HOUSE, routingOptions)
-//                    } catch (e: Exception) {
-//                        displayMessage("Exception occurred: ${e.message}")
-//                    }
-
-                    val placeIds = listOf(
-                        "ChIJ66ezlB6ZqTMRPEHqHopTArk", // SM City Cebu
-                        "ChIJI4dr1eOdqTMRVEQyfXaBtoY", // SM Seaside City Cebu
-                        "ChIJG8_Q5PubqTMRWkotholsdnk"  // Pasil Fish Market
-                    )
-
-                    navigateWithMultipleStops(placeIds, routingOptions)
-                    setupArrivalListener()
-
-
+                    navigateWithMultipleStops(routeToken, placeIds)
+                   // setupArrivalListener()
                 }
 
                 override fun onError(@NavigationApi.ErrorCode errorCode: Int) {
@@ -135,40 +138,7 @@ class StartNavigationsActivity : AppCompatActivity() {
         )
     }
 
-    private fun navigateToPlace(placeId: String, travelMode: RoutingOptions) {
-        val destination: Waypoint
-        try {
-            destination = Waypoint.builder().setPlaceIdString(placeId).build()
-        } catch (e: Waypoint.UnsupportedPlaceIdException) {
-            displayMessage("Error starting navigation: Place ID is not supported.")
-            return
-        }
-
-        val pendingRoute = navigator.setDestination(destination, travelMode)
-
-        pendingRoute.setOnResultListener { code ->
-            when (code) {
-                Navigator.RouteStatus.OK -> {
-
-
-                    // Enable voice audio guidance (through the device speaker).
-                    navigator.setAudioGuidance(Navigator.AudioGuidance.VOICE_ALERTS_AND_GUIDANCE)
-
-                    //navigator.simulator.simulateLocationsAlongExistingRoute(SimulationOptions().speedMultiplier(5F))
-
-
-                    // Start turn-by-turn guidance along the current route.
-                    navigator.startGuidance()
-                }
-                Navigator.RouteStatus.NO_ROUTE_FOUND -> displayMessage("Error starting navigation: No route found.")
-                Navigator.RouteStatus.NETWORK_ERROR -> displayMessage("Error starting navigation: Network error.")
-                Navigator.RouteStatus.ROUTE_CANCELED -> displayMessage("Error starting navigation: Route canceled.")
-                else -> displayMessage("Error starting navigation: $code")
-            }
-        }
-    }
-
-    private fun requestLocationPermissions() {
+    private fun requestLocationPermissions(routeToken: String, placeIds: ArrayList<String>) {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
             != PackageManager.PERMISSION_GRANTED ||
             ContextCompat.checkSelfPermission(this, Manifest.permission.FOREGROUND_SERVICE_LOCATION)
@@ -181,7 +151,7 @@ class StartNavigationsActivity : AppCompatActivity() {
                 PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION)
         } else {
             // Permissions are already granted, you can start your service or navigation
-            initializeNavigationSdk()
+            initializeNavigationSdk(routeToken, placeIds)
         }
     }
 
@@ -252,7 +222,7 @@ class StartNavigationsActivity : AppCompatActivity() {
         notificationManager.notify(notificationId, notification)
     }
 
-    private fun navigateWithMultipleStops(placesIds: List<String>, travelMode: RoutingOptions) {
+    private fun navigateWithMultipleStops(routeToken: String, placesIds: List<String>) {
         // Create a list of waypoints based on the provided place IDs
         val waypoints = mutableListOf<Waypoint>()
 
@@ -260,7 +230,8 @@ class StartNavigationsActivity : AppCompatActivity() {
             for (placeId in placesIds) {
                 // Build each waypoint using the placeId and add to the list
                 val waypoint = Waypoint.builder()
-                    .setPlaceIdString(placeId) // Set the place ID for each waypoint
+                    .setPlaceIdString(placeId)
+                    .setVehicleStopover(true)
                     .build()
                 waypoints.add(waypoint)
             }
@@ -269,8 +240,20 @@ class StartNavigationsActivity : AppCompatActivity() {
             return
         }
 
+        val customRoutesOptions =
+            CustomRoutesOptions.builder()
+                .setRouteToken(routeToken)
+                .setTravelMode(CustomRoutesOptions.TravelMode.DRIVING)
+                .build()
+
+        val displayOptions = DisplayOptions().apply {
+            showStopSigns(true)
+            showTrafficLights(true)
+        }
+
+
         // Set multiple destinations using the list of waypoints
-        val pendingRoute = navigator.setDestinations(waypoints, travelMode)
+        val pendingRoute = navigator.setDestinations(waypoints,customRoutesOptions, displayOptions)
 
         // Handle the route calculation result
         pendingRoute.setOnResultListener { code ->
@@ -281,6 +264,9 @@ class StartNavigationsActivity : AppCompatActivity() {
 
                     // Enable voice audio guidance for turn-by-turn navigation
                     navigator.setAudioGuidance(Navigator.AudioGuidance.VOICE_ALERTS_AND_GUIDANCE)
+
+                    registerNavigationListeners();
+
 
                     navigator.simulator.simulateLocationsAlongExistingRoute(SimulationOptions().speedMultiplier(5F))
 
@@ -305,8 +291,75 @@ class StartNavigationsActivity : AppCompatActivity() {
     }
 
 
+    private fun registerNavigationListeners() {
+        mArrivalListener =
+            ArrivalListener { arrivalEvent ->
+                displayMessage(
+                    ("onArrival: You've arrived at a waypoint: "
+                            + navigator.currentRouteSegment.destinationWaypoint
+                        .title)
+                )
+                // Start turn-by-turn guidance for the next leg of the route.
+                if (arrivalEvent.isFinalDestination) {
+                    displayMessage(
+                        "onArrival: You've arrived at the final destination."
+                    )
+                } else {
+                    navigator.continueToNextDestination()
+                    navigator.startGuidance()
+                }
+            }
+        // Listens for arrival at a waypoint.
+        navigator.addArrivalListener(mArrivalListener)
 
+        mRouteChangedListener =
+            RouteChangedListener {
+                displayMessage(
+                    ("onRouteChanged: The driver's route has changed. Current waypoint: "
+                            + navigator.currentRouteSegment.destinationWaypoint
+                        .title),
+                )
+            }
+        // Listens for changes in the route.
+        navigator.addRouteChangedListener(mRouteChangedListener)
 
+        // Listens for road-snapped location updates.
+        mRoadSnappedLocationProvider = NavigationApi.getRoadSnappedLocationProvider(application)
+        mLocationListener =
+            object : RoadSnappedLocationProvider.LocationListener {
+                override fun onLocationChanged(location: Location) {
+//                    displayMessage(
+//                        "onLocationUpdated: Navigation engine has provided a new"
+//                                + " road-snapped location: "
+//                                + location.toString()
+//                    )
+                }
+
+                override fun onRawLocationUpdate(location: Location) {
+//                    displayMessage(
+//                        (("onLocationUpdated: Navigation engine has provided a new"
+//                                + " raw location: "
+//                                + location.toString()))
+//                    )
+                }
+            }
+        if (mRoadSnappedLocationProvider != null) {
+            mRoadSnappedLocationProvider!!.addLocationListener(mLocationListener)
+        } else {
+            displayMessage("ERROR: Failed to get a location provider")
+        }
+
+        mRemainingTimeOrDistanceChangedListener =
+            RemainingTimeOrDistanceChangedListener {
+                displayMessage(
+                    "onRemainingTimeOrDistanceChanged: Time or distance estimate" + " has changed."
+                )
+            }
+        // Listens for changes in time or distance.
+        navigator.addRemainingTimeOrDistanceChangedListener(
+            60, 100, mRemainingTimeOrDistanceChangedListener
+        )
+    }
 
 
 
@@ -327,6 +380,15 @@ class StartNavigationsActivity : AppCompatActivity() {
             supportFragmentManager.beginTransaction().remove(it).commit()
         }
 
+
+        if (this.isFinishing) {
+            navigator.removeArrivalListener(mArrivalListener);
+            navigator.removeRouteChangedListener(mRouteChangedListener);
+            navigator.removeRemainingTimeOrDistanceChangedListener(
+                mRemainingTimeOrDistanceChangedListener);
+            mRoadSnappedLocationProvider?.removeLocationListener(mLocationListener)
+            displayMessage("OnDestroy: Released navigation listeners.");
+        }
         navigator.clearDestinations()
         navigator.cleanup()
 
