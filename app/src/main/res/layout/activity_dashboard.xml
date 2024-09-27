@@ -18,8 +18,7 @@
             android:id="@+id/parent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/backdraft3"
-            android:paddingTop="24dp">
+            android:background="@drawable/backdraft3">
 
             <!-- Profile Picture -->
             <de.hdodenhof.circleimageview.CircleImageView

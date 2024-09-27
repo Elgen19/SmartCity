@@ -27,7 +27,12 @@ import com.elgenium.smartcity.singletons.LayoutStateManager
 import com.elgenium.smartcity.viewpager_adapter.EventImageAdapter
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.firebase.auth.FirebaseAuth
@@ -51,7 +56,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-class EventsActivity : AppCompatActivity() {
+class EventsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var binding: ActivityEventsBinding
     private lateinit var eventAdapter: EventAdapter
@@ -60,7 +65,8 @@ class EventsActivity : AppCompatActivity() {
     private var selectedCategoryButton: MaterialButton? = null
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private val LOCATION_PERMISSION_REQUEST_CODE = 1
-
+    private lateinit var googleMap: GoogleMap
+    private lateinit var mapFragment: SupportMapFragment
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,6 +74,12 @@ class EventsActivity : AppCompatActivity() {
 
         binding = ActivityEventsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
+        mapFragment.getMapAsync { map ->
+            googleMap = map
+            setupMap()
+        }
 
         // Initialize Firebase Database reference
         database = FirebaseDatabase.getInstance().getReference("Events")
@@ -107,8 +119,66 @@ class EventsActivity : AppCompatActivity() {
         setupFilterButton()
 
         BottomNavigationManager.setupBottomNavigation(this, binding.bottomNavigation, EventsActivity::class.java)
+    }
 
+    override fun onMapReady(map: GoogleMap) {
+        googleMap = map
+    }
 
+    private fun setupMap() {
+        googleMap.uiSettings.isZoomControlsEnabled = true
+        googleMap.uiSettings.isMapToolbarEnabled = true
+
+        // Clear previous markers if any
+        googleMap.clear()
+
+        // Iterate through the event list and add markers
+        eventList.forEach { event ->
+            val latLngString = event.placeLatLng?.replace("lat/lng: (", "")?.replace(")", "")
+            val latLngParts = latLngString?.split(",")
+            val lat = latLngParts?.get(0)?.trim()?.toDouble()
+            val lng = latLngParts?.get(1)?.trim()?.toDouble()
+            val position = lat?.let {
+                if (lng != null) {
+                    LatLng(it, lng)
+                } else null
+            }
+
+            position?.let {
+                // Add marker for each event and set the event as the tag
+                val marker = googleMap.addMarker(
+                    MarkerOptions()
+                        .position(it)
+                        .title(event.eventName)
+                        .snippet(event.location)
+                )
+                marker?.tag = event // Store the event in the marker's tag
+            }
+        }
+
+        // Move the camera to the first event location (if any)
+        if (eventList.isNotEmpty()) {
+            val firstEventLatLng = eventList[0].placeLatLng?.replace("lat/lng: (", "")
+                ?.replace(")", "")?.split(",")
+            val firstLat = firstEventLatLng?.get(0)?.trim()?.toDouble()
+            val firstLng = firstEventLatLng?.get(1)?.trim()?.toDouble()
+            firstLat?.let {
+                if (firstLng != null) {
+                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(it, firstLng), 12f))
+                }
+            }
+        }
+
+        // Set a listener for marker click events
+        googleMap.setOnMarkerClickListener { marker ->
+            // Retrieve the event associated with this marker
+            val event = marker.tag as? Event
+            event?.let {
+                // Show the bottom sheet dialog with event details
+                showEventDetailsBottomSheetDialog(it)
+            }
+            true // Return true to indicate the click event is handled
+        }
     }
 
     private fun showEventDetailsBottomSheetDialog(event: Event) {
@@ -492,22 +562,50 @@ class EventsActivity : AppCompatActivity() {
 
     private fun setupFilterButton() {
         binding.filterButton.setOnClickListener {
-            // Inflate the bottom sheet layout
-            val bottomSheetView = LayoutInflater.from(this).inflate(R.layout.bottom_sheet_filtering_options, binding.root, false)
-
-            // Create BottomSheetDialog and set the inflated view
-            val bottomSheetDialog = BottomSheetDialog(this)
-            bottomSheetDialog.setContentView(bottomSheetView)
-
             // Handle option clicks
-            setupBottomSheetOptions(bottomSheetView, bottomSheetDialog)
-
-            // Show the dialog
-            bottomSheetDialog.show()
+            setupBottomSheetMainOptions()
         }
     }
 
-    private fun setupBottomSheetOptions(bottomSheetView: View, bottomSheetDialog: BottomSheetDialog) {
+    private fun setupBottomSheetMainOptions(){
+        val bottomSheetView = LayoutInflater.from(this).inflate(R.layout.bottom_sheet_events_main_options, binding.root, false)
+
+        // Create BottomSheetDialog and set the inflated view
+        val bottomSheetDialog = BottomSheetDialog(this)
+        bottomSheetDialog.setContentView(bottomSheetView)
+
+        Log.e("EventsActivity", "ALL EVENTS: $eventList")
+
+        val optionViewHideMap = bottomSheetView.findViewById<LinearLayout>(R.id.optionChangeView)
+        val optionFilter = bottomSheetView.findViewById<LinearLayout>(R.id.optionFilter)
+
+        optionFilter.setOnClickListener {
+            bottomSheetDialog.dismiss()
+            setupBottomSheetOptions()
+        }
+
+        optionViewHideMap.setOnClickListener {
+           if (binding.mapContainer.visibility == View.VISIBLE) {
+               binding.mapContainer.visibility = View.GONE
+               binding.eventsRecyclerView.visibility = View.VISIBLE
+           } else {
+               binding.mapContainer.visibility = View.VISIBLE
+               binding.eventsRecyclerView.visibility = View.GONE
+           }
+
+            bottomSheetDialog.dismiss()
+        }
+
+        bottomSheetDialog.show()
+    }
+
+    private fun setupBottomSheetOptions() {
+        val bottomSheetView = LayoutInflater.from(this).inflate(R.layout.bottom_sheet_filtering_options, binding.root, false)
+
+        // Create BottomSheetDialog and set the inflated view
+        val bottomSheetDialog = BottomSheetDialog(this)
+        bottomSheetDialog.setContentView(bottomSheetView)
+
         val ongoingOption = bottomSheetView.findViewById<LinearLayout>(R.id.ongoingOptionLayout)
         val upcomingOption = bottomSheetView.findViewById<LinearLayout>(R.id.upcomingOptionLayout)
         val pastOption = bottomSheetView.findViewById<LinearLayout>(R.id.pastOptionLayout)
@@ -539,6 +637,8 @@ class EventsActivity : AppCompatActivity() {
             eventAdapter.updateEvents(eventList)
             bottomSheetDialog.dismiss()
         }
+
+        bottomSheetDialog.show()
     }
 
     private fun setupCategoryButtons() {
@@ -626,6 +726,9 @@ class EventsActivity : AppCompatActivity() {
                     }
                     eventAdapter.updateEvents(eventList)
                     eventAdapter.notifyDataSetChanged() // Notify adapter about data changes
+
+                    Log.e("EventsActivity", "ALL EVENTS AT LOADEVENTSFROM FIREBASE: $eventList")
+                    setupMap()
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -638,7 +741,6 @@ class EventsActivity : AppCompatActivity() {
             // Optionally handle the UI for non-authenticated state
         }
     }
-
 
     private fun setupSearchView() {
         binding.searchEvent.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
