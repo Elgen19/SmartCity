@@ -5,6 +5,8 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.location.Geocoder
 import android.os.Bundle
 import android.util.Log
@@ -13,6 +15,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
 import com.elgenium.smartcity.databinding.ActivityDirectionsBinding
 import com.elgenium.smartcity.models.OriginDestinationStops
 import com.elgenium.smartcity.network_reponses.RoutesResponse
@@ -29,6 +32,8 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptor
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
@@ -54,6 +59,7 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
     private var selectedTransportMode: String? = "Car"
     private var selectedButton: MaterialButton? = null
     private var isUpdated: Boolean = false
+    private val stopoverMarkers = mutableListOf<Marker>()
     private  var stopList: MutableList<OriginDestinationStops> = mutableListOf()
     private val stopResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
@@ -111,8 +117,8 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         Log.d("DirectionsActivity", "ORIGIN ADDRESS: $originAddressFormatted")
 
         // Extract destination data (Place Name, Address, LatLng)
-        val destinationData = destination.split("==").takeIf { it.size == 3 }
-            ?: listOf("Unknown Destination", "Unknown Address", "")
+        val destinationData = destination.split("==").takeIf { it.size == 4 }
+            ?: listOf("Unknown Destination", "Unknown Address", "Unknown Latlng", "Unknown placeid")
 
         setupBottomSheet(originAddressFormatted, originLatLngString, destinationData)
 
@@ -125,9 +131,23 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         latLngList.add(originLatLngString)
         latLngList.add(destinationData[2])
-        Log.d("DirectionsActivity", "LAT LANG LIST AT ON CREATE: $latLngList")
+        Log.e("DirectionsActivity", "LAT LANG LIST AT ON CREATE: $latLngList")
 
         fetchRoute()
+
+       if (!isUpdated) {
+           val places = mutableListOf(
+               OriginDestinationStops(name = "Your Location", address = "", type = "Origin", latlng = originLatLngString, placeid = ""),
+               OriginDestinationStops(name = destinationData[0], address = destinationData[1], type = "Destination", latlng = destinationData[2], placeid = destinationData[3])
+           )
+           for (place in places) {
+               val (name, address, type, latlng, placeid) = place
+               val stop = OriginDestinationStops(name = name, address = address, type = type, latlng = latlng, placeid = placeid)
+               stopList.add(stop)
+           }
+       }
+
+        Log.e("DirectionsActivity", "STOPLIST AT ON CREATE: $stopList")
     }
 
     private fun fetchRoute() {
@@ -153,7 +173,6 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
                         longitude in -180.0..180.0) {
                         Waypoint(
                             location = LatLng(Coordinates(latitude, longitude)),
-                            via = false, // Set to false for stopover
                             vehicleStopover = false, // Set to true if it is a stopover
                             sideOfRoad = false // Adjust as needed
                         )
@@ -199,11 +218,16 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
                     // Select the best route based on distance or duration
                     val bestRoute = response.body()?.routes?.firstOrNull()
 
+
+
                     bestRoute?.let { route ->
                         val polyline = route.polyline.encodedPolyline
                         val travelAdvisories = route.travelAdvisory
 
-                        plotPolyline(polyline, travelAdvisories, travelMode)
+                        plotPolylineWithWaypoints(polyline, travelAdvisories, travelMode, intermediates)
+
+                        Log.e("DirectionsActivity", "ROUTE TOKEN: ${bestRoute.routeToken}" )
+
 
                         val durationString = route.duration // e.g., "1381s"
                         val durationInSeconds = durationString.replace("s", "").toInt() // Remove 's' and convert to integer
@@ -246,6 +270,24 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
                             binding.trafficCondition.setTextColor(resources.getColor(R.color.dark_gray))
                         }
 
+                        val routeToken = bestRoute.routeToken
+
+                        binding.startNavigationButton.setOnClickListener {
+                            // Create a list of place IDs from the stopList, excluding entries with empty place IDs
+                            val placeIds = stopList.mapNotNull { stop ->
+                                stop.placeid.ifEmpty { null }
+                            }
+
+                            // Log or check the filtered placeIds if needed
+                             Log.e("Place IDs", placeIds.joinToString())
+
+                            // Create the intent for starting the navigation activity
+                            val intent = Intent(this@DirectionsActivity, StartNavigationsActivity::class.java).apply {
+                                putExtra("ROUTE_TOKEN", routeToken)
+                                putStringArrayListExtra("PLACE_IDS", ArrayList(placeIds))  // Pass place IDs as an extra
+                            }
+                            startActivity(intent)
+                        }
 
                     } ?: run {
                         Log.e("DirectionsActivity", "No routes found in response.")
@@ -261,11 +303,52 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         })
     }
 
-    private fun plotPolyline(encodedPolyline: String, travelAdvisory: TravelAdvisory?, travelMode: String) {
+    private fun plotPolylineWithWaypoints(encodedPolyline: String, travelAdvisory: TravelAdvisory?, travelMode: String, intermediates: List<Waypoint>) {
+        // Map intermediates (waypoints) to their LatLng objects
+        val stopoverLatLngs = intermediates.map { waypoint ->
+            com.google.android.gms.maps.model.LatLng(
+                waypoint.location.latLng.latitude,
+                waypoint.location.latLng.longitude
+            )
+        }
+
+        // Clear old stopover markers
+        clearStopoverMarkers()
+
+        // Now call the original plotPolyline method with the LatLngs
+        plotPolyline(encodedPolyline, travelAdvisory, travelMode, stopoverLatLngs)
+
+        // Add new stopover markers with custom icon (flag) and address as title
+        intermediates.forEach { waypoint ->
+            val latLng = com.google.android.gms.maps.model.LatLng(
+                waypoint.location.latLng.latitude,
+                waypoint.location.latLng.longitude
+            )
+
+            // Fetch the address for this waypoint
+            val address = getAddressFromLatLng("${latLng.latitude},${latLng.longitude}")
+
+            // Create a custom flag icon for stopover markers
+            val flagIcon = getScaledIcon(R.drawable.stop_circle, 50, 50) // Scale to desired width and height
+
+            // Add marker with the fetched address as the title
+            val marker = mMap.addMarker(
+                MarkerOptions()
+                    .position(latLng)
+                    .title(address) // Use the address for the title
+                    .icon(flagIcon) // Set the custom flag icon for the stopover marker
+            )
+            if (marker != null) {
+                stopoverMarkers.add(marker)
+            } // Add the marker to the list
+        }
+    }
+
+    private fun plotPolyline(encodedPolyline: String, travelAdvisory: TravelAdvisory?, travelMode: String, intermediates: List<com.google.android.gms.maps.model.LatLng>) {
         // Decode the polyline points
         val polylinePoints: List<com.google.android.gms.maps.model.LatLng> = PolyUtil.decode(encodedPolyline)
 
-        // Clear previous polylines
+        // Clear previous polylines and markers
         clearPolylines()
 
         // Draw the default polyline
@@ -294,7 +377,6 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
                     })
                 }
 
-
                 val trafficPolyline = mMap.addPolyline(polylineOptions) // Create colored polyline
                 polylines.add(trafficPolyline) // Store in the list
             }
@@ -305,10 +387,13 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         val destinationLatLng = polylinePoints.last()
         destinationMarker = mMap.addMarker(MarkerOptions().position(destinationLatLng).title("Destination"))
 
-        // Create bounds to focus the camera on the polyline
+        // Create bounds to focus the camera on the polyline and markers
         val builder = LatLngBounds.Builder().apply {
             for (point in polylinePoints) {
                 include(point)
+            }
+            intermediates.forEach { stopoverLatLng -> // Include stopovers in the bounds
+                include(stopoverLatLng)
             }
         }
 
@@ -320,13 +405,33 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         mMap.animateCamera(cameraUpdate)
     }
 
-    private fun clearPolylines() {
-        // Remove all polylines from the map
-        for (polyline in polylines) {
-            polyline.remove()
-        }
-        polylines.clear() // Clear the list after removing
+    private fun getScaledIcon(drawableResId: Int, width: Int, height: Int): BitmapDescriptor {
+        // Convert the drawable resource into a Bitmap
+        val drawable = ResourcesCompat.getDrawable(resources, drawableResId, null)
+        val bitmap = Bitmap.createBitmap(drawable!!.intrinsicWidth, drawable.intrinsicHeight, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        drawable.setBounds(0, 0, canvas.width, canvas.height)
+        drawable.draw(canvas)
+
+        // Scale the bitmap to the desired size
+        val scaledBitmap = Bitmap.createScaledBitmap(bitmap, width, height, false)
+
+        // Return the scaled bitmap as a BitmapDescriptor
+        return BitmapDescriptorFactory.fromBitmap(scaledBitmap)
     }
+
+    // Helper function to clear previous stopover markers
+    private fun clearStopoverMarkers() {
+        stopoverMarkers.forEach { it.remove() } // Remove all stopover markers
+        stopoverMarkers.clear() // Clear the list
+    }
+
+    // Helper function to clear previous polylines
+    private fun clearPolylines() {
+        polylines.forEach { it.remove() } // Remove all polylines
+        polylines.clear() // Clear the list
+    }
+
 
     private fun determineOverallTrafficCondition(travelAdvisory: TravelAdvisory?): String {
         if (travelAdvisory == null) {
@@ -465,12 +570,6 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
         mapFragment?.view?.isClickable = true
 
-        // Set up UI elements using binding
-        val places = mutableListOf(
-            OriginDestinationStops(name = "Your Location", address = originAddress, type = "Origin", latlng = originLatLng),
-            OriginDestinationStops(name = destinationData[0], address = destinationData[1], type = "Destination", latlng = destinationData[2])
-        )
-
         // Button click handlers
         binding.btnCar.setOnClickListener {
             handleButtonSelection(binding.btnCar)
@@ -498,24 +597,15 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
 
         binding.editCourseButton.setOnClickListener {
-            if (!isUpdated) {
-                for (place in places) {
-                    val (name, address, type, latlng) = place
-                    val stop = OriginDestinationStops(name = name, address = address, type = type, latlng = latlng)
-                    stopList.add(stop)
-                }
-                val intent = Intent(this, StopManagementActivity::class.java).apply {
-                    putExtra("ROUTES", ArrayList(stopList)) // Ensure stopList is passed as an ArrayList
-                }
-                stopResultLauncher.launch(intent)
+            val intent = Intent(this, StopManagementActivity::class.java).apply {
+                putExtra("ROUTES", ArrayList(stopList)) // Ensure stopList is passed as an ArrayList
+            }
+            stopResultLauncher.launch(intent)
+        }
 
-            }
-            else {
-                val intent = Intent(this, StopManagementActivity::class.java).apply {
-                    putExtra("ROUTES", ArrayList(stopList)) // Ensure stopList is passed as an ArrayList
-                }
-                stopResultLauncher.launch(intent)
-            }
+        binding.startNavigationButton.setOnClickListener {
+            val intent = Intent(this, StartNavigationsActivity::class.java)
+            intent.putExtra("ROUTE_TOKEN", true)
         }
 
         binding.closeButton.setOnClickListener {

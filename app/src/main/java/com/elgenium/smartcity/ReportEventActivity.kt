@@ -60,6 +60,7 @@ class ReportEventActivity : AppCompatActivity() {
     private var currentPhotoPath: String? = null
     private val imageList = mutableListOf<ReportImages>()
     private lateinit var placeLatLng: String
+    private lateinit var placeId: String
 
     private val searchActivityLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
@@ -111,10 +112,13 @@ class ReportEventActivity : AppCompatActivity() {
         placeName = intent.getStringExtra("PLACE_NAME").toString()
         placeAddress = intent.getStringExtra("PLACE_ADDRESS").toString()
         placeLatLng = intent.getStringExtra("PLACE_LATLNG").toString()
+        placeId = intent.getStringExtra("PLACE_ID").toString()
 
         Log.d("ReportEventActivity", "place name: $placeName")
         Log.d("ReportEventActivity", "place address: $placeAddress")
         Log.d("ReportEventActivity", "place latlng: $placeLatLng")
+        Log.d("ReportEventActivity", "place latlng: $placeId")
+
 
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
@@ -437,7 +441,8 @@ class ReportEventActivity : AppCompatActivity() {
                     "location" to location,
                     "additionalInfo" to additionalInfo,
                     "placeLatLng" to placeLatLng,
-                    "checker" to "${eventName}_${location}"
+                    "checker" to "${eventName}_${location}",
+                    "placeId" to placeId
                 )
 
                 LayoutStateManager.showLoadingLayout(this, "Please wait while we are saving your events")
@@ -506,35 +511,55 @@ class ReportEventActivity : AppCompatActivity() {
             return
         }
 
+        // Fetch the current user's full name
+        usersRef.child(userId).child("fullName").get()
+            .addOnSuccessListener { snapshot ->
+                val fullName = snapshot.getValue(String::class.java) ?: "Unknown User"
 
-        // Generate a unique key for the new event
-        val newEventRef = eventsRef.push()
+                // Get the current date and time for event submission
+                val currentDateTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(System.currentTimeMillis())
 
-        // Set the event data
-        newEventRef.setValue(eventData)
-            .addOnSuccessListener {
-                Log.d("ReportEventActivity", "Event data saved successfully")
-                // Update the user's points
-                updateUserPoints(usersRef, userId)
+                // Add user information and submission time to the event data
+                val updatedEventData = eventData.toMutableMap().apply {
+                    put("submittedBy", fullName)
+                    put("submittedAt", currentDateTime)
+                }
+
+                // Generate a unique key for the new event
+                val newEventRef = eventsRef.push()
+
+                // Set the event data
+                newEventRef.setValue(updatedEventData)
+                    .addOnSuccessListener {
+                        Log.d("ReportEventActivity", "Event data saved successfully")
+                        // Update the user's points
+                        updateUserPoints(usersRef, userId)
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e("ReportEventActivity", "Failed to save event data", e)
+                        Toast.makeText(this, "Failed to save event", Toast.LENGTH_SHORT).show()
+                    }
             }
             .addOnFailureListener { e ->
-                Log.e("ReportEventActivity", "Failed to save event data", e)
-                Toast.makeText(this, "Failed to save event", Toast.LENGTH_SHORT).show()
+                Log.e("ReportEventActivity", "Failed to retrieve user information", e)
+                Toast.makeText(this, "Failed to retrieve user information", Toast.LENGTH_SHORT).show()
             }
     }
 
     private fun updateUserPoints(usersRef: DatabaseReference, userId: String) {
         val userPointsRef = usersRef.child(userId).child("points")
 
-        // Fetch the current points
+        // Fetch the current points from the Users node
         userPointsRef.get().addOnSuccessListener { snapshot ->
             val currentPoints = snapshot.getValue(Int::class.java) ?: 0
             val newPoints = currentPoints + 5
 
-            // Update the points in the database
+            // Update the points in the Users node
             userPointsRef.setValue(newPoints)
                 .addOnSuccessListener {
                     Log.d("ReportEventActivity", "User points updated successfully")
+                    // Update the Leaderboard node after successfully updating user points
+                    updateLeaderboard(userId, newPoints)
                     Toast.makeText(this, "You've earned a total of $newPoints points!", Toast.LENGTH_SHORT).show()
                 }
                 .addOnFailureListener { e ->
@@ -542,6 +567,30 @@ class ReportEventActivity : AppCompatActivity() {
                 }
         }.addOnFailureListener { e ->
             Log.e("ReportEventActivity", "Failed to retrieve current points", e)
+        }
+    }
+
+    private fun updateLeaderboard(userId: String, points: Int) {
+        val leaderboardRef = FirebaseDatabase.getInstance().getReference("Leaderboard")
+        val userRef = FirebaseDatabase.getInstance().getReference("Users").child(userId)
+
+        // Fetch the full name from the Users node
+        userRef.child("fullName").get().addOnSuccessListener { snapshot ->
+            val fullName = snapshot.getValue(String::class.java) ?: "Unknown User"
+
+            // Add or update the user's entry in the Leaderboard node
+            leaderboardRef.child(userId).setValue(
+                mapOf(
+                    "fullName" to fullName,
+                    "points" to points
+                )
+            ).addOnSuccessListener {
+                Log.d("Leaderboard", "Leaderboard updated successfully for user: $fullName")
+            }.addOnFailureListener { e ->
+                Log.e("Leaderboard", "Failed to update leaderboard", e)
+            }
+        }.addOnFailureListener { e ->
+            Log.e("Leaderboard", "Failed to fetch user full name", e)
         }
     }
 

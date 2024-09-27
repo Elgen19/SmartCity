@@ -1,0 +1,66 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/item_background"
+    android:orientation="horizontal"
+    android:layout_marginBottom="8dp"
+    android:padding="12dp">
+
+
+    <!-- Rank TextView -->
+    <TextView
+        android:id="@+id/rankTextView"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@drawable/rank_circle_background"
+        android:gravity="center"
+        android:textColor="#FFFFFF"
+        android:visibility="gone"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <ImageView
+        android:id="@+id/trophyImageview"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/trophy"
+        android:scaleType="centerCrop" />
+
+    <!-- Profile Picture -->
+    <ImageView
+        android:id="@+id/profileImageView"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="12dp"
+        android:src="@drawable/male"
+        android:scaleType="centerCrop"
+        android:background="@drawable/circle_background"
+        android:layout_marginEnd="12dp"/>
+
+    <!-- Name and Points Container -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <!-- User Name -->
+        <TextView
+            android:id="@+id/nameTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="User Name"
+            android:textColor="#000"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <!-- User Points -->
+        <TextView
+            android:id="@+id/pointsTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Points: 0"
+            android:textColor="#6D6D6D"
+            android:textSize="14sp" />
+    </LinearLayout>
+</LinearLayout>

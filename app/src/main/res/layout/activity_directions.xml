@@ -12,9 +12,17 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- ScrollView to accommodate all bottom sheet content -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
 
-            <!-- RelativeLayout inside ScrollView -->
+        <androidx.coordinatorlayout.widget.CoordinatorLayout
+            android:id="@+id/bottomSheetLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@id/bottomAppLayout"
+            >
+
             <RelativeLayout
                 android:id="@+id/bottomsheet"
                 android:layout_width="match_parent"
@@ -24,7 +32,7 @@
                 android:background="@drawable/bottom_sheet_round_corners">
 
 
-            <!-- Row: Routes TextView and Close Button -->
+                <!-- Row: Routes TextView and Close Button -->
                 <LinearLayout
                     android:id="@+id/topComponents"
                     android:layout_width="match_parent"
@@ -483,7 +491,42 @@
                     android:textColor="@color/black"
                     android:layout_marginTop="16dp"
                     android:text="step 1" />
-
-
             </RelativeLayout>
+        </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+        <androidx.coordinatorlayout.widget.CoordinatorLayout
+            android:id="@+id/bottomAppLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true">
+
+            <com.google.android.material.bottomappbar.BottomAppBar
+                android:id="@+id/bottomAppBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="-8dp"
+                android:layout_margin="-8dp"
+                android:layout_gravity="bottom"
+                app:fabAlignmentMode="center"
+                app:fabCradleMargin="10dp"
+                app:fabCradleRoundedCornerRadius="16dp"
+                app:fabCradleVerticalOffset="10dp"
+                android:backgroundTint="@color/secondary_color">
+
+                <!-- Add a MaterialButton for Start Navigation -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/startNavigationButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:backgroundTint="@color/secondary_color"
+                    android:textColor="@color/primary_color"
+                    android:layout_gravity="center"
+                    android:text="Start Navigation"
+                    app:cornerRadius="8dp"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+            </com.google.android.material.bottomappbar.BottomAppBar>
+
+        </androidx.coordinatorlayout.widget.CoordinatorLayout>
+    </RelativeLayout>
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -30,7 +30,7 @@ class StopManagementActivity : AppCompatActivity() {
             val placeName = data?.getStringExtra("PLACE_NAME")
             val placeAddress = data?.getStringExtra("PLACE_ADDRESS")
             val address = "$placeName $placeAddress"
-            if (placeName != null && placeAddress != null) {
+            if (placeName != null && placeAddress != null && placeId != null) {
                 fetchLatLng(address) { latLngString ->
                     if (latLngString != null) {
                         Log.d("StopManagementActivity", "Fetched LatLng: $latLngString")
@@ -40,7 +40,8 @@ class StopManagementActivity : AppCompatActivity() {
                             name = placeName,
                             address = placeAddress,
                             type = "Stop", // or any other type you prefer
-                            latlng = latLngString // Assigning the fetched latLng value here
+                            latlng = latLngString, // Assigning the fetched latLng value here
+                            placeid = placeId
                         )
 
                         // Now you can add the newStop to your stopList and notify the adapter

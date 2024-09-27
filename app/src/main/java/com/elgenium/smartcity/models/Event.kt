@@ -10,5 +10,8 @@ data class Event(
     val startedDateTime: String? = null,
     val endedDateTime: String? = null,
     val placeLatLng: String? = null,
-    val checker: String? = null
+    val checker: String? = null,
+    val placeId: String? = null,
+    val submittedBy: String? = null,
+    val submittedAt: String? = null
 )
