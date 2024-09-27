@@ -13,11 +13,14 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import com.elgenium.smartcity.databinding.DialogTripRecapBinding
 import com.google.android.gms.maps.GoogleMap.CameraPerspective
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.navigation.CustomRoutesOptions
 import com.google.android.libraries.navigation.DisplayOptions
 import com.google.android.libraries.navigation.ForceNightMode.FORCE_NIGHT
@@ -27,11 +30,13 @@ import com.google.android.libraries.navigation.Navigator.ArrivalListener
 import com.google.android.libraries.navigation.Navigator.RemainingTimeOrDistanceChangedListener
 import com.google.android.libraries.navigation.Navigator.RouteChangedListener
 import com.google.android.libraries.navigation.RoadSnappedLocationProvider
-import com.google.android.libraries.navigation.RoutingOptions
 import com.google.android.libraries.navigation.SimulationOptions
 import com.google.android.libraries.navigation.StylingOptions
 import com.google.android.libraries.navigation.SupportNavigationFragment
 import com.google.android.libraries.navigation.Waypoint
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 
 class StartNavigationsActivity : AppCompatActivity() {
@@ -39,16 +44,13 @@ class StartNavigationsActivity : AppCompatActivity() {
     private val TAG = "StartNavigationsActivity"
     private lateinit var navigator: Navigator
     private lateinit var navFragment: SupportNavigationFragment
-    private lateinit var routingOptions: RoutingOptions
     private var mArrivalListener: ArrivalListener? = null
     private var mRouteChangedListener: RouteChangedListener? = null
     private var mRemainingTimeOrDistanceChangedListener: RemainingTimeOrDistanceChangedListener? = null
     private var mLocationListener: RoadSnappedLocationProvider.LocationListener? = null
     private var mRoadSnappedLocationProvider: RoadSnappedLocationProvider? = null
+    private var startTime: Long = 0
 
-
-    // Define the Sydney Opera House by specifying its place ID.
-    private val SYDNEY_OPERA_HOUSE = "ChIJ616SM-GYqTMRMNepa3oD2v4"
 
     // Set fields for requesting location permission.
     private val PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1
@@ -65,8 +67,6 @@ class StartNavigationsActivity : AppCompatActivity() {
         if (placeIds != null && routeToken != null) {
             requestLocationPermissions(routeToken, placeIds)
         }
-
-
     }
 
     private fun initializeNavigationSdk(routeToken: String, placeIds: ArrayList<String>) {
@@ -122,7 +122,6 @@ class StartNavigationsActivity : AppCompatActivity() {
                     }
 
                     navigateWithMultipleStops(routeToken, placeIds)
-                   // setupArrivalListener()
                 }
 
                 override fun onError(@NavigationApi.ErrorCode errorCode: Int) {
@@ -163,11 +162,6 @@ class StartNavigationsActivity : AppCompatActivity() {
                 locationPermissionGranted = true
             }
         }
-    }
-
-    private fun setupArrivalListener() {
-        // Add an ArrivalListener to the Navigator
-        navigator.addArrivalListener { showArrivalNotification() }
     }
 
     private fun showArrivalNotification() {
@@ -251,7 +245,6 @@ class StartNavigationsActivity : AppCompatActivity() {
             showTrafficLights(true)
         }
 
-
         // Set multiple destinations using the list of waypoints
         val pendingRoute = navigator.setDestinations(waypoints,customRoutesOptions, displayOptions)
 
@@ -273,6 +266,7 @@ class StartNavigationsActivity : AppCompatActivity() {
 
                     // Start turn-by-turn guidance along the route
                     navigator.startGuidance()
+                    startTrip()
                 }
                 Navigator.RouteStatus.NO_ROUTE_FOUND -> {
                     displayMessage("Error starting navigation: No route found.")
@@ -290,7 +284,6 @@ class StartNavigationsActivity : AppCompatActivity() {
         }
     }
 
-
     private fun registerNavigationListeners() {
         mArrivalListener =
             ArrivalListener { arrivalEvent ->
@@ -304,6 +297,9 @@ class StartNavigationsActivity : AppCompatActivity() {
                     displayMessage(
                         "onArrival: You've arrived at the final destination."
                     )
+
+                    computeTotalTime()
+                    showTripSummaryDialog(computeTotalDistance(), computeTotalTime(), computeArrivalTime(), computeAverageSpeed(), getTrafficConditions())
                 } else {
                     navigator.continueToNextDestination()
                     navigator.startGuidance()
@@ -352,20 +348,139 @@ class StartNavigationsActivity : AppCompatActivity() {
         mRemainingTimeOrDistanceChangedListener =
             RemainingTimeOrDistanceChangedListener {
                 displayMessage(
-                    "onRemainingTimeOrDistanceChanged: Time or distance estimate" + " has changed."
+                    "onRemainingTimeOrDistanceChanged: Time or distance estimate ${navigator.timeAndDistanceList.last()}"
                 )
             }
         // Listens for changes in time or distance.
         navigator.addRemainingTimeOrDistanceChangedListener(
             60, 100, mRemainingTimeOrDistanceChangedListener
         )
+
     }
-
-
 
     private fun displayMessage(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
         Log.e(TAG, message)
+    }
+
+    private fun calculateTotalDistanceCovered(): Float {
+        val traveledRoute = navigator.traveledRoute
+        var totalDistance = 0f
+
+        for (i in 0 until traveledRoute.size - 1) {
+            totalDistance += calculateDistance(traveledRoute[i], traveledRoute[i + 1])
+        }
+
+        return totalDistance
+    }
+
+    private fun calculateDistance(start: LatLng, end: LatLng): Float {
+        val results = FloatArray(1)
+        Location.distanceBetween(start.latitude, start.longitude, end.latitude, end.longitude, results)
+        return results[0]
+    }
+
+    private fun computeTotalDistance(): String {
+        val distanceCovered = calculateTotalDistanceCovered() // This should return distance in meters
+        return String.format("%.2f km", distanceCovered / 1000) // Convert to kilometers
+    }
+
+    private fun startTrip() {
+        startTime = System.currentTimeMillis() // Record start time
+    }
+
+    private fun computeTotalTime(): String {
+        val endTime = System.currentTimeMillis() // Get the current time
+        val totalTimeInMillis = endTime - startTime // Calculate elapsed time
+        val totalSeconds = totalTimeInMillis / 1000 // Convert milliseconds to seconds
+
+        // Calculate hours and minutes
+        val totalMinutes = totalSeconds / 60
+        val totalHours = totalMinutes / 60
+
+        // Remaining minutes after calculating hours
+        val remainingMinutes = totalMinutes % 60
+
+        // Format the total time as a string based on the values of totalHours and remainingMinutes
+        return when {
+            totalHours > 0 && remainingMinutes > 0 -> String.format("%d hr %d min", totalHours, remainingMinutes)
+            totalHours > 0 -> String.format("%d hr", totalHours)
+            remainingMinutes > 0 -> String.format("%d min", remainingMinutes)
+            else -> "0 min" // If both hours and minutes are 0, display "0 min" (optional)
+        }
+    }
+
+
+    private fun computeArrivalTime(): String {
+        val currentTime = System.currentTimeMillis()
+        val dateFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
+        return dateFormat.format(Date(currentTime)) // Format current time as "HH:MM AM/PM"
+    }
+
+    private fun computeAverageSpeed(): String {
+        val totalDistanceCovered = calculateTotalDistanceCovered() // In meters
+        val totalTimeInMillis = System.currentTimeMillis() - startTime
+        val averageSpeed = if (totalTimeInMillis > 0) {
+            (totalDistanceCovered / (totalTimeInMillis / 1000)) * 3.6 // Convert m/s to km/h
+        } else {
+            0f
+        }
+        return String.format("%.2f km/h", averageSpeed)
+    }
+
+    private fun getTrafficConditions(): String {
+        // Implement logic based on current speed or API response
+        // Example: If average speed is significantly lower than expected, assume heavy traffic
+        val averageSpeed = computeAverageSpeed().removeSuffix(" km/h").toFloat()
+        return when {
+            averageSpeed < 20 -> "Heavy"
+            averageSpeed < 40 -> "Moderate"
+            else -> "Light"
+        }
+    }
+
+
+    private fun showTripSummaryDialog(totalDistance: String, totalTime: String, arrivalTime: String, averageSpeed: String, trafficConditions: String) {
+        // Inflate the custom layout using View Binding
+        val binding = DialogTripRecapBinding.inflate(layoutInflater)
+
+        // Populate the TextViews in the binding object
+        binding.totalDistanceTextView.text = "Total Distance: $totalDistance"
+        binding.totalTimeTextView.text = "Total Time: $totalTime"
+        binding.arrivalTimeTextView.text = "Arrival Time: $arrivalTime"
+        binding.averageSpeedTextView.text = "Average Speed: $averageSpeed"
+        binding.trafficConditionsTextView.text = "Traffic: $trafficConditions"
+        // Regular expression to extract place name and address
+        val fullText = navigator.currentRouteSegment.destinationWaypoint.title
+        val regex = Regex("""^(.*?)(?:,\s*(.*))?$""") // Match everything before the first comma and everything after
+
+        val matchResult = regex.find(fullText)
+        if (matchResult != null) {
+            val placeName = matchResult.groups[1]?.value?.trim() ?: ""
+            val address = matchResult.groups[2]?.value?.trim() ?: ""
+
+            binding.placeNameTextView.text = placeName // Set only the place name
+            binding.addressTextView.text = address // If you have an address TextView
+        } else {
+            // Handle unexpected format
+            binding.placeNameTextView.text = fullText // Fallback
+        }
+
+
+        // Create the AlertDialog
+        val alertDialog = AlertDialog.Builder(this)
+            .setView(binding.root) // Use the root view from the binding
+            .setCancelable(true)
+            .create()
+
+        // Handle Done button
+        binding.doneButton.setOnClickListener {
+            alertDialog.dismiss() // Close the dialog
+            finish()
+        }
+
+        // Show the dialog
+        alertDialog.show()
     }
 
     override fun onDestroy() {
@@ -393,5 +508,4 @@ class StartNavigationsActivity : AppCompatActivity() {
         navigator.cleanup()
 
     }
-
 }

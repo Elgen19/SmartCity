@@ -18,7 +18,8 @@
             android:id="@+id/parent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/backdraft3">
+            android:background="@color/primary_color"
+            android:paddingTop="24dp">
 
             <!-- Profile Picture -->
             <de.hdodenhof.circleimageview.CircleImageView
@@ -42,7 +43,7 @@
                 android:layout_marginStart="16dp"
                 android:layout_toEndOf="@id/profile_image"
                 android:text="@string/good_morning"
-                android:textColor="@color/primary_color"
+                android:textColor="@color/secondary_color"
                 android:textSize="20sp"
                 android:textStyle="bold"
                 tools:ignore="RelativeOverlap" />
@@ -62,9 +63,10 @@
             <!-- Notification Button -->
             <ImageButton
                 android:id="@+id/notification_button"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
                 android:layout_alignParentEnd="true"
+                android:scaleType="centerCrop"
                 android:layout_marginEnd="16dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/baseline_notifications_24"
@@ -78,7 +80,7 @@
                 android:layout_height="wrap_content"
                 android:layout_below="@id/user_name_text"
                 android:layout_marginStart="16dp"
-                android:layout_marginTop="56dp"
+                android:layout_marginTop="24dp"
                 android:layout_marginEnd="16dp"
                 app:cardBackgroundColor="@color/secondary_color"
                 app:cardCornerRadius="8dp"
@@ -362,7 +364,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="4dp"
                             android:text="computing"
-                            android:textColor="@color/brand_color"
+                            android:textColor="@color/secondary_color"
                             android:textSize="14sp" />
                     </LinearLayout>
 
@@ -394,7 +396,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="4dp"
                             android:text="computing"
-                            android:textColor="@color/brand_color"
+                            android:textColor="@color/secondary_color"
                             android:textSize="14sp" />
                     </LinearLayout>
 
@@ -426,7 +428,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="4dp"
                             android:text="computing"
-                            android:textColor="@color/brand_color"
+                            android:textColor="@color/secondary_color"
                             android:textSize="14sp" />
                     </LinearLayout>
 
@@ -458,7 +460,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="4dp"
                             android:text="computing"
-                            android:textColor="@color/brand_color"
+                            android:textColor="@color/secondary_color"
                             android:textSize="14sp" />
                     </LinearLayout>
 
@@ -490,7 +492,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="4dp"
                             android:text="computing"
-                            android:textColor="@color/brand_color"
+                            android:textColor="@color/secondary_color"
                             android:textSize="14sp" />
                     </LinearLayout>
 

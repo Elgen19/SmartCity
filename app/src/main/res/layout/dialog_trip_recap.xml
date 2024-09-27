@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="24dp"
+    android:background="@color/white">
+
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/lotifyAnimation"
+        android:layout_alignParentTop="true"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_centerInParent="true"
+        app:lottie_rawRes="@raw/arrival_anim"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        app:lottie_cacheComposition="true"
+        app:lottie_loop="true"
+        app:lottie_autoPlay="true" />
+
+
+
+    <!-- Arrival Title -->
+    <TextView
+        android:id="@+id/arrivalTitleTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="You Have Arrived At"
+        android:textSize="20sp"
+        android:textColor="@color/gray"
+        android:textStyle="bold"
+        android:layout_marginTop="16dp"
+        android:layout_below="@id/lotifyAnimation"
+        android:layout_centerHorizontal="true" />
+
+    <!-- Place Name -->
+    <TextView
+        android:id="@+id/placeNameTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Place Name"
+        android:textSize="18sp"
+        android:textColor="@color/brand_color"
+        android:gravity="center"
+        android:layout_below="@id/arrivalTitleTextView"
+        android:layout_marginTop="8dp"
+        android:layout_centerHorizontal="true" />
+
+    <!-- Address -->
+    <TextView
+        android:id="@+id/addressTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="123 Example Street, City"
+        android:textSize="14sp"
+        android:textColor="@color/gray"
+        android:layout_below="@id/placeNameTextView"
+        android:gravity="center"
+        android:layout_marginTop="4dp"
+        android:layout_centerHorizontal="true" />
+
+    <!-- Trip Summary Label -->
+    <TextView
+        android:id="@+id/tripSummaryLabelTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Trip Summary"
+        android:textSize="16sp"
+        android:textColor="@color/black"
+        android:layout_below="@id/addressTextView"
+        android:layout_marginTop="16dp" />
+
+    <!-- Trip Summary Section in CardView -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/tripSummaryCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardElevation="4dp"
+        app:cardBackgroundColor="@color/white"
+        app:cardCornerRadius="8dp"
+        android:layout_below="@id/tripSummaryLabelTextView"
+        android:layout_marginTop="8dp">
+
+        <LinearLayout
+            android:id="@+id/tripSummarySection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Total Distance -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingVertical="8dp">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/distance" />
+
+                <TextView
+                    android:id="@+id/totalDistanceTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Total Distance: 12 km"
+                    android:textSize="16sp"
+                    android:layout_marginStart="8dp"
+                    android:textColor="@color/black" />
+            </LinearLayout>
+
+            <!-- Total Time -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingVertical="8dp">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/time" />
+
+                <TextView
+                    android:id="@+id/totalTimeTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Total Time: 30 min"
+                    android:textSize="16sp"
+                    android:layout_marginStart="8dp"
+                    android:textColor="@color/black" />
+            </LinearLayout>
+
+            <!-- Arrival Time -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingVertical="8dp">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/time" />
+
+                <TextView
+                    android:id="@+id/arrivalTimeTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Arrival Time: 10:30 AM"
+                    android:textSize="16sp"
+                    android:layout_marginStart="8dp"
+                    android:textColor="@color/black" />
+            </LinearLayout>
+
+            <!-- Average Speed -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingVertical="8dp">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_speedometer" />
+
+                <TextView
+                    android:id="@+id/averageSpeedTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Average Speed: 40 km/h"
+                    android:textSize="16sp"
+                    android:layout_marginStart="8dp"
+                    android:textColor="@color/black" />
+            </LinearLayout>
+
+            <!-- Traffic Conditions -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingVertical="8dp">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/car"
+                    app:tint="@color/secondary_color" />
+
+                <TextView
+                    android:id="@+id/trafficConditionsTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Traffic: Moderate"
+                    android:textSize="16sp"
+                    android:layout_marginStart="8dp"
+                    android:textColor="@color/black"/>
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Done Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/doneButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Done"
+        android:textSize="16sp"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        app:cornerRadius="8dp"
+        android:layout_below="@id/tripSummaryCard"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        android:backgroundTint="@color/secondary_color"
+        android:textColor="@color/white"/>
+</RelativeLayout>
