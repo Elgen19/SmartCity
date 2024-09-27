@@ -594,7 +594,6 @@ class ReportEventActivity : AppCompatActivity() {
         }
     }
 
-
     private fun getCurrentLocation() {
         Log.d("ReportEventActivity", "Getting current location")
         if (ActivityCompat.checkSelfPermission(
