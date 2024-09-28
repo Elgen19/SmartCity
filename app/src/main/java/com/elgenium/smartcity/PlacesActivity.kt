@@ -116,10 +116,6 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
             navigateToActivity(this, SearchActivity::class.java, true)
         }
 
-//        binding.fabDirections.setOnClickListener {
-//            val intent = Intent(this, DirectionsActivity::class.java)
-//            intent.putExtra("")
-//        }
 
         // Setup map styles button listener
         binding.fabMapStyles.setOnClickListener {
@@ -969,7 +965,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
 
             getUserLocation { userLocation ->
                 val origin = "${userLocation.latitude},${userLocation.longitude}"
-                val regex = """lat/lng: \((\-?\d+\.\d+),(\-?\d+\.\d+)\)""".toRegex()
+                val regex = """lat/lng: \((-?\d+\.\d+),(-?\d+\.\d+)\)""".toRegex()
                 val destinationLatLng =
                     place.latLngString?.let {
                         regex.find(it)?.let { matchResult ->

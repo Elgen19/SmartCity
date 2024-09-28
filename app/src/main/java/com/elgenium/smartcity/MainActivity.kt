@@ -5,15 +5,18 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.LocationManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.text.Html
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
-import android.widget.Toast
+import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -27,9 +30,10 @@ import com.google.firebase.auth.FirebaseAuth
 class MainActivity : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
-    private val LOCATION_PERMISSION_REQUEST_CODE = 1000
     private lateinit var googleSignInClient: GoogleSignInClient
     private var alertDialog: AlertDialog? = null
+    private var permissionsHandled = false
+    private val deniedPermissions = mutableListOf<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,23 +50,23 @@ class MainActivity : AppCompatActivity() {
 
         // Initial check for location services and permissions
         checkLocationAndPermissions()
-
     }
 
     override fun onResume() {
         super.onResume()
 
-        if (isLocationEnabled())
+        // Ensure permissions are handled before proceeding
+        if (permissionsHandled && isLocationEnabled()) {
             proceedWithAppLogic()
-
+        }
     }
-
 
     private fun checkLocationAndPermissions() {
         if (isLocationEnabled() && isLocationPermissionGranted()) {
-           proceedWithAppLogic()
+            permissionsHandled = true
+            proceedWithAppLogic()
         } else {
-            requestLocationPermissions()
+            requestAllPermissions()
         }
     }
 
@@ -83,18 +87,42 @@ class MainActivity : AppCompatActivity() {
                 ) == PackageManager.PERMISSION_GRANTED
     }
 
-    private fun requestLocationPermissions() {
-        ActivityCompat.requestPermissions(
-            this,
-            arrayOf(
+    private fun requestAllPermissions() {
+        val permissionsToRequest = mutableListOf<String>()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+
+        permissionsToRequest.addAll(
+            listOf(
                 Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ),
-            LOCATION_PERMISSION_REQUEST_CODE
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.FOREGROUND_SERVICE_LOCATION,
+                Manifest.permission.RECORD_AUDIO,
+                Manifest.permission.CAMERA,
+                Manifest.permission.VIBRATE,
+                Manifest.permission.READ_MEDIA_IMAGES
+            )
         )
+
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S) {
+            permissionsToRequest.addAll(
+                listOf(
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    Manifest.permission.READ_EXTERNAL_STORAGE
+                )
+            )
+        }
+
+        if (permissionsToRequest.isNotEmpty()) {
+            ActivityCompat.requestPermissions(
+                this,
+                permissionsToRequest.toTypedArray(),
+                1001
+            )
+        }
     }
-
-
 
     private fun promptEnableLocationAndPermissions() {
         if (isFinishing || isDestroyed) return
@@ -122,9 +150,8 @@ class MainActivity : AppCompatActivity() {
         alertDialog?.show()
     }
 
-
-
     private fun proceedWithAppLogic() {
+        // Delay to ensure smooth transition after permissions are granted
         Handler(Looper.getMainLooper()).postDelayed({
             if (auth.currentUser == null) {
                 // User is not logged in
@@ -134,47 +161,34 @@ class MainActivity : AppCompatActivity() {
                     navigateToOnboarding()
                 }
             } else {
-                // Check Firebase authentication state and refresh token if needed
                 checkFirebaseAuthState()
             }
-        }, 1000) // 1000 milliseconds = 1 second
+        }, 1000)
     }
-
 
     private fun checkFirebaseAuthState() {
         val currentUser = auth.currentUser
         currentUser?.getIdToken(true)?.addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                // Token is refreshed, proceed to dashboard
                 navigateToDashboard()
             } else {
-                // Handle the specific error
                 if (task.exception?.message?.contains("BAD_AUTHENTICATION") == true) {
-                    // Force sign-out and redirect to sign-in
                     signOut()
                 } else {
-                    // Handle other potential exceptions
                     Log.e("MainActivity", "FirebaseAuth token error: ${task.exception?.message}")
                 }
             }
         } ?: run {
-            // If currentUser is null, navigate to sign-in screen
             navigateToSignIn()
         }
     }
 
     private fun signOut() {
-        // Sign out from Firebase
         auth.signOut()
-
-        // Sign out from Google
         googleSignInClient.signOut().addOnCompleteListener(this) {
-            // After sign out, you can redirect to the sign-in screen
             navigateToSignIn()
         }
     }
-
-
 
     private fun navigateToSignIn() {
         val intent = Intent(this, SignInActivity::class.java)
@@ -200,13 +214,74 @@ class MainActivity : AppCompatActivity() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
-            if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+        if (requestCode == 1001) {
+            deniedPermissions.clear() // Clear previous entries
+
+            for (i in permissions.indices) {
+                if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
+                    deniedPermissions.add(permissions[i]) // Add denied permissions to the list
+                }
+            }
+
+            // If all permissions are granted, proceed to check location settings
+            if (deniedPermissions.isEmpty()) {
                 promptEnableLocationAndPermissions()
             } else {
-                Toast.makeText(this, "Please enable location permission to use the app", Toast.LENGTH_LONG).show()
+                showPermissionDeniedDialog()
             }
         }
     }
+
+    // Show a dialog if permissions are permanently denied (Don't ask again)
+    private fun showPermissionDeniedDialog() {
+        // Inflate the custom dialog layout
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_permission_denied, null)
+
+        // Get references to the views in the custom layout
+        val dialogMessage: TextView = dialogView.findViewById(R.id.dialog_message)
+        val goToSettingsButton: Button = dialogView.findViewById(R.id.button_go_to_settings)
+        val cancelButton: Button = dialogView.findViewById(R.id.button_cancel)
+
+        // Set the message for denied permissions
+        val deniedPermissionsMessage = deniedPermissions.joinToString(", ") { permission ->
+            when (permission) {
+                Manifest.permission.ACCESS_FINE_LOCATION -> "Location"
+                Manifest.permission.RECORD_AUDIO -> "Audio Recording"
+                Manifest.permission.CAMERA -> "Camera"
+                Manifest.permission.READ_MEDIA_IMAGES -> "Media Access"
+                Manifest.permission.WRITE_EXTERNAL_STORAGE -> "Storage"
+                Manifest.permission.READ_EXTERNAL_STORAGE -> "Storage"
+                Manifest.permission.POST_NOTIFICATIONS -> "Notifications"
+                else -> permission
+            }
+        }
+
+        dialogMessage.text = Html.fromHtml("The following permissions are necessary for the app to function properly: <b> $deniedPermissionsMessage.</b> <br> <br>Please go to Settings > Apps > SmartCity > Permissions and enable the required permissions.", Html.FROM_HTML_MODE_LEGACY)
+
+        // Create the dialog
+        val dialogBuilder = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .setCancelable(false) // Prevent dismissal without user interaction
+
+        // Set up the buttons
+        goToSettingsButton.setOnClickListener {
+            // Directs user to the app's settings page
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+            val uri = Uri.fromParts("package", packageName, null)
+            intent.data = uri
+            startActivity(intent)
+            finish()
+        }
+
+        cancelButton.setOnClickListener {
+            // Dismiss the dialog
+            dialogBuilder.create().dismiss()
+            finish() // Optionally, navigate the user to a safe screen or exit the app
+        }
+
+        // Show the dialog
+        dialogBuilder.create().show()
+    }
+
 
 }

@@ -1,13 +1,10 @@
 package com.elgenium.smartcity
 
 import android.Manifest
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
+import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -16,7 +13,6 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.elgenium.smartcity.databinding.DialogTripRecapBinding
 import com.google.android.gms.maps.GoogleMap.CameraPerspective
@@ -50,16 +46,6 @@ class StartNavigationsActivity : AppCompatActivity() {
     private var mLocationListener: RoadSnappedLocationProvider.LocationListener? = null
     private var mRoadSnappedLocationProvider: RoadSnappedLocationProvider? = null
     private var startTime: Long = 0
-    private var isArrivalConfirmed = false
-    private var lastKnownDistance: Float = Float.MAX_VALUE
-    private var arrivalCheckStartTime: Long? = null
-
-    // Define a custom arrival threshold (in meters)
-    private val arrivalThresholdDistance = 50f // Adjust this value to your desired threshold
-    private val arrivalConfirmationDuration = 5000L
-
-
-    // Set fields for requesting location permission.
     private val PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1
     private var locationPermissionGranted = false
 
@@ -145,21 +131,48 @@ class StartNavigationsActivity : AppCompatActivity() {
     }
 
     private fun requestLocationPermissions(routeToken: String, placeIds: ArrayList<String>) {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-            != PackageManager.PERMISSION_GRANTED ||
-            ContextCompat.checkSelfPermission(this, Manifest.permission.FOREGROUND_SERVICE_LOCATION)
-            != PackageManager.PERMISSION_GRANTED) {
+        // List of permissions to request
+        val permissionsToRequest = mutableListOf<String>()
 
-            ActivityCompat.requestPermissions(this,
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION,
-                    Manifest.permission.FOREGROUND_SERVICE_LOCATION),
-                PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION)
+        // Check ACCESS_FINE_LOCATION permission
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED) {
+            permissionsToRequest.add(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+
+        // Check ACCESS_COARSE_LOCATION permission
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED) {
+            permissionsToRequest.add(Manifest.permission.ACCESS_COARSE_LOCATION)
+        }
+
+        // Check FOREGROUND_SERVICE_LOCATION permission
+        if (ContextCompat.checkSelfPermission(this, "android.permission.FOREGROUND_SERVICE_LOCATION")
+            != PackageManager.PERMISSION_GRANTED) {
+            permissionsToRequest.add("android.permission.FOREGROUND_SERVICE_LOCATION")
+        }
+
+        // Check POST_NOTIFICATIONS permission for Android 13 (API level 33) and above
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+
+        // Request all permissions if any are not granted
+        if (permissionsToRequest.isNotEmpty()) {
+            ActivityCompat.requestPermissions(
+                this,
+                permissionsToRequest.toTypedArray(),
+                PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION
+            )
         } else {
-            // Permissions are already granted, you can start your service or navigation
+            // Permissions are already granted, proceed with the service or navigation
             initializeNavigationSdk(routeToken, placeIds)
         }
     }
+
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
@@ -171,57 +184,6 @@ class StartNavigationsActivity : AppCompatActivity() {
         }
     }
 
-    private fun showArrivalNotification() {
-        // Example of showing an in-app alert using a Toast (you can customize this with dialogs or notifications)
-        Toast.makeText(this, "You have arrived at your destination!", Toast.LENGTH_LONG).show()
-
-        // Optionally, you could also trigger a vibration or play a sound
-        val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
-
-        // You could also play a voice instruction here if needed
-         //textToSpeech.speak("You have arrived", TextToSpeech.QUEUE_FLUSH, null, null)
-
-        // Alternatively, you can also use a notification
-        showNotification()
-    }
-
-    private fun showNotification() {
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val notificationId = 1 // Arbitrary ID
-        val channelId = "arrival_channel" // Create a unique channel ID
-
-        // Create an explicit intent to launch the specific activity
-        val intent = Intent(this, StartNavigationsActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            // You can add extras here if needed
-            putExtra("notification_type", "arrival")
-        }
-
-        // Create a pending intent that wraps the intent to open StartNavigationsActivity
-        val pendingIntent: PendingIntent = PendingIntent.getActivity(
-            this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        // For Android Oreo and above, you need to create a notification channel
-        val importance = NotificationManager.IMPORTANCE_HIGH
-        val notificationChannel = NotificationChannel(channelId, "Arrival Notifications", importance)
-        notificationChannel.description = "Notifications for arrival at destinations"
-        notificationManager.createNotificationChannel(notificationChannel)
-
-        // Build the notification
-        val notification = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.drawable.smart_city_logo) // Replace with your app icon
-            .setContentTitle("Arrived!")
-            .setContentText("You have arrived at the destination.")
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(true)
-            .setContentIntent(pendingIntent) // Set the pending intent to be triggered when the notification is pressed
-            .build()
-
-        // Display the notification
-        notificationManager.notify(notificationId, notification)
-    }
 
     private fun navigateWithMultipleStops(routeToken: String, placesIds: List<String>) {
         // Create a list of waypoints based on the provided place IDs
@@ -267,9 +229,7 @@ class StartNavigationsActivity : AppCompatActivity() {
 
                     registerNavigationListeners();
 
-
                     navigator.simulator.simulateLocationsAlongExistingRoute(SimulationOptions().speedMultiplier(5F))
-
 
                     // Start turn-by-turn guidance along the route
                     navigator.startGuidance()
@@ -296,8 +256,9 @@ class StartNavigationsActivity : AppCompatActivity() {
 
             if (arrivalEvent.isFinalDestination) {
                 displayMessage("onArrival: You've arrived at the final destination.")
-
-
+                val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+                vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
+                showTripSummaryDialog(computeTotalDistance(), computeTotalTime(), computeArrivalTime(), computeAverageSpeed(),getTrafficConditions())
 
             } else {
                 // Continue to the next waypoint if not at the final destination
@@ -309,70 +270,7 @@ class StartNavigationsActivity : AppCompatActivity() {
 
         // Listens for arrival at a waypoint.
         navigator.addArrivalListener(mArrivalListener)
-
-        mRouteChangedListener =
-            RouteChangedListener {
-                displayMessage(
-                    ("onRouteChanged: The driver's route has changed. Current waypoint: "
-                            + navigator.currentRouteSegment.destinationWaypoint
-                        .title),
-                )
-            }
-        // Listens for changes in the route.
-        navigator.addRouteChangedListener(mRouteChangedListener)
-
-        // Listens for road-snapped location updates.
-        mRoadSnappedLocationProvider = NavigationApi.getRoadSnappedLocationProvider(application)
-        mLocationListener = object : RoadSnappedLocationProvider.LocationListener {
-            override fun onLocationChanged(location: Location) {
-
-            }
-
-            override fun onRawLocationUpdate(location: Location) {
-
-            }
-        }
-
-     // Add the listener to the location provider
-        if (mRoadSnappedLocationProvider != null) {
-            mRoadSnappedLocationProvider!!.addLocationListener(mLocationListener)
-        } else {
-            displayMessage("ERROR: Failed to get a location provider")
-        }
-
-
-        mRemainingTimeOrDistanceChangedListener = Navigator.RemainingTimeOrDistanceChangedListener {
-            // Call the method to check distance and handle arrival
-            checkRemainingDistanceAndHandleArrival()
-        }
-
-        // Register the listener for changes in time and distance
-        navigator.addRemainingTimeOrDistanceChangedListener(
-            60,  // Threshold for remaining time changes (in seconds)
-            20, // Threshold for remaining distance changes (in meters)
-            mRemainingTimeOrDistanceChangedListener
-        )
-
     }
-
-    private fun checkRemainingDistanceAndHandleArrival() {
-        // Get the current remaining time and distance list
-        val timeAndDistanceList = navigator.timeAndDistanceList
-
-        // Check if there are any waypoints in the list
-        if (timeAndDistanceList.isNotEmpty()) {
-            val firstWaypoint = timeAndDistanceList[0] // Get the first waypoint
-
-            // Check the remaining distance to the destination
-            val remainingDistance = firstWaypoint.meters
-
-            // Check if the remaining distance is less than your arrival threshold
-            if (remainingDistance <= 20) { // Adjust this value as needed
-                showTripSummaryDialog(computeTotalDistance(), computeTotalTime(), computeArrivalTime(), computeAverageSpeed(),getTrafficConditions())
-            }
-        }
-    }
-
 
     private fun displayMessage(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
