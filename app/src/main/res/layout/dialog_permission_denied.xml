@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/primary_color"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/error_animation"
+        android:layout_width="150dp"
+        app:lottie_autoPlay="true"
+        android:layout_alignParentTop="true"
+        android:layout_gravity="center_horizontal"
+        app:lottie_loop="true"
+        android:layout_height="150dp"
+        app:lottie_rawRes="@raw/permission_denied" />
+
+    <TextView
+        android:id="@+id/dialog_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Permissions Required"
+        android:textColor="@color/brand_color"
+        android:layout_marginTop="8dp"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:paddingBottom="8dp" />
+
+    <TextView
+        android:id="@+id/dialog_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/gray"
+        android:text="Permissions are necessary for the app to function properly."
+        android:textSize="16sp"
+        android:paddingBottom="16dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_go_to_settings"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Go to Settings"
+        app:backgroundTint="@color/secondary_color"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        app:cornerRadius="8dp"
+        android:textColor="@android:color/white"
+        android:layout_marginBottom="8dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_cancel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Cancel"
+        app:backgroundTint="@color/primary_color"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        app:cornerRadius="8dp"
+        app:strokeWidth="2dp"
+        app:strokeColor="@color/red"
+        android:textColor="@color/red"
+        android:layout_marginBottom="8dp" />
+</LinearLayout>
