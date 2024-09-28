@@ -5,11 +5,24 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="24dp"
-    android:background="@color/white">
+    android:background="@color/primary_color">
+
+    <!-- Close Button -->
+    <ImageButton
+        android:id="@+id/closeButton"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:background="@null"
+        android:contentDescription="Close"
+        android:src="@drawable/ic_qu_appbar_close"
+        app:tint="@color/red"/>
 
     <com.airbnb.lottie.LottieAnimationView
         android:id="@+id/lotifyAnimation"
-        android:layout_alignParentTop="true"
+        android:layout_below="@+id/closeButton"
         android:layout_width="150dp"
         android:layout_height="150dp"
         android:layout_centerInParent="true"
@@ -61,17 +74,6 @@
         android:layout_marginTop="4dp"
         android:layout_centerHorizontal="true" />
 
-    <!-- Trip Summary Label -->
-    <TextView
-        android:id="@+id/tripSummaryLabelTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Trip Summary"
-        android:textSize="16sp"
-        android:textColor="@color/black"
-        android:layout_below="@id/addressTextView"
-        android:layout_marginTop="16dp" />
-
     <!-- Trip Summary Section in CardView -->
     <androidx.cardview.widget.CardView
         android:id="@+id/tripSummaryCard"
@@ -80,10 +82,10 @@
         app:cardElevation="4dp"
         app:cardBackgroundColor="@color/white"
         app:cardCornerRadius="8dp"
-        android:layout_below="@id/tripSummaryLabelTextView"
+        android:layout_below="@id/addressTextView"
         android:layout_marginTop="8dp">
 
-        <LinearLayout
+         <LinearLayout
             android:id="@+id/tripSummarySection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -213,7 +215,7 @@
         android:id="@+id/doneButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Done"
+        android:text="Return to Directions"
         android:textSize="16sp"
         android:paddingTop="16dp"
         android:paddingBottom="16dp"

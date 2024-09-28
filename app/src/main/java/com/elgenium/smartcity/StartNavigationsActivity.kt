@@ -50,6 +50,13 @@ class StartNavigationsActivity : AppCompatActivity() {
     private var mLocationListener: RoadSnappedLocationProvider.LocationListener? = null
     private var mRoadSnappedLocationProvider: RoadSnappedLocationProvider? = null
     private var startTime: Long = 0
+    private var isArrivalConfirmed = false
+    private var lastKnownDistance: Float = Float.MAX_VALUE
+    private var arrivalCheckStartTime: Long? = null
+
+    // Define a custom arrival threshold (in meters)
+    private val arrivalThresholdDistance = 50f // Adjust this value to your desired threshold
+    private val arrivalConfirmationDuration = 5000L
 
 
     // Set fields for requesting location permission.
@@ -285,26 +292,21 @@ class StartNavigationsActivity : AppCompatActivity() {
     }
 
     private fun registerNavigationListeners() {
-        mArrivalListener =
-            ArrivalListener { arrivalEvent ->
-                displayMessage(
-                    ("onArrival: You've arrived at a waypoint: "
-                            + navigator.currentRouteSegment.destinationWaypoint
-                        .title)
-                )
-                // Start turn-by-turn guidance for the next leg of the route.
-                if (arrivalEvent.isFinalDestination) {
-                    displayMessage(
-                        "onArrival: You've arrived at the final destination."
-                    )
+        mArrivalListener = ArrivalListener { arrivalEvent ->
 
-                    computeTotalTime()
-                    showTripSummaryDialog(computeTotalDistance(), computeTotalTime(), computeArrivalTime(), computeAverageSpeed(), getTrafficConditions())
-                } else {
-                    navigator.continueToNextDestination()
-                    navigator.startGuidance()
-                }
+            if (arrivalEvent.isFinalDestination) {
+                displayMessage("onArrival: You've arrived at the final destination.")
+
+
+
+            } else {
+                // Continue to the next waypoint if not at the final destination
+                navigator.continueToNextDestination()
+                navigator.startGuidance()
             }
+
+        }
+
         // Listens for arrival at a waypoint.
         navigator.addArrivalListener(mArrivalListener)
 
@@ -321,42 +323,56 @@ class StartNavigationsActivity : AppCompatActivity() {
 
         // Listens for road-snapped location updates.
         mRoadSnappedLocationProvider = NavigationApi.getRoadSnappedLocationProvider(application)
-        mLocationListener =
-            object : RoadSnappedLocationProvider.LocationListener {
-                override fun onLocationChanged(location: Location) {
-//                    displayMessage(
-//                        "onLocationUpdated: Navigation engine has provided a new"
-//                                + " road-snapped location: "
-//                                + location.toString()
-//                    )
-                }
+        mLocationListener = object : RoadSnappedLocationProvider.LocationListener {
+            override fun onLocationChanged(location: Location) {
 
-                override fun onRawLocationUpdate(location: Location) {
-//                    displayMessage(
-//                        (("onLocationUpdated: Navigation engine has provided a new"
-//                                + " raw location: "
-//                                + location.toString()))
-//                    )
-                }
             }
+
+            override fun onRawLocationUpdate(location: Location) {
+
+            }
+        }
+
+     // Add the listener to the location provider
         if (mRoadSnappedLocationProvider != null) {
             mRoadSnappedLocationProvider!!.addLocationListener(mLocationListener)
         } else {
             displayMessage("ERROR: Failed to get a location provider")
         }
 
-        mRemainingTimeOrDistanceChangedListener =
-            RemainingTimeOrDistanceChangedListener {
-                displayMessage(
-                    "onRemainingTimeOrDistanceChanged: Time or distance estimate ${navigator.timeAndDistanceList.last()}"
-                )
-            }
-        // Listens for changes in time or distance.
+
+        mRemainingTimeOrDistanceChangedListener = Navigator.RemainingTimeOrDistanceChangedListener {
+            // Call the method to check distance and handle arrival
+            checkRemainingDistanceAndHandleArrival()
+        }
+
+        // Register the listener for changes in time and distance
         navigator.addRemainingTimeOrDistanceChangedListener(
-            60, 100, mRemainingTimeOrDistanceChangedListener
+            60,  // Threshold for remaining time changes (in seconds)
+            20, // Threshold for remaining distance changes (in meters)
+            mRemainingTimeOrDistanceChangedListener
         )
 
     }
+
+    private fun checkRemainingDistanceAndHandleArrival() {
+        // Get the current remaining time and distance list
+        val timeAndDistanceList = navigator.timeAndDistanceList
+
+        // Check if there are any waypoints in the list
+        if (timeAndDistanceList.isNotEmpty()) {
+            val firstWaypoint = timeAndDistanceList[0] // Get the first waypoint
+
+            // Check the remaining distance to the destination
+            val remainingDistance = firstWaypoint.meters
+
+            // Check if the remaining distance is less than your arrival threshold
+            if (remainingDistance <= 20) { // Adjust this value as needed
+                showTripSummaryDialog(computeTotalDistance(), computeTotalTime(), computeArrivalTime(), computeAverageSpeed(),getTrafficConditions())
+            }
+        }
+    }
+
 
     private fun displayMessage(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
@@ -479,12 +495,17 @@ class StartNavigationsActivity : AppCompatActivity() {
             finish()
         }
 
+        binding.closeButton.setOnClickListener {
+            alertDialog.dismiss()
+        }
+
         // Show the dialog
         alertDialog.show()
     }
 
     override fun onDestroy() {
         super.onDestroy()
+
         // Stop any ongoing navigation
         if (::navigator.isInitialized) {
             navigator.stopGuidance()
@@ -495,17 +516,18 @@ class StartNavigationsActivity : AppCompatActivity() {
             supportFragmentManager.beginTransaction().remove(it).commit()
         }
 
-
+        // Check if the activity is finishing before removing listeners
         if (this.isFinishing) {
-            navigator.removeArrivalListener(mArrivalListener);
-            navigator.removeRouteChangedListener(mRouteChangedListener);
-            navigator.removeRemainingTimeOrDistanceChangedListener(
-                mRemainingTimeOrDistanceChangedListener);
+            // Use safe calls to avoid NullPointerException
+            mArrivalListener?.let { navigator.removeArrivalListener(it) }
+            mRouteChangedListener?.let { navigator.removeRouteChangedListener(it) }
+            mRemainingTimeOrDistanceChangedListener?.let { navigator.removeRemainingTimeOrDistanceChangedListener(it) }
             mRoadSnappedLocationProvider?.removeLocationListener(mLocationListener)
-            displayMessage("OnDestroy: Released navigation listeners.");
+            displayMessage("OnDestroy: Released navigation listeners.")
         }
+
         navigator.clearDestinations()
         navigator.cleanup()
-
     }
+
 }
