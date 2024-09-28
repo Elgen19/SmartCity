@@ -116,6 +116,11 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
             navigateToActivity(this, SearchActivity::class.java, true)
         }
 
+//        binding.fabDirections.setOnClickListener {
+//            val intent = Intent(this, DirectionsActivity::class.java)
+//            intent.putExtra("")
+//        }
+
         // Setup map styles button listener
         binding.fabMapStyles.setOnClickListener {
             showMapStylesBottomSheet()
@@ -662,6 +667,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
                     name = place.name,
                     address = place.address,
                     phoneNumber = place.phoneNumber,
+                    latLngString = place.latLng?.toString(),
                     latLng = place.latLng,
                     openingDaysAndTime = place.openingHours?.weekdayText?.joinToString(", "),
                     rating = place.rating?.toString(),
@@ -721,7 +727,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
         setupMoreButton(bottomSheetView, bottomSheetDialog)
         setupCloseButton(bottomSheetView, bottomSheetDialog)
         setupSavedPlaces(bottomSheetView, bottomSheetDialog, place)
-        setupGetDirectionsButton(bottomSheetView, bottomSheetDialog)
+        setupGetDirectionsButton(bottomSheetView, bottomSheetDialog, place)
 
         // Show the bottom sheet dialog
         bottomSheetDialog.show()
@@ -955,13 +961,40 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    private fun setupGetDirectionsButton(bottomSheetView: View, bottomSheetDialog: BottomSheetDialog) {
+    private fun setupGetDirectionsButton(bottomSheetView: View, bottomSheetDialog: BottomSheetDialog, place: SavedPlace) {
         val btnGetDirections: MaterialButton = bottomSheetView.findViewById(R.id.btnGetDirections)
         btnGetDirections.setOnClickListener {
             // Dismiss the bottom sheet dialog
             bottomSheetDialog.dismiss()
 
-            navigateToActivity(this, DirectionsActivity::class.java, false)
+            getUserLocation { userLocation ->
+                val origin = "${userLocation.latitude},${userLocation.longitude}"
+                val regex = """lat/lng: \((\-?\d+\.\d+),(\-?\d+\.\d+)\)""".toRegex()
+                val destinationLatLng =
+                    place.latLngString?.let {
+                        regex.find(it)?.let { matchResult ->
+                            "${matchResult.groupValues[1]},${matchResult.groupValues[2]}"
+                        }
+                    }
+                val destination = "${place.name}==${place.address}==${destinationLatLng}==${place.id}"
+                Log.e("PlacesActivity", "Destination Lat lng: ${place.latLngString}")
+                Log.e(
+                    "PlacesActivity",
+                    "Origin: $origin, Destination: $destination"
+                )
+
+                if (destination.isNotBlank()) {
+                    val intent =
+                        Intent(this@PlacesActivity, DirectionsActivity::class.java)
+                    intent.putExtra("DESTINATION", destination)
+                    intent.putExtra("ORIGIN", origin)
+                    startActivity(intent)
+                    bottomSheetDialog.dismiss()
+                } else {
+                    Log.e("PlacesActivity", "Destination is missing")
+                }
+            }
+
         }
     }
 
@@ -1047,7 +1080,6 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
         }
         return super.dispatchTouchEvent(ev)
     }
-
 
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1
