@@ -48,13 +48,15 @@ class StartNavigationsActivity : AppCompatActivity() {
     private var startTime: Long = 0
     private val PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1
     private var locationPermissionGranted = false
+    private lateinit var routeToken: String
+    private lateinit var placeIds: ArrayList<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_start_navigations)
 
-        val routeToken = intent.getStringExtra("ROUTE_TOKEN")
-        val placeIds = intent.getStringArrayListExtra("PLACE_IDS")
+        routeToken = intent.getStringExtra("ROUTE_TOKEN") ?: ""
+        placeIds = intent.getStringArrayListExtra("PLACE_IDS") ?: ArrayList()
 
         // Use the placeIds and routeToken for further navigation logic
         if (placeIds != null && routeToken != null) {
@@ -119,12 +121,13 @@ class StartNavigationsActivity : AppCompatActivity() {
 
                 override fun onError(@NavigationApi.ErrorCode errorCode: Int) {
                     when (errorCode) {
-                        NavigationApi.ErrorCode.NOT_AUTHORIZED -> displayMessage("Error loading Navigation SDK: Your API key is invalid or not authorized to use the Navigation SDK.")
-                        NavigationApi.ErrorCode.TERMS_NOT_ACCEPTED -> displayMessage("Error loading Navigation SDK: User did not accept the Navigation Terms of Use.")
+                        NavigationApi.ErrorCode.NOT_AUTHORIZED -> displayMessage("Your API key is invalid or not authorized to use the Navigation SDK.")
+                        NavigationApi.ErrorCode.TERMS_NOT_ACCEPTED -> displayMessage("Please accept the terms and conditions to continue.")
                         NavigationApi.ErrorCode.NETWORK_ERROR -> displayMessage("Error loading Navigation SDK: Network error.")
                         NavigationApi.ErrorCode.LOCATION_PERMISSION_MISSING -> displayMessage("Error loading Navigation SDK: Location permission is missing.")
                         else -> displayMessage("Error loading Navigation SDK: $errorCode")
                     }
+                    finish()
                 }
             }
         )
@@ -180,6 +183,11 @@ class StartNavigationsActivity : AppCompatActivity() {
         if (requestCode == PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 locationPermissionGranted = true
+            }
+        }
+        if (requestCode == PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                requestLocationPermissions(routeToken, placeIds)
             }
         }
     }
@@ -409,13 +417,13 @@ class StartNavigationsActivity : AppCompatActivity() {
             navigator.stopGuidance()
         }
 
-        // Perform any other necessary cleanups
-        supportFragmentManager.findFragmentById(R.id.navigation_fragment)?.let {
-            supportFragmentManager.beginTransaction().remove(it).commit()
+        // Remove navigation fragment if it exists
+        supportFragmentManager.findFragmentById(R.id.navigation_fragment)?.let { fragment ->
+            supportFragmentManager.beginTransaction().remove(fragment).commit()
         }
 
         // Check if the activity is finishing before removing listeners
-        if (this.isFinishing) {
+        if (isFinishing) {
             // Use safe calls to avoid NullPointerException
             mArrivalListener?.let { navigator.removeArrivalListener(it) }
             mRouteChangedListener?.let { navigator.removeRouteChangedListener(it) }
@@ -424,8 +432,12 @@ class StartNavigationsActivity : AppCompatActivity() {
             displayMessage("OnDestroy: Released navigation listeners.")
         }
 
-        navigator.clearDestinations()
-        navigator.cleanup()
+        // Clear destinations and perform cleanup, ensuring navigator is initialized
+        if (::navigator.isInitialized) {
+            navigator.clearDestinations()
+            navigator.cleanup()
+        }
     }
+
 
 }
