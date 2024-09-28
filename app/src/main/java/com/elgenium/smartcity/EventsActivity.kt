@@ -3,6 +3,7 @@ package com.elgenium.smartcity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
+import android.content.res.Resources
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.util.Log
@@ -32,6 +33,7 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
@@ -50,6 +52,7 @@ import kotlinx.coroutines.launch
 import retrofit2.Retrofit
 import retrofit2.await
 import retrofit2.converter.gson.GsonConverterFactory
+import java.io.IOException
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -123,6 +126,27 @@ class EventsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
+        setMapStyle()
+    }
+
+    private fun setMapStyle() {
+        try {
+            // Load the JSON file from the res/raw directory
+            val inputStream = resources.openRawResource(R.raw.map_style_night)
+            val jsonString = inputStream.bufferedReader().use { it.readText() }
+
+            // Apply the style to the map
+            val success = googleMap.setMapStyle(MapStyleOptions(jsonString))
+            if (!success) {
+                Log.e("MapStyle", "Style parsing failed.")
+            }
+
+        } catch (e: IOException) {
+            e.printStackTrace()
+            // Handle the exception if loading the style fails
+        } catch (e: Resources.NotFoundException) {
+            e.printStackTrace()
+        }
     }
 
     private fun setupMap() {
