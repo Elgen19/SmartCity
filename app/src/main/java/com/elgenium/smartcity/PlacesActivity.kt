@@ -6,6 +6,7 @@ import android.annotation.SuppressLint
 import android.app.ActivityOptions
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Rect
@@ -51,8 +52,10 @@ import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.PointOfInterest
 import com.google.android.libraries.places.api.model.PhotoMetadata
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.net.FetchPhotoRequest
@@ -72,13 +75,14 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.io.ByteArrayOutputStream
+import java.io.IOException
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
 @Suppress("PrivatePropertyName")
-class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
+class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiClickListener {
 
     private lateinit var mMap: GoogleMap
     private lateinit var binding: ActivityPlacesBinding
@@ -263,6 +267,11 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
 
+        mMap.setIndoorEnabled(true)
+//        setMapStyle()
+
+        googleMap.setOnPoiClickListener(this)
+
         // Check for location permission
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             // Enable the My Location layer
@@ -306,6 +315,57 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQUEST_CODE)
         }
     }
+
+    override fun onPoiClick(poi: PointOfInterest) {
+
+        currentRedMarker?.remove()
+        // Handle the POI click event
+        currentRedMarker = mMap.addMarker(
+            MarkerOptions()
+                .position(poi.latLng)
+                .title(poi.name)
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)) // Red marker
+        )
+
+        // Optionally, move the camera to the new marker
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(poi.latLng, 15f))
+
+        poi.placeId?.let { it ->
+            fetchPlaceDetailsFromAPI(it) { savedPlace ->
+                savedPlace?.let {
+                    this.savedPlace = it
+                    // Update UI or do something with the savedPlace
+                    plotMarkerOnMap(poi.placeId!!, savedPlace) // Use the Place object to plot the marker
+                    showPlaceDetailsInBottomSheet(it) // Use the Place object to show details
+                } ?: run {
+                    // Handle the case where savedPlace is null
+                    Log.e("PlacesActivity", "Failed to fetch place details")
+                }
+            }
+        }
+    }
+
+
+    private fun setMapStyle() {
+        try {
+            // Load the JSON file from the res/raw directory
+            val inputStream = resources.openRawResource(R.raw.map_style_night)
+            val jsonString = inputStream.bufferedReader().use { it.readText() }
+
+            // Apply the style to the map
+            val success = mMap.setMapStyle(MapStyleOptions(jsonString))
+            if (!success) {
+                Log.e("MapStyle", "Style parsing failed.")
+            }
+
+        } catch (e: IOException) {
+            e.printStackTrace()
+            // Handle the exception if loading the style fails
+        } catch (e: Resources.NotFoundException) {
+            e.printStackTrace()
+        }
+    }
+
 
     private fun setupMoreButton(bottomSheetView: View, bottomSheetDialog: BottomSheetDialog) {
         val btnMore: MaterialButton = bottomSheetView.findViewById(R.id.btnMore)
