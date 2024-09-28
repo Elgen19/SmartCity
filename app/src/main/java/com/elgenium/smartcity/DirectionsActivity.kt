@@ -5,6 +5,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.location.Geocoder
@@ -35,6 +36,7 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLngBounds
+import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.Polyline
@@ -46,6 +48,7 @@ import com.google.maps.android.PolyUtil
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.io.IOException
 import java.util.Locale
 
 
@@ -538,6 +541,8 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
 
+        setMapStyle()
+
         // Check for location permission
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             // Enable the My Location layer
@@ -611,6 +616,26 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         binding.closeButton.setOnClickListener {
             // Dismiss the bottom sheet
             behavior.state = BottomSheetBehavior.STATE_HIDDEN
+        }
+    }
+
+    private fun setMapStyle() {
+        try {
+            // Load the JSON file from the res/raw directory
+            val inputStream = resources.openRawResource(R.raw.map_style_night)
+            val jsonString = inputStream.bufferedReader().use { it.readText() }
+
+            // Apply the style to the map
+            val success = mMap.setMapStyle(MapStyleOptions(jsonString))
+            if (!success) {
+                Log.e("MapStyle", "Style parsing failed.")
+            }
+
+        } catch (e: IOException) {
+            e.printStackTrace()
+            // Handle the exception if loading the style fails
+        } catch (e: Resources.NotFoundException) {
+            e.printStackTrace()
         }
     }
 

@@ -268,7 +268,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         mMap = googleMap
 
         mMap.setIndoorEnabled(true)
-//        setMapStyle()
+        setMapStyle()
 
         googleMap.setOnPoiClickListener(this)
 
@@ -296,7 +296,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
                 }
             }
 
-//            // Marker click listener to show the bottom sheet
+            // Marker click listener to show the bottom sheet
             mMap.setOnMarkerClickListener { marker ->
                 // Fetch the place ID (you can save this when adding the marker)
                 val placeId = marker.tag as? String
@@ -345,7 +345,6 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         }
     }
 
-
     private fun setMapStyle() {
         try {
             // Load the JSON file from the res/raw directory
@@ -365,7 +364,6 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
             e.printStackTrace()
         }
     }
-
 
     private fun setupMoreButton(bottomSheetView: View, bottomSheetDialog: BottomSheetDialog) {
         val btnMore: MaterialButton = bottomSheetView.findViewById(R.id.btnMore)
@@ -477,7 +475,6 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         }
     }
 
-    // Save place data with image URLs to Firebase Realtime Database
     private fun savePlaceToDatabase(userRef: DatabaseReference, placeData: SavedPlace?, imageUrls: List<String>) {
         placeData?.let { place ->
             // Add the image URLs to the place data
