@@ -419,14 +419,31 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
                 Log.d("PlacesActivity", "Inside of place data:  $placeData")
 
                 LayoutStateManager.showLoadingLayout(this, "Please wait while we are saving your place")
-                // Function to upload images to Firebase Storage
-                uploadPlaceImagesAndSaveData(userRef, placeData, place)
+
+                // Check for existing records first
+                userRef.orderByChild("id").equalTo(placeData?.id).addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        if (snapshot.exists()) {
+                            // Place already exists, show a message or handle accordingly
+                            LayoutStateManager.showFailureLayout(this@PlacesActivity, "This place is already save in the Favorites section. Please select another place to save.", "Return to Places", PlacesActivity::class.java)
+                        } else {
+                            // Proceed to upload images and save the place data
+                            uploadPlaceImagesAndSaveData(userRef, placeData, place)
+                        }
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        // Handle possible errors
+                        Log.e("PlacesActivity", "Database error", error.toException())
+                    }
+                })
             } else {
                 // Handle case where user is not authenticated
                 Toast.makeText(this, "User not authenticated. Please log in.", Toast.LENGTH_SHORT).show()
             }
         }
     }
+
 
     private fun uploadPlaceImagesAndSaveData(userRef: DatabaseReference, placeData: SavedPlace?, place: SavedPlace) {
         val storageRef = FirebaseStorage.getInstance().reference.child("places")
@@ -486,35 +503,31 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
             // Add the image URLs to the place data
             val updatedPlaceData = place.copy(imageUrls = imageUrls)
 
-            // Check for existing records
-            userRef.orderByChild("id").equalTo(place.id).addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (snapshot.exists()) {
-                        // Place already exists, show a message or handle accordingly
-                        Toast.makeText(this@PlacesActivity, "Place is already saved!", Toast.LENGTH_SHORT).show()
-                    } else {
-                        // Save the place data
-                        val newPlaceRef = userRef.push()
-                        newPlaceRef.setValue(updatedPlaceData)
-                            .addOnSuccessListener {
-                                // Successfully saved the place data
-                                LayoutStateManager.showSuccessLayout(this@PlacesActivity, "Place saved successfully!", "You can now view your saved place under Favorites menu.", PlacesActivity::class.java)
-                            }
-                            .addOnFailureListener { exception ->
-                                // Handle any errors
-                                Log.e("PlacesActivity", "Error saving place data", exception)
-                                LayoutStateManager.showFailureLayout(this@PlacesActivity, "Something went wrong. Please check your connection or try again.", "Return to Places", PlacesActivity::class.java)
-                            }
-                    }
+            // Save the place data without checking for duplicates again
+            val newPlaceRef = userRef.push()
+            newPlaceRef.setValue(updatedPlaceData)
+                .addOnSuccessListener {
+                    // Successfully saved the place data
+                    LayoutStateManager.showSuccessLayout(
+                        this@PlacesActivity,
+                        "Place saved successfully!",
+                        "You can now view your saved place under the Favorites menu.",
+                        PlacesActivity::class.java
+                    )
                 }
-
-                override fun onCancelled(error: DatabaseError) {
-                    // Handle possible errors
-                    Log.e("PlacesActivity", "Database error", error.toException())
+                .addOnFailureListener { exception ->
+                    // Handle any errors
+                    Log.e("PlacesActivity", "Error saving place data", exception)
+                    LayoutStateManager.showFailureLayout(
+                        this@PlacesActivity,
+                        "Something went wrong. Please check your connection or try again.",
+                        "Return to Places",
+                        PlacesActivity::class.java
+                    )
                 }
-            })
         }
     }
+
 
 //    private fun fetchAndAddPois(userLatLng: LatLng, category: String? = null) {
 //        // Check if category is null or empty
