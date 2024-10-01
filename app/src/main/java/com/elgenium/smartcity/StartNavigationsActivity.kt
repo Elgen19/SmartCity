@@ -17,15 +17,19 @@ import androidx.core.content.ContextCompat
 import com.elgenium.smartcity.databinding.DialogTripRecapBinding
 import com.google.android.gms.maps.GoogleMap.CameraPerspective
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.libraries.navigation.AlternateRoutesStrategy
 import com.google.android.libraries.navigation.CustomRoutesOptions
 import com.google.android.libraries.navigation.DisplayOptions
 import com.google.android.libraries.navigation.ForceNightMode.FORCE_NIGHT
+import com.google.android.libraries.navigation.ListenableResultFuture
 import com.google.android.libraries.navigation.NavigationApi
 import com.google.android.libraries.navigation.Navigator
 import com.google.android.libraries.navigation.Navigator.ArrivalListener
 import com.google.android.libraries.navigation.Navigator.RemainingTimeOrDistanceChangedListener
 import com.google.android.libraries.navigation.Navigator.RouteChangedListener
 import com.google.android.libraries.navigation.RoadSnappedLocationProvider
+import com.google.android.libraries.navigation.RoutingOptions
+import com.google.android.libraries.navigation.RoutingOptions.TravelMode
 import com.google.android.libraries.navigation.SimulationOptions
 import com.google.android.libraries.navigation.StylingOptions
 import com.google.android.libraries.navigation.SupportNavigationFragment
@@ -48,23 +52,31 @@ class StartNavigationsActivity : AppCompatActivity() {
     private var startTime: Long = 0
     private val PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1
     private var locationPermissionGranted = false
-    private lateinit var routeToken: String
+    private var routeToken: String? = null
+    private lateinit var travelMode: String
     private lateinit var placeIds: ArrayList<String>
+    private var isSimulated = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_start_navigations)
 
-        routeToken = intent.getStringExtra("ROUTE_TOKEN") ?: ""
+        travelMode = intent.getStringExtra("TRAVEL_MODE") ?: ""
+        routeToken = intent.getStringExtra("ROUTE_TOKEN") ?: "NO ROUTE TOKEN"
         placeIds = intent.getStringArrayListExtra("PLACE_IDS") ?: ArrayList()
+        isSimulated = intent.getBooleanExtra("IS_SIMULATED", false)
 
+        Log.e("StartNavigationsActivity", "TRAVEL MODE AT NAVIGATION: $travelMode" )
+        Log.e("StartNavigationsActivity", "ROUTE TOKEN AT NAVIGATION: $routeToken" )
+
+
+        if (routeToken == null)
+            routeToken = "NO ROUTE TOKEN"
         // Use the placeIds and routeToken for further navigation logic
-        if (placeIds != null && routeToken != null) {
-            requestLocationPermissions(routeToken, placeIds)
-        }
+        requestLocationPermissions(routeToken!!, placeIds, travelMode)
     }
 
-    private fun initializeNavigationSdk(routeToken: String, placeIds: ArrayList<String>) {
+    private fun initializeNavigationSdk(routeToken: String, placeIds: ArrayList<String>, travelMode: String) {
         // Request location permission.
         if (ContextCompat.checkSelfPermission(
                 applicationContext, Manifest.permission.ACCESS_FINE_LOCATION
@@ -116,7 +128,7 @@ class StartNavigationsActivity : AppCompatActivity() {
                         }
                     }
 
-                    navigateWithMultipleStops(routeToken, placeIds)
+                    navigateWithMultipleStops(routeToken, placeIds, travelMode)
                 }
 
                 override fun onError(@NavigationApi.ErrorCode errorCode: Int) {
@@ -133,7 +145,7 @@ class StartNavigationsActivity : AppCompatActivity() {
         )
     }
 
-    private fun requestLocationPermissions(routeToken: String, placeIds: ArrayList<String>) {
+    private fun requestLocationPermissions(routeToken: String, placeIds: ArrayList<String>, travelMode: String) {
         // List of permissions to request
         val permissionsToRequest = mutableListOf<String>()
 
@@ -172,7 +184,7 @@ class StartNavigationsActivity : AppCompatActivity() {
             )
         } else {
             // Permissions are already granted, proceed with the service or navigation
-            initializeNavigationSdk(routeToken, placeIds)
+            initializeNavigationSdk(routeToken, placeIds, travelMode)
         }
     }
 
@@ -187,13 +199,13 @@ class StartNavigationsActivity : AppCompatActivity() {
         }
         if (requestCode == PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                requestLocationPermissions(routeToken, placeIds)
+                routeToken?.let { requestLocationPermissions(it, placeIds, travelMode) }
             }
         }
     }
 
 
-    private fun navigateWithMultipleStops(routeToken: String, placesIds: List<String>) {
+    private fun navigateWithMultipleStops(routeToken: String, placesIds: List<String>, travelMode: String) {
         // Create a list of waypoints based on the provided place IDs
         val waypoints = mutableListOf<Waypoint>()
 
@@ -211,50 +223,57 @@ class StartNavigationsActivity : AppCompatActivity() {
             return
         }
 
-        val customRoutesOptions =
-            CustomRoutesOptions.builder()
-                .setRouteToken(routeToken)
-                .setTravelMode(CustomRoutesOptions.TravelMode.DRIVING)
-                .build()
-
+        // Set display options for stop signs and traffic lights
         val displayOptions = DisplayOptions().apply {
             showStopSigns(true)
             showTrafficLights(true)
         }
 
-        // Set multiple destinations using the list of waypoints
-        val pendingRoute = navigator.setDestinations(waypoints,customRoutesOptions, displayOptions)
+        val pendingRoute = if (travelMode == "WALK" || travelMode == "TRANSIT") {
+            val routingOptions = RoutingOptions().apply {
+                travelMode(if (travelMode == "WALK") TravelMode.WALKING else TravelMode.DRIVING)
+                avoidFerries(true)
+                avoidTolls(true)
+                alternateRoutesStrategy(AlternateRoutesStrategy.SHOW_ALL)
+            }
+            Log.e("StartNavigationsActivity", "ROUTE TOKEN: $routeToken")
+            navigator.setDestinations(waypoints, routingOptions, displayOptions)
+        } else {
+            val travelModeTraffic = if (travelMode == "DRIVE") CustomRoutesOptions.TravelMode.DRIVING else CustomRoutesOptions.TravelMode.TWO_WHEELER
 
-        // Handle the route calculation result
+            val customRoutesOptions = CustomRoutesOptions.builder()
+                .setRouteToken(routeToken)
+                .setTravelMode(travelModeTraffic)
+                .build()
+
+            Log.e("StartNavigationsActivity", "ROUTE TOKEN AT ELSE: $routeToken")
+
+            navigator.setDestinations(waypoints, customRoutesOptions, displayOptions)
+
+        }
+
+// Handle route result
+        handleRouteResult(pendingRoute)
+    }
+
+    private fun handleRouteResult(pendingRoute: ListenableResultFuture<Navigator.RouteStatus>) {
         pendingRoute.setOnResultListener { code ->
             when (code) {
                 Navigator.RouteStatus.OK -> {
-                    // Route found, start navigation
                     displayMessage("Route successfully calculated with multiple stops!")
-
-                    // Enable voice audio guidance for turn-by-turn navigation
                     navigator.setAudioGuidance(Navigator.AudioGuidance.VOICE_ALERTS_AND_GUIDANCE)
+                    registerNavigationListeners()
 
-                    registerNavigationListeners();
-
-                    navigator.simulator.simulateLocationsAlongExistingRoute(SimulationOptions().speedMultiplier(5F))
-
-                    // Start turn-by-turn guidance along the route
+                    if (isSimulated) {
+                        navigator.simulator.simulateLocationsAlongExistingRoute(SimulationOptions().speedMultiplier(5F))
+                    }
                     navigator.startGuidance()
                     startTrip()
                 }
-                Navigator.RouteStatus.NO_ROUTE_FOUND -> {
-                    displayMessage("Error starting navigation: No route found.")
-                }
-                Navigator.RouteStatus.NETWORK_ERROR -> {
-                    displayMessage("Error starting navigation: Network error.")
-                }
-                Navigator.RouteStatus.ROUTE_CANCELED -> {
-                    displayMessage("Error starting navigation: Route canceled.")
-                }
-                else -> {
-                    displayMessage("Error starting navigation: $code")
-                }
+                Navigator.RouteStatus.NO_ROUTE_FOUND -> displayMessage("Error starting navigation: No route found.")
+                Navigator.RouteStatus.NETWORK_ERROR -> displayMessage("Error starting navigation: Network error.")
+                Navigator.RouteStatus.ROUTE_CANCELED -> displayMessage("Error starting navigation: Route canceled.")
+                else -> displayMessage("Error starting navigation: $code")
             }
         }
     }
@@ -267,7 +286,7 @@ class StartNavigationsActivity : AppCompatActivity() {
                 val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
                 vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
                 showTripSummaryDialog(computeTotalDistance(), computeTotalTime(), computeArrivalTime(), computeAverageSpeed(),getTrafficConditions())
-
+                navigator.simulator.unsetUserLocation()
             } else {
                 // Continue to the next waypoint if not at the final destination
                 navigator.continueToNextDestination()

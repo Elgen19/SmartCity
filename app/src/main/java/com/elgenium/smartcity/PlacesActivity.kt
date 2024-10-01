@@ -30,9 +30,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.elgenium.smartcity.databinding.ActivityPlacesBinding
 import com.elgenium.smartcity.models.SavedPlace
 import com.elgenium.smartcity.network.PlaceDistanceService
-import com.elgenium.smartcity.network.PlacesService
 import com.elgenium.smartcity.network_reponses.PlaceDistanceResponse
-import com.elgenium.smartcity.network_reponses.PlacesResponse
 import com.elgenium.smartcity.singletons.ActivityNavigationUtils.navigateToActivity
 import com.elgenium.smartcity.singletons.BottomNavigationManager
 import com.elgenium.smartcity.singletons.LayoutStateManager
@@ -56,10 +54,12 @@ import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.PointOfInterest
+import com.google.android.libraries.places.api.model.CircularBounds
 import com.google.android.libraries.places.api.model.PhotoMetadata
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.net.FetchPhotoRequest
 import com.google.android.libraries.places.api.net.FetchPlaceRequest
+import com.google.android.libraries.places.api.net.SearchNearbyRequest
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.firebase.auth.FirebaseAuth
@@ -153,6 +153,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
 
         // Get the category from the intent from Search Activity, if available
         val category = intent.getStringExtra("CATEGORY")
+
         // Fetch the user's location (ensure you have location permission)
         getUserLocation { userLatLng ->
             // Use the userLatLng here
@@ -301,7 +302,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
                 // Fetch the place ID (you can save this when adding the marker)
                 val placeId = marker.tag as? String
                 placeId?.let {
-                    Log.d("PlacesActivity", "At on map click marker listener: $savedPlace")
+                    Log.e("PlacesActivity", "At on map click marker listener: $savedPlace")
                     // Plot the marker on the map
                     plotMarkerOnMap(placeId, savedPlace)
                     // Show place details in the bottom sheet
@@ -510,75 +511,189 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         }
     }
 
+//    private fun fetchAndAddPois(userLatLng: LatLng, category: String? = null) {
+//        // Check if category is null or empty
+//        if (category.isNullOrEmpty()) {
+//            Log.e("PlacesActivity", "No category provided. No POIs will be displayed.")
+//            return // Exit the method if no category is provided
+//        }
+//
+//        // Check for location permission
+//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+//            val apiKey = BuildConfig.MAPS_API_KEY
+//
+//            val retrofit = Retrofit.Builder()
+//                .baseUrl("https://maps.googleapis.com/maps/api/")
+//                .addConverterFactory(GsonConverterFactory.create())
+//                .build()
+//
+//            val service = retrofit.create(PlacesService::class.java)
+//
+//            val location = "${userLatLng.latitude},${userLatLng.longitude}"
+//            val radius = 5000 // Radius in meters
+//
+//            // Define custom icons
+//            val restaurantIcon = createCustomMarker(R.drawable.restaurant)
+//            val hotelIcon = createCustomMarker(R.drawable.hotel)
+//            val barIcon = createCustomMarker(R.drawable.bar)
+//            val defaultIcon = createCustomMarker(R.drawable.marker_custom)
+//
+//            // List with the provided category
+//            val categories = listOf(category)
+//
+//            Log.e("PlacesActivity", "category in list: $categories")
+//
+//            for (type in categories) {
+//                service.getNearbyPlaces(location, radius, type, apiKey).enqueue(object :
+//                    Callback<PlacesResponse> {
+//                    @SuppressLint("PotentialBehaviorOverride")
+//                    override fun onResponse(call: Call<PlacesResponse>, response: Response<PlacesResponse>) {
+//                        if (response.isSuccessful) {
+//                            response.body()?.results?.forEach { place ->
+//                                Log.e("PlacesActivity", "Place: ${response.body()}")
+//                                val latLng = LatLng(place.geometry.location.lat, place.geometry.location.lng)
+//                                val markerOptions = MarkerOptions()
+//                                    .position(latLng)
+//                                    .title(place.name)
+//                                    .snippet("Category: $type")
+//
+//                                // Set the icon based on the category
+//                                when (type) {
+//                                    "restaurant" -> markerOptions.icon(restaurantIcon)
+//                                    "hotel" -> markerOptions.icon(hotelIcon)
+//                                    "bar" -> markerOptions.icon(barIcon)
+//                                    else -> markerOptions.icon(defaultIcon) // Use default icon for other types
+//                                }
+//                                val marker = mMap.addMarker(markerOptions)
+//                                marker?.tag = place.place_id // Ensure place.id is valid
+//
+//// Fetch place details using the placeId
+//                                mMap.setOnMarkerClickListener { markers ->
+//                                    // Retrieve the place ID from the marker's tag
+//                                    val placeId = markers.tag as? String
+//                                    placeId?.let {
+//                                        // Fetch the details for this specific place and show them in the bottom sheet
+//                                        fetchPlaceDetailsFromAPI(it) { fetchedPlace ->
+//                                            fetchedPlace?.let { placeDetails ->
+//                                                showPlaceDetailsInBottomSheet(placeDetails) // Show details in the bottom sheet
+//                                            } ?: run {
+//                                                Log.e("PlacesActivity", "Failed to fetch place details for place ID: $placeId")
+//                                            }
+//                                        }
+//                                    }
+//                                    true // Return true to indicate that we have handled the click
+//                                }
+//
+//
+//
+//// Add marker to the poiMarkers list
+//                                marker?.let { poiMarkers.add(it) }
+//                                Log.d("PlacesActivity", "Marker added with ID: ${place.place_id}")
+//                                Log.d("PlacesActivity", "POI markers on the list: $poiMarkers")
+//
+//
+//                            }
+//                        } else {
+//                            Log.e("PlacesActivity", "Response error for type: $type. Error code: ${response.code()}")
+//                        }
+//                    }
+//
+//                    override fun onFailure(call: Call<PlacesResponse>, t: Throwable) {
+//                        Log.e("PlacesActivity", "Error fetching POI data", t)
+//                    }
+//                })
+//            }
+//        } else {
+//            ActivityCompat.requestPermissions(
+//                this,
+//                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+//                LOCATION_PERMISSION_REQUEST_CODE
+//            )
+//        }
+//    }
+
     private fun fetchAndAddPois(userLatLng: LatLng, category: String? = null) {
         // Check if category is null or empty
         if (category.isNullOrEmpty()) {
-            Log.d("PlacesActivity", "No category provided. No POIs will be displayed.")
+            Log.e("PlacesActivity", "No category provided. No POIs will be displayed.")
             return // Exit the method if no category is provided
         }
 
         // Check for location permission
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            val apiKey = BuildConfig.MAPS_API_KEY
 
-            val retrofit = Retrofit.Builder()
-                .baseUrl("https://maps.googleapis.com/maps/api/")
-                .addConverterFactory(GsonConverterFactory.create())
+
+            // Define the search area as a 1000 meter diameter circle
+            val center = LatLng(userLatLng.latitude, userLatLng.longitude)
+            val circle = CircularBounds.newInstance(center, 1000.0) // 1000 meters
+
+            // Define the fields to include in the response for each returned place
+            val placeFields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG, Place.Field.TYPES)
+
+            // Define included and excluded types
+            val includedTypes = listOf(category) // Only include "bar"
+            val excludedTypes = listOf("pizza_restaurant", "american_restaurant") // Exclude specific types
+
+// Build the SearchNearbyRequest
+            val searchNearbyRequest = SearchNearbyRequest.builder(circle, placeFields)
+                .setIncludedTypes(includedTypes) // Only bars will be included
+                .setExcludedTypes(excludedTypes)
+                .setMaxResultCount(10)
                 .build()
 
-            val service = retrofit.create(PlacesService::class.java)
+            // Call placesClient.searchNearby() to perform the search
+            placesClient.searchNearby(searchNearbyRequest)
+                .addOnSuccessListener { response ->
+                    val places = response.places
 
-            val location = "${userLatLng.latitude},${userLatLng.longitude}"
-            val radius = 5000 // Radius in meters
+                    // Clear existing markers if needed (optional)
+                    // poiMarkers.forEach { it.remove() }
+                    // poiMarkers.clear()
 
-            // Define custom icons
-            val restaurantIcon = createCustomMarker(R.drawable.restaurant)
-            val hotelIcon = createCustomMarker(R.drawable.hotel)
-            val barIcon = createCustomMarker(R.drawable.bar)
-            val defaultIcon = createCustomMarker(R.drawable.marker_custom)
+                    places.forEach { place ->
+                        val latLng = place.latLng ?: return@forEach
 
-            // List with the provided category
-            val categories = listOf(category)
+                        val markerOptions = MarkerOptions()
+                            .position(latLng)
+                            .title(place.name)
+                            .snippet("Type: ${place.types.joinToString(", ")}")
 
-            Log.d("PlacesActivity", "category in list: $categories")
+                        // Set the icon based on the category
+                        when {
+                            place.types!!.contains(Place.Type.RESTAURANT) -> markerOptions.icon(createCustomMarker(R.drawable.restaurant))
+                            place.types.contains(Place.Type.BAR) -> markerOptions.icon(createCustomMarker(R.drawable.bar)) // Add your custom icon for cafes
+                            else -> markerOptions.icon(createCustomMarker(R.drawable.marker_custom)) // Default icon
+                        }
 
-            for (type in categories) {
-                service.getNearbyPlaces(location, radius, type, apiKey).enqueue(object :
-                    Callback<PlacesResponse> {
-                    override fun onResponse(call: Call<PlacesResponse>, response: Response<PlacesResponse>) {
-                        if (response.isSuccessful) {
-                            response.body()?.results?.forEach { place ->
-                                Log.d("PlacesActivity", "Place: ${response.body()}")
-                                val latLng = LatLng(place.geometry.location.lat, place.geometry.location.lng)
-                                val markerOptions = MarkerOptions()
-                                    .position(latLng)
-                                    .title(place.name)
-                                    .snippet("Category: $type")
+                        // Add the marker to the map
+                        val marker = mMap.addMarker(markerOptions)
+                        marker?.tag = place.id // Store place ID in marker's tag
 
-                                // Set the icon based on the category
-                                when (type) {
-                                    "restaurant" -> markerOptions.icon(restaurantIcon)
-                                    "hotel" -> markerOptions.icon(hotelIcon)
-                                    "bar" -> markerOptions.icon(barIcon)
-                                    else -> markerOptions.icon(defaultIcon) // Use default icon for other types
+                        // Add marker to the poiMarkers list
+                        marker?.let { poiMarkers.add(it) }
+                        Log.d("PlacesActivity", "Marker added with ID: ${place.id}")
+                        Log.d("PlacesActivity", "POI markers on the list: $poiMarkers")
+
+                        // Set the marker click listener
+                        mMap.setOnMarkerClickListener { markers ->
+                            // Retrieve the place ID from the marker's tag
+                            val placeId = markers.tag as? String
+                            placeId?.let {
+                                // Fetch the details for this specific place and show them in the bottom sheet
+                                fetchPlaceDetailsFromAPI(it) { fetchedPlace ->
+                                    fetchedPlace?.let { placeDetails ->
+                                        showPlaceDetailsInBottomSheet(placeDetails) // Show details in the bottom sheet
+                                    } ?: run {
+                                        Log.e("PlacesActivity", "Failed to fetch place details for place ID: $placeId")
+                                    }
                                 }
-
-                                val marker = mMap.addMarker(markerOptions)
-                                marker?.tag = place.place_id // Ensure place.id is valid
-                                marker?.let { poiMarkers.add(it) }
-                                Log.d("PlacesActivity", "Marker added with ID: ${place.place_id}")
-                                Log.d("PlacesActivity", "POI markers on the list: $poiMarkers")
                             }
-                        } else {
-                            Log.e("PlacesActivity", "Response error for type: $type. Error code: ${response.code()}")
+                            true // Return true to indicate that we have handled the click
                         }
                     }
-
-                    override fun onFailure(call: Call<PlacesResponse>, t: Throwable) {
-                        Log.e("PlacesActivity", "Error fetching POI data", t)
-                    }
-                })
-            }
+                }.addOnFailureListener { exception ->
+                    Log.e("PlacesActivity", "Error fetching nearby places: ${exception.message}")
+                }
         } else {
             ActivityCompat.requestPermissions(
                 this,
@@ -587,6 +702,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
             )
         }
     }
+
 
     private fun createCustomMarker(iconId: Int): BitmapDescriptor {
         val markerWidth = 100 // Desired width of the marker in pixels
@@ -658,7 +774,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         }
 
         shareOptionLayout.setOnClickListener {
-        // setup share text
+            // setup share text
             val shareText = """
             📍 Check out this place:
             

@@ -17,6 +17,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -54,6 +55,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        Toast.makeText(this, "Permission handles: $permissionsHandled and Location enabled: ${isLocationEnabled()}", Toast.LENGTH_SHORT).show()
 
         // Ensure permissions are handled before proceeding
         if (permissionsHandled && isLocationEnabled()) {
@@ -226,6 +228,7 @@ class MainActivity : AppCompatActivity() {
             // If all permissions are granted, proceed to check location settings
             if (deniedPermissions.isEmpty()) {
                 promptEnableLocationAndPermissions()
+                permissionsHandled = true
             } else {
                 showPermissionDeniedDialog()
             }

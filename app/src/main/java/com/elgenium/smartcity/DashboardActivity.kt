@@ -66,6 +66,10 @@ class DashboardActivity : AppCompatActivity() {
     private val apiKey = BuildConfig.OPEN_WEATHER_API
     private lateinit var locationCallback: LocationCallback
     private lateinit var leaderboardAdapter: LeaderboardAdapter
+    private val COOLDOWN_TIME_MS: Long = 60 * 1000 // 1 minute in milliseconds
+    private var lastActiveUpdateTime: Long = 0 // To track the last update time
+    private val ACTIVE_TIMEFRAME_MS: Long = 2 * 60 * 1000 // 5 minutes in milliseconds
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -545,5 +549,34 @@ class DashboardActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         checkLocationSettings()
+
+        // Update last active timestamp
+        val currentTime = System.currentTimeMillis()
+        if (currentTime - lastActiveUpdateTime >= COOLDOWN_TIME_MS) {
+            val userId = FirebaseAuth.getInstance().currentUser?.uid
+            val userRef = FirebaseDatabase.getInstance().getReference("Users/$userId")
+            userRef.child("lastActive").setValue(currentTime)
+            lastActiveUpdateTime = currentTime // Update the last update time
+        }
+
+        // Count active users
+        countActiveUsers() // This will update the active user count
     }
+
+    private fun countActiveUsers() {
+        val cutoffTime = (System.currentTimeMillis() - ACTIVE_TIMEFRAME_MS).toDouble() // Convert to Double
+        val usersRef = FirebaseDatabase.getInstance().getReference("Users")
+
+        usersRef.orderByChild("lastActive").startAt(cutoffTime).addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val activeUserCount = snapshot.childrenCount // Count of active users
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                // Handle error if needed
+            }
+        })
+    }
+
+
 }

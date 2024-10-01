@@ -58,14 +58,13 @@
                         android:background="?attr/selectableItemBackgroundBorderless" />
                 </LinearLayout>
 
-                <com.google.android.material.card.MaterialCardView
+                <androidx.cardview.widget.CardView
                     android:layout_below="@id/topComponents"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     app:cardCornerRadius="8dp"
-                    app:strokeColor="@color/dark_gray"
-                    app:strokeWidth="2dp"
-
+                    android:elevation="4dp"
+                    app:cardBackgroundColor="@color/white"
                     android:id="@+id/courseCard">
 
                     <LinearLayout
@@ -201,11 +200,14 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Edit Course"
+                            app:strokeWidth="0dp"
+                            android:textColor="@color/gray"
+                            app:backgroundTint="@color/mod_google_transparent"
                             android:layout_gravity="end"
                             android:theme="@style/Widget.MaterialComponents.Button.OutlinedButton" />
 
                     </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
+                </androidx.cardview.widget.CardView>
 
 
                 <!-- Transport Mode Label -->
@@ -481,52 +483,52 @@
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
 
-
-                <TextView
-                    android:id="@+id/steps"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
-                    android:layout_below="@+id/tripInfoCard"
-                    android:textColor="@color/black"
-                    android:layout_marginTop="16dp"
-                    android:text="step 1" />
             </RelativeLayout>
         </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
-        <androidx.coordinatorlayout.widget.CoordinatorLayout
+        <LinearLayout
             android:id="@+id/bottomAppLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true">
+            android:orientation="horizontal"
+            android:layout_alignParentBottom="true"
+            android:gravity="center"
+            android:background="@color/secondary_color"
+            android:layout_gravity="bottom">
 
-            <com.google.android.material.bottomappbar.BottomAppBar
-                android:id="@+id/bottomAppBar"
-                android:layout_width="match_parent"
+            <!-- Start Navigation Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/startNavigationButton"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:padding="-8dp"
-                android:layout_margin="-8dp"
-                android:layout_gravity="bottom"
-                app:fabAlignmentMode="center"
-                app:fabCradleMargin="10dp"
-                app:fabCradleRoundedCornerRadius="16dp"
-                app:fabCradleVerticalOffset="10dp"
-                android:backgroundTint="@color/secondary_color">
+                app:backgroundTint="@color/secondary_color"
+                android:textColor="@color/primary_color"
+                android:text="Start Navigation"
+                app:strokeWidth="0dp"
+                app:cornerRadius="8dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
 
-                <!-- Add a MaterialButton for Start Navigation -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/startNavigationButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    app:backgroundTint="@color/secondary_color"
-                    android:textColor="@color/primary_color"
-                    android:layout_gravity="center"
-                    android:text="Start Navigation"
-                    app:cornerRadius="8dp"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
-            </com.google.android.material.bottomappbar.BottomAppBar>
+            <!-- Vertical Divider -->
+            <View
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:background="@color/white"
+                android:layout_margin="16dp" />
 
-        </androidx.coordinatorlayout.widget.CoordinatorLayout>
+            <!-- Simulate Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/simulateButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:backgroundTint="@color/secondary_color"
+                android:textColor="@color/primary_color"
+                app:strokeWidth="0dp"
+                android:text="Simulate"
+                app:cornerRadius="8dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+        </LinearLayout>
+
     </RelativeLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
