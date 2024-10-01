@@ -92,6 +92,7 @@
         android:id="@+id/viewPager"
         android:layout_width="match_parent"
         android:layout_height="200dp"
+        android:visibility="gone"
         android:layout_below="@id/openStatusDistanceRow"
         android:layout_marginTop="16dp" />
 

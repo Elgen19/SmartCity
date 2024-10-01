@@ -446,14 +446,15 @@ class ReportEventActivity : AppCompatActivity() {
                 )
 
                 LayoutStateManager.showLoadingLayout(this, "Please wait while we are saving your events")
-                uploadImagesAndSaveEvent(imageList.map { it.uri }, eventData)
+                uploadImagesAndSaveEvent(eventName, imageList.map { it.uri }, eventData)
             }
         }
     }
 
-    private fun uploadImageToFirebaseStorage(uri: Uri, onSuccess: (String) -> Unit, onFailure: (Exception) -> Unit) {
+    private fun uploadImageToFirebaseStorage(eventName: String, uri: Uri, onSuccess: (String) -> Unit, onFailure: (Exception) -> Unit) {
         val storageRef = FirebaseStorage.getInstance().reference
-        val imageRef = storageRef.child("event_images/${UUID.randomUUID()}.jpg")
+        // Create a unique file name using the event name and UUID
+        val imageRef = storageRef.child("event_images/${eventName}_${System.currentTimeMillis()}_${UUID.randomUUID()}.jpg")
 
         imageRef.putFile(uri)
             .addOnSuccessListener {
@@ -468,10 +469,10 @@ class ReportEventActivity : AppCompatActivity() {
             }
     }
 
-    private fun uploadImagesAndSaveEvent(images: List<Uri>, eventData: Map<String, Any?>) {
+    private fun uploadImagesAndSaveEvent(eventName: String, images: List<Uri>, eventData: Map<String, Any?>) {
         val uploadTasks = images.map { uri ->
             val promise = CompletableDeferred<String>()
-            uploadImageToFirebaseStorage(uri,
+            uploadImageToFirebaseStorage(eventName, uri,
                 onSuccess = { url ->
                     promise.complete(url)
                     LayoutStateManager.showSuccessLayout(this, "Event saved successfully!", "Thank you for your valuable contribution! You've earned 5 points for your efforts.")

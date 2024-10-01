@@ -80,6 +80,7 @@ import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import java.util.UUID
 
 @Suppress("PrivatePropertyName")
 class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiClickListener {
@@ -432,13 +433,16 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         val photoMetadatas = place.photoMetadataList
         val imageUrls = mutableListOf<String>()
 
-        if (photoMetadatas.isEmpty()) {
+        // Limit the number of photos to a maximum of 4
+        val limitedPhotoMetadatas = if (photoMetadatas.size > 4) photoMetadatas.take(4) else photoMetadatas
+
+        if (limitedPhotoMetadatas.isEmpty()) {
             // Save place data without images if no images exist
             savePlaceToDatabase(userRef, placeData, imageUrls)
             return
         }
 
-        photoMetadatas.forEachIndexed { index, photoMetadata ->
+        limitedPhotoMetadatas.forEachIndexed { _, photoMetadata ->
             val photoRequest = FetchPhotoRequest.builder(photoMetadata)
                 .setMaxWidth(400)
                 .setMaxHeight(400)
@@ -454,7 +458,8 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
                     val data = baos.toByteArray()
 
                     // Upload the photo to Firebase Storage
-                    val photoRef = storageRef.child("image_$index.jpg")
+                    // Create a unique file name using place name, index, and current timestamp
+                    val photoRef = storageRef.child("${place.name}_${System.currentTimeMillis()}_${UUID.randomUUID()}.jpg")
                     val uploadTask = photoRef.putBytes(data)
 
                     uploadTask.addOnSuccessListener {
@@ -463,7 +468,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
                             imageUrls.add(uri.toString())
 
                             // Once all images are uploaded, save place data with image URLs
-                            if (imageUrls.size == photoMetadatas.size) {
+                            if (imageUrls.size == limitedPhotoMetadatas.size) {
                                 savePlaceToDatabase(userRef, placeData, imageUrls)
                             }
                         }
