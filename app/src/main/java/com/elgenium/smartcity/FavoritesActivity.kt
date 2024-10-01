@@ -520,8 +520,13 @@ class FavoritesActivity : AppCompatActivity() {
 
         // Set up ViewPager2 with images
         val imageUrls = place.imageUrls
-        val imageAdapter = PlaceImageAdapter(imageUrls)
-        bottomSheetBinding.viewPager.adapter = imageAdapter
+
+        if (imageUrls.isNotEmpty()) {
+            // Set up ViewPager2 with images if imageUrls is not null or empty
+            val imageAdapter = PlaceImageAdapter(imageUrls)
+            bottomSheetBinding.viewPager.adapter = imageAdapter
+            bottomSheetBinding.viewPager.visibility = View.VISIBLE // Make ViewPager visible
+        }
 
         // close button listener
         bottomSheetBinding.closeButton.setOnClickListener {
