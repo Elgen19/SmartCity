@@ -1,5 +1,6 @@
 package com.elgenium.smartcity
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
@@ -149,6 +150,7 @@ class EventsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
+    @SuppressLint("PotentialBehaviorOverride")
     private fun setupMap() {
         googleMap.uiSettings.isZoomControlsEnabled = true
         googleMap.uiSettings.isMapToolbarEnabled = true

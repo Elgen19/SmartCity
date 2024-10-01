@@ -109,6 +109,8 @@ dependencies {
     implementation ("androidx.fragment:fragment:1.8.3")
     annotationProcessor (libs.androidx.annotation)
     implementation(libs.material.v1120)
+    implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.8.0"))
+
 
 
 

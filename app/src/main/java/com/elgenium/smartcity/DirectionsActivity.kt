@@ -176,7 +176,7 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
                         longitude in -180.0..180.0) {
                         Waypoint(
                             location = LatLng(Coordinates(latitude, longitude)),
-                            vehicleStopover = false, // Set to true if it is a stopover
+                            vehicleStopover = true, // Set to true if it is a stopover
                             sideOfRoad = false // Adjust as needed
                         )
                     } else {
@@ -230,6 +230,8 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
                         plotPolylineWithWaypoints(polyline, travelAdvisories, travelMode, intermediates)
 
                         Log.e("DirectionsActivity", "ROUTE TOKEN: ${bestRoute.routeToken}" )
+                        Log.e("DirectionsActivity", "TRAVEL MODE: $travelMode" )
+
 
 
                         val durationString = route.duration // e.g., "1381s"
@@ -273,20 +275,35 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
                             binding.trafficCondition.setTextColor(resources.getColor(R.color.dark_gray))
                         }
 
-                        val routeToken = bestRoute.routeToken
+                        var routeToken = bestRoute.routeToken
+
+                        if (travelMode == "WALK" || travelMode == "TRANSIT") {
+                            routeToken = "NO ROUTE TOKEN"
+                        }
+                        // Create a list of place IDs from the stopList, excluding entries with empty place IDs
+                        val placeIds = stopList.mapNotNull { stop ->
+                            stop.placeid.ifEmpty { null }
+                        }
 
                         binding.startNavigationButton.setOnClickListener {
-                            // Create a list of place IDs from the stopList, excluding entries with empty place IDs
-                            val placeIds = stopList.mapNotNull { stop ->
-                                stop.placeid.ifEmpty { null }
-                            }
-
                             // Log or check the filtered placeIds if needed
                              Log.e("Place IDs", placeIds.joinToString())
 
                             // Create the intent for starting the navigation activity
                             val intent = Intent(this@DirectionsActivity, StartNavigationsActivity::class.java).apply {
                                 putExtra("ROUTE_TOKEN", routeToken)
+                                putExtra("IS_SIMULATED", false )
+                                putExtra("TRAVEL_MODE", travelMode)
+                                putStringArrayListExtra("PLACE_IDS", ArrayList(placeIds))  // Pass place IDs as an extra
+                            }
+                            startActivity(intent)
+                        }
+
+                        binding.simulateButton.setOnClickListener{
+                            val intent = Intent(this@DirectionsActivity, StartNavigationsActivity::class.java).apply {
+                                putExtra("ROUTE_TOKEN", routeToken)
+                                putExtra("IS_SIMULATED", true )
+                                putExtra("TRAVEL_MODE", travelMode)
                                 putStringArrayListExtra("PLACE_IDS", ArrayList(placeIds))  // Pass place IDs as an extra
                             }
                             startActivity(intent)
@@ -331,15 +348,13 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
             // Fetch the address for this waypoint
             val address = getAddressFromLatLng("${latLng.latitude},${latLng.longitude}")
 
-            // Create a custom flag icon for stopover markers
-            val flagIcon = getScaledIcon(R.drawable.stop_circle, 50, 50) // Scale to desired width and height
 
             // Add marker with the fetched address as the title
             val marker = mMap.addMarker(
                 MarkerOptions()
                     .position(latLng)
                     .title(address) // Use the address for the title
-                    .icon(flagIcon) // Set the custom flag icon for the stopover marker
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW))
             )
             if (marker != null) {
                 stopoverMarkers.add(marker)
@@ -541,7 +556,7 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
 
-        setMapStyle()
+       // setMapStyle()
 
         // Check for location permission
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -608,14 +623,9 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
             stopResultLauncher.launch(intent)
         }
 
-        binding.startNavigationButton.setOnClickListener {
-            val intent = Intent(this, StartNavigationsActivity::class.java)
-            intent.putExtra("ROUTE_TOKEN", true)
-        }
-
         binding.closeButton.setOnClickListener {
             // Dismiss the bottom sheet
-            behavior.state = BottomSheetBehavior.STATE_HIDDEN
+            finish()
         }
     }
 
