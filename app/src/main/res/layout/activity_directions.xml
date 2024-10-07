@@ -23,467 +23,705 @@
             android:layout_above="@id/bottomAppLayout"
             >
 
-            <RelativeLayout
-                android:id="@+id/bottomsheet"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
-                android:padding="16dp"
-                android:background="@drawable/bottom_sheet_round_corners">
+           <androidx.core.widget.NestedScrollView
+               android:id="@+id/bottomsheet"
+               android:layout_width="match_parent"
+               app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
+               android:layout_height="wrap_content">
+               <RelativeLayout
+
+                   android:layout_width="match_parent"
+                   android:layout_height="wrap_content"
+                   android:padding="16dp"
+                   android:background="@drawable/bottom_sheet_round_corners">
 
 
-                <!-- Row: Routes TextView and Close Button -->
-                <LinearLayout
-                    android:id="@+id/topComponents"
-                    android:layout_width="match_parent"
-                    android:layout_alignParentTop="true"
-                    android:layout_marginBottom="8dp"
-                    android:layout_height="wrap_content">
-                    <TextView
-                        android:id="@+id/setACourseLabel"
-                        android:layout_width="0dp"
-                        android:layout_weight="1"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/gray"
-                        android:text="Set a course"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
+                   <!-- Row: Routes TextView and Close Button -->
+                   <LinearLayout
+                       android:id="@+id/topComponents"
+                       android:layout_width="match_parent"
+                       android:layout_alignParentTop="true"
+                       android:layout_marginBottom="8dp"
+                       android:layout_height="wrap_content">
+                       <ImageView
+                           android:id="@+id/courseIcon"
+                           android:layout_width="24dp"
+                           android:layout_height="24dp"
+                           android:src="@drawable/course"
+                           android:layout_gravity="center_vertical"
+                           app:tint="@color/secondary_color" />
+                       <TextView
+                           android:id="@+id/setACourseLabel"
+                           android:layout_width="0dp"
+                           android:layout_weight="1"
+                           android:layout_marginStart="8dp"
+                           android:layout_height="wrap_content"
+                           android:textColor="@color/gray"
+                           android:text="Set A Course"
+                           android:textSize="16sp"
+                           android:textStyle="bold" />
 
-                    <ImageButton
-                        android:id="@+id/closeButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:src="@drawable/baseline_close_24"
-                        app:tint="@color/red"
-                        android:background="?attr/selectableItemBackgroundBorderless" />
-                </LinearLayout>
+                       <ImageButton
+                           android:id="@+id/closeButton"
+                           android:layout_width="wrap_content"
+                           android:layout_height="wrap_content"
+                           android:src="@drawable/baseline_close_24"
+                           app:tint="@color/red"
+                           android:background="?attr/selectableItemBackgroundBorderless" />
+                   </LinearLayout>
 
-                <androidx.cardview.widget.CardView
-                    android:layout_below="@id/topComponents"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:cardCornerRadius="8dp"
-                    android:elevation="4dp"
-                    app:cardBackgroundColor="@color/white"
-                    android:id="@+id/courseCard">
+                   <androidx.cardview.widget.CardView
+                       android:layout_below="@id/topComponents"
+                       android:layout_width="match_parent"
+                       android:layout_height="wrap_content"
+                       app:cardCornerRadius="8dp"
+                       android:elevation="4dp"
+                       app:cardBackgroundColor="@color/white"
+                       android:id="@+id/courseCard">
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:background="@color/primary_color"
-                        android:padding="16dp">
+                       <LinearLayout
+                           android:layout_width="match_parent"
+                           android:layout_height="wrap_content"
+                           android:orientation="vertical"
+                           android:background="@color/primary_color"
+                           android:padding="16dp">
 
-                        <!-- Origin Layout -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:layout_marginBottom="8dp">
+                           <!-- Origin Layout -->
+                           <LinearLayout
+                               android:layout_width="match_parent"
+                               android:layout_height="wrap_content"
+                               android:orientation="horizontal"
+                               android:layout_marginBottom="8dp">
 
-                            <!-- Icon (Origin) -->
-                            <ImageView
-                                android:id="@+id/originIcon"
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:src="@drawable/origin"
-                                android:contentDescription="Origin Icon"
-                                android:layout_gravity="center_vertical"
-                                android:layout_marginEnd="8dp" />
+                               <!-- Icon (Origin) -->
+                               <ImageView
+                                   android:id="@+id/originIcon"
+                                   android:layout_width="24dp"
+                                   android:layout_height="24dp"
+                                   android:src="@drawable/origin"
+                                   android:contentDescription="Origin Icon"
+                                   android:layout_gravity="center_vertical"
+                                   android:layout_marginEnd="8dp" />
 
-                            <!-- Place Name and Address -->
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
+                               <!-- Place Name and Address -->
+                               <LinearLayout
+                                   android:layout_width="0dp"
+                                   android:layout_height="wrap_content"
+                                   android:layout_weight="1"
+                                   android:orientation="vertical">
 
-                                <!-- Place Name -->
-                                <TextView
-                                    android:id="@+id/originName"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Origin Place"
-                                    android:textSize="16sp"
-                                    android:textStyle="bold"
-                                    android:textColor="@android:color/black" />
+                                   <!-- Place Name -->
+                                   <TextView
+                                       android:id="@+id/originName"
+                                       android:layout_width="wrap_content"
+                                       android:layout_height="wrap_content"
+                                       android:text="Origin Place"
+                                       android:textSize="16sp"
+                                       android:textStyle="bold"
+                                       android:textColor="@android:color/black" />
 
-                                <!-- Place Address -->
-                                <TextView
-                                    android:id="@+id/originAddress"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Origin Address"
-                                    android:textSize="14sp"
-                                    android:textColor="@color/dark_gray" />
-                            </LinearLayout>
-                        </LinearLayout>
+                                   <!-- Place Address -->
+                                   <TextView
+                                       android:id="@+id/originAddress"
+                                       android:layout_width="wrap_content"
+                                       android:layout_height="wrap_content"
+                                       android:text="Origin Address"
+                                       android:textSize="14sp"
+                                       android:textColor="@color/dark_gray" />
+                               </LinearLayout>
+                           </LinearLayout>
 
-                        <!-- Stops Layout (Similar to Origin but No Address) -->
-                        <LinearLayout
-                            android:id="@+id/stopsLayout"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:visibility="gone"
-                            android:layout_marginBottom="8dp">
+                           <!-- Stops Layout (Similar to Origin but No Address) -->
+                           <LinearLayout
+                               android:id="@+id/stopsLayout"
+                               android:layout_width="match_parent"
+                               android:layout_height="wrap_content"
+                               android:orientation="horizontal"
+                               android:visibility="gone"
+                               android:layout_marginBottom="8dp">
 
-                            <!-- Icon (Stops) -->
-                            <ImageView
-                                android:id="@+id/stopIcon"
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:src="@drawable/stops"
-                                android:contentDescription="Stop Icon"
-                                android:layout_gravity="center_vertical"
-                                android:layout_marginEnd="8dp" />
+                               <!-- Icon (Stops) -->
+                               <ImageView
+                                   android:id="@+id/stopIcon"
+                                   android:layout_width="24dp"
+                                   android:layout_height="24dp"
+                                   android:src="@drawable/stop"
+                                   android:contentDescription="Stop Icon"
+                                   android:layout_gravity="center_vertical"
+                                   android:layout_marginEnd="8dp" />
 
-                            <!-- Place Name -->
-                            <TextView
-                                android:id="@+id/stopName"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Stop Place"
-                                android:textSize="16sp"
-                                android:textStyle="bold"
-                                android:textColor="@android:color/black" />
-                        </LinearLayout>
+                               <!-- Place Name -->
+                               <TextView
+                                   android:id="@+id/stopName"
+                                   android:layout_width="wrap_content"
+                                   android:layout_height="wrap_content"
+                                   android:text="Stop Place"
+                                   android:textSize="16sp"
+                                   android:textStyle="bold"
+                                   android:textColor="@android:color/black" />
+                           </LinearLayout>
 
-                        <!-- Destination Layout -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:layout_marginBottom="8dp">
+                           <!-- Destination Layout -->
+                           <LinearLayout
+                               android:layout_width="match_parent"
+                               android:layout_height="wrap_content"
+                               android:orientation="horizontal"
+                               android:layout_marginBottom="8dp">
 
-                            <!-- Icon (Destination) -->
-                            <ImageView
-                                android:id="@+id/destinationIcon"
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:src="@drawable/end"
-                                android:contentDescription="Destination Icon"
-                                android:layout_gravity="center_vertical"
-                                android:layout_marginEnd="8dp" />
+                               <!-- Icon (Destination) -->
+                               <ImageView
+                                   android:id="@+id/destinationIcon"
+                                   android:layout_width="24dp"
+                                   android:layout_height="24dp"
+                                   android:src="@drawable/end"
+                                   android:contentDescription="Destination Icon"
+                                   android:layout_gravity="center_vertical"
+                                   android:layout_marginEnd="8dp" />
 
-                            <!-- Place Name and Address -->
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
+                               <!-- Place Name and Address -->
+                               <LinearLayout
+                                   android:layout_width="0dp"
+                                   android:layout_height="wrap_content"
+                                   android:layout_weight="1"
+                                   android:orientation="vertical">
 
-                                <!-- Place Name -->
-                                <TextView
-                                    android:id="@+id/destinationName"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Destination Place"
-                                    android:textSize="16sp"
-                                    android:textStyle="bold"
-                                    android:textColor="@android:color/black" />
+                                   <!-- Place Name -->
+                                   <TextView
+                                       android:id="@+id/destinationName"
+                                       android:layout_width="wrap_content"
+                                       android:layout_height="wrap_content"
+                                       android:text="Destination Place"
+                                       android:textSize="16sp"
+                                       android:textStyle="bold"
+                                       android:textColor="@android:color/black" />
 
-                                <!-- Place Address -->
-                                <TextView
-                                    android:id="@+id/destinationAddress"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Destination Address"
-                                    android:textSize="14sp"
-                                    android:textColor="@color/dark_gray" />
-                            </LinearLayout>
-                        </LinearLayout>
+                                   <!-- Place Address -->
+                                   <TextView
+                                       android:id="@+id/destinationAddress"
+                                       android:layout_width="wrap_content"
+                                       android:layout_height="wrap_content"
+                                       android:text="Destination Address"
+                                       android:textSize="14sp"
+                                       android:textColor="@color/dark_gray" />
+                               </LinearLayout>
+                           </LinearLayout>
 
-                        <!-- Edit Course Button -->
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/editCourseButton"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Edit Course"
-                            app:strokeWidth="0dp"
-                            android:textColor="@color/gray"
-                            app:backgroundTint="@color/mod_google_transparent"
-                            android:layout_gravity="end"
-                            android:theme="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+                           <!-- Edit Course Button -->
+                           <com.google.android.material.button.MaterialButton
+                               android:id="@+id/editCourseButton"
+                               android:layout_width="wrap_content"
+                               android:layout_height="wrap_content"
+                               android:text="Edit Course"
+                               app:strokeWidth="0dp"
+                               android:textColor="@color/gray"
+                               app:backgroundTint="@color/mod_google_transparent"
+                               android:layout_gravity="end"
+                               android:theme="@style/Widget.MaterialComponents.Button.OutlinedButton" />
 
-                    </LinearLayout>
-                </androidx.cardview.widget.CardView>
-
-
-                <!-- Transport Mode Label -->
-                <TextView
-                    android:id="@+id/transportModeLabel"
-                    android:layout_width="wrap_content"
-                    android:textColor="@color/gray"
-                    android:layout_height="wrap_content"
-                    android:text="Select mode of transport"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:layout_below="@id/courseCard"
-                    android:layout_marginTop="16dp" />
-
-                <!-- Transport Mode Buttons -->
-                <HorizontalScrollView
-                    android:id="@+id/category_scroll"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_below="@id/transportModeLabel"
-                    android:scrollbars="none">
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnCar"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Car"
-                            app:icon="@drawable/car"
-                            app:iconTint="@color/secondary_color"
-                            app:iconGravity="top"
-                            android:textAllCaps="false"
-                            android:textColor="@color/gray"
-                            app:strokeColor="@color/gray"
-                            app:cornerRadius="8dp"
-                            android:layout_marginEnd="8dp"
-                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnTwoWheeler"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="2 Wheeler"
-                            app:icon="@drawable/motor"
-                            app:iconTint="@color/secondary_color"
-                            app:iconGravity="top"
-                            android:textAllCaps="false"
-                            android:textColor="@color/gray"
-                            app:strokeColor="@color/gray"
-                            app:cornerRadius="8dp"
-                            android:layout_marginEnd="8dp"
-                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnWalk"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Walk"
-                            app:icon="@drawable/walk"
-                            app:iconTint="@color/secondary_color"
-                            app:iconGravity="top"
-                            android:textAllCaps="false"
-                            android:textColor="@color/gray"
-                            app:strokeColor="@color/gray"
-                            app:cornerRadius="8dp"
-                            android:layout_marginEnd="8dp"
-                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnTransit"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Transit"
-                            app:icon="@drawable/transit"
-                            app:iconTint="@color/secondary_color"
-                            app:iconGravity="top"
-                            android:textAllCaps="false"
-                            android:textColor="@color/gray"
-                            app:strokeColor="@color/gray"
-                            app:cornerRadius="8dp"
-                            android:layout_marginEnd="8dp"
-                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
-                    </LinearLayout>
-                </HorizontalScrollView>
-
-                <!-- Transport Mode Icon and Title -->
-                <LinearLayout
-                    android:id="@+id/transportModeDetails"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_below="@id/category_scroll"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="16dp">
-
-                    <ImageView
-                        android:id="@+id/transportIcon"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/car"
-                        android:layout_gravity="center_vertical"
-                        app:tint="@color/secondary_color" />
-
-                    <TextView
-                        android:id="@+id/transportTitle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_vertical"
-                        android:layout_marginStart="8dp"
-                        android:textColor="@color/secondary_color"
-                        android:text="Drive Mode"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <!-- Best Route and Traffic Condition -->
-                <androidx.cardview.widget.CardView
-                    android:id="@+id/tripInfoCard"
-                    android:layout_below="@id/transportModeDetails"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:cardCornerRadius="8dp"
-                    app:cardElevation="4dp"
-                    android:layout_marginTop="8dp"
-                    app:cardBackgroundColor="@color/white">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:padding="16dp"
-                        android:orientation="vertical">
-
-                        <LinearLayout
-                            android:id="@+id/routeAndTraffic"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal">
-
-                            <!-- Vertical Line -->
-                            <View
-                                android:id="@+id/verticalLine"
-                                android:layout_width="8dp"
-                                android:layout_height="match_parent"
-                                android:background="@color/brand_color" />
-
-                            <!-- Best Route Text and Label -->
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="8dp"
-                                android:orientation="vertical">
-
-                                <LinearLayout
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:orientation="horizontal">
-
-                                    <TextView
-                                        android:id="@+id/bestRouteText"
-                                        android:layout_width="0dp"
-                                        android:layout_height="wrap_content"
-                                        android:layout_weight="1"
-                                        android:layout_marginEnd="8dp"
-                                        android:text="Via M.Logarta Avenue"
-                                        android:textColor="@color/gray"
-                                        android:maxLines="3" /> <!-- Limit to one line -->
-
-                                    <TextView
-                                        android:id="@+id/bestRouteLabel"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:background="@drawable/open_pill_background"
-                                        android:paddingStart="8dp"
-                                        android:paddingEnd="8dp"
-                                        android:text="Best Route"
-                                        android:textColor="@color/white"
-                                        android:textSize="12sp" />
-                                </LinearLayout>
-
-                                <!-- Traffic Condition -->
-                                <TextView
-                                    android:id="@+id/trafficCondition"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="4dp"
-                                    android:textColor="@color/dark_gray"
-                                    android:textStyle="bold"
-                                    android:text="A typical traffic"
-                                    android:textSize="12sp" />
-                            </LinearLayout>
-                        </LinearLayout>
+                       </LinearLayout>
+                   </androidx.cardview.widget.CardView>
 
 
+                   <LinearLayout
+                       android:id="@+id/transportSelectionLayout"
+                       android:layout_width="match_parent"
+                       android:layout_height="wrap_content"
+                       android:layout_below="@id/courseCard"
+                       android:orientation="horizontal"
+                       android:layout_marginTop="16dp">
+
+                       <ImageView
+                           android:id="@+id/transportIcon2"
+                           android:layout_width="24dp"
+                           android:layout_height="24dp"
+                           android:src="@drawable/transport"
+                           android:layout_gravity="center_vertical"
+                           app:tint="@color/secondary_color" />
+
+                       <TextView
+                           android:id="@+id/transportTitle2"
+                           android:layout_width="wrap_content"
+                           android:layout_height="wrap_content"
+                           android:layout_gravity="center_vertical"
+                           android:layout_marginStart="8dp"
+                           android:textColor="@color/secondary_color"
+                           android:text="Select Transport Mode"
+                           android:textSize="16sp"
+                           android:textStyle="bold" />
+                   </LinearLayout>
+
+                   <!-- Transport Mode Buttons -->
+                   <HorizontalScrollView
+                       android:id="@+id/category_scroll"
+                       android:layout_width="match_parent"
+                       android:layout_height="wrap_content"
+                       android:layout_below="@id/transportSelectionLayout"
+                       android:scrollbars="none">
+
+                       <LinearLayout
+                           android:layout_width="wrap_content"
+                           android:layout_height="wrap_content"
+                           android:orientation="horizontal">
+
+                           <com.google.android.material.button.MaterialButton
+                               android:id="@+id/btnCar"
+                               android:layout_width="wrap_content"
+                               android:layout_height="wrap_content"
+                               android:text="Car"
+                               app:icon="@drawable/car"
+                               app:iconTint="@color/secondary_color"
+                               app:iconGravity="top"
+                               android:textAllCaps="false"
+                               android:textColor="@color/gray"
+                               app:strokeColor="@color/gray"
+                               app:cornerRadius="8dp"
+                               android:layout_marginEnd="8dp"
+                               style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+                           <com.google.android.material.button.MaterialButton
+                               android:id="@+id/btnTwoWheeler"
+                               android:layout_width="wrap_content"
+                               android:layout_height="wrap_content"
+                               android:text="2 Wheeler"
+                               app:icon="@drawable/motor"
+                               app:iconTint="@color/secondary_color"
+                               app:iconGravity="top"
+                               android:textAllCaps="false"
+                               android:textColor="@color/gray"
+                               app:strokeColor="@color/gray"
+                               app:cornerRadius="8dp"
+                               android:layout_marginEnd="8dp"
+                               style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+                           <com.google.android.material.button.MaterialButton
+                               android:id="@+id/btnWalk"
+                               android:layout_width="wrap_content"
+                               android:layout_height="wrap_content"
+                               android:text="Walk"
+                               app:icon="@drawable/walk"
+                               app:iconTint="@color/secondary_color"
+                               app:iconGravity="top"
+                               android:textAllCaps="false"
+                               android:textColor="@color/gray"
+                               app:strokeColor="@color/gray"
+                               app:cornerRadius="8dp"
+                               android:layout_marginEnd="8dp"
+                               style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+                           <com.google.android.material.button.MaterialButton
+                               android:id="@+id/btnTransit"
+                               android:layout_width="wrap_content"
+                               android:layout_height="wrap_content"
+                               android:text="Transit"
+                               app:icon="@drawable/transit"
+                               app:iconTint="@color/secondary_color"
+                               app:iconGravity="top"
+                               android:textAllCaps="false"
+                               android:textColor="@color/gray"
+                               app:strokeColor="@color/gray"
+                               app:cornerRadius="8dp"
+                               android:layout_marginEnd="8dp"
+                               style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+                       </LinearLayout>
+                   </HorizontalScrollView>
+
+                   <!-- Transport Mode Icon and Title -->
+                   <LinearLayout
+                       android:id="@+id/transportModeDetails"
+                       android:layout_width="match_parent"
+                       android:layout_height="wrap_content"
+                       android:layout_below="@id/category_scroll"
+                       android:orientation="horizontal"
+                       android:layout_marginTop="16dp">
+
+                       <ImageView
+                           android:id="@+id/transportIcon"
+                           android:layout_width="24dp"
+                           android:layout_height="24dp"
+                           android:src="@drawable/car"
+                           android:layout_gravity="center_vertical"
+                           app:tint="@color/secondary_color" />
+
+                       <TextView
+                           android:id="@+id/transportTitle"
+                           android:layout_width="wrap_content"
+                           android:layout_height="wrap_content"
+                           android:layout_gravity="center_vertical"
+                           android:layout_marginStart="8dp"
+                           android:textColor="@color/secondary_color"
+                           android:text="Drive Mode"
+                           android:textSize="16sp"
+                           android:textStyle="bold" />
+                   </LinearLayout>
 
 
-                        <!-- Travel Time and Estimated Arrival Time -->
-                        <LinearLayout
-                            android:id="@+id/travelDetails"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="16dp"
-                            android:orientation="vertical">
+                   <!-- Best Route and Traffic Condition -->
+                   <androidx.cardview.widget.CardView
+                       android:id="@+id/tripInfoCard"
+                       android:layout_width="match_parent"
+                       android:layout_height="wrap_content"
+                       app:cardCornerRadius="8dp"
+                       app:cardElevation="4dp"
+                       android:layout_marginTop="8dp"
+                       android:layout_below="@id/transportModeDetails"
+                       app:cardBackgroundColor="@color/white">
 
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:layout_marginBottom="8dp">
+                       <LinearLayout
+                           android:layout_width="match_parent"
+                           android:layout_height="wrap_content"
+                           android:padding="16dp"
+                           android:orientation="vertical">
 
-                                <ImageView
-                                    android:id="@+id/travelTimeIcon"
-                                    android:layout_width="24dp"
-                                    android:layout_height="19dp"
-                                    android:layout_gravity="center_vertical"
-                                    android:src="@drawable/travel_time"
-                                    app:tint="@color/gray" />
+                           <LinearLayout
+                               android:id="@+id/routeAndTraffic"
+                               android:layout_width="match_parent"
+                               android:layout_height="wrap_content"
+                               android:orientation="horizontal">
 
-                                <TextView
-                                    android:id="@+id/travelTimeLabel"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_gravity="center_vertical"
-                                    android:layout_marginStart="8dp"
-                                    android:textColor="@color/gray"
-                                    android:text="Travel Time:" />
+                               <!-- Vertical Line -->
+                               <View
+                                   android:id="@+id/verticalLine"
+                                   android:layout_width="8dp"
+                                   android:layout_height="match_parent"
+                                   android:background="@color/brand_color" />
 
-                                <TextView
-                                    android:id="@+id/travelTimeValue"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_gravity="center_vertical"
-                                    android:layout_marginStart="8dp"
-                                    android:textColor="@color/black"
-                                    android:text="45 min" />
-                            </LinearLayout>
+                               <!-- Best Route Text and Label -->
+                               <LinearLayout
+                                   android:layout_width="match_parent"
+                                   android:layout_height="wrap_content"
+                                   android:layout_marginStart="8dp"
+                                   android:orientation="vertical">
 
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:layout_marginBottom="8dp">
+                                   <LinearLayout
+                                       android:id="@+id/bestRouteLayout"
+                                       android:layout_width="wrap_content"
+                                       android:layout_height="wrap_content"
+                                       android:orientation="horizontal">
 
-                                <ImageView
-                                    android:id="@+id/distanceIcon"
-                                    android:layout_width="24dp"
-                                    android:layout_height="24dp"
-                                    android:src="@drawable/distance"
-                                    android:layout_gravity="center_vertical"
-                                    app:tint="@color/gray" />
+                                       <TextView
+                                           android:id="@+id/bestRouteText"
+                                           android:layout_width="0dp"
+                                           android:layout_height="wrap_content"
+                                           android:layout_weight="1"
+                                           android:layout_marginEnd="8dp"
+                                           android:text="Via M.Logarta Avenue"
+                                           android:textColor="@color/gray"
+                                           android:maxLines="3" />
 
-                                <TextView
-                                    android:id="@+id/distanceLabel"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_gravity="center_vertical"
-                                    android:layout_marginStart="8dp"
-                                    android:textColor="@color/gray"
-                                    android:text="Distance:" />
+                                       <TextView
+                                           android:id="@+id/bestRouteLabel"
+                                           android:layout_width="wrap_content"
+                                           android:layout_height="wrap_content"
+                                           android:background="@drawable/open_pill_background"
+                                           android:paddingStart="8dp"
+                                           android:paddingEnd="8dp"
+                                           android:text="Best Route"
+                                           android:textColor="@color/white"
+                                           android:textSize="12sp" />
+                                   </LinearLayout>
 
-                                <TextView
-                                    android:id="@+id/distanceValue"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_gravity="center_vertical"
-                                    android:layout_marginStart="8dp"
-                                    android:textColor="@color/black"
-                                    android:text="1.4 km" />
-                            </LinearLayout>
-                        </LinearLayout>
-                    </LinearLayout>
-                </androidx.cardview.widget.CardView>
+                                   <RelativeLayout
+                                       android:visibility="gone"
+                                       android:id="@+id/transit1Layout"
+                                       android:layout_width="wrap_content"
+                                       android:layout_height="wrap_content">
 
-            </RelativeLayout>
+                                       <TextView
+                                           android:id="@+id/transit1"
+                                           android:layout_width="wrap_content"
+                                           android:layout_height="wrap_content"
+                                           android:layout_alignParentStart="true"
+                                           android:layout_toStartOf="@+id/transit1Sign"
+                                           android:layout_marginEnd="8dp"
+                                           android:text="Via M.Logarta Avenue"
+                                           android:textColor="@color/gray"
+                                           android:maxLines="3" />
+
+                                       <TextView
+                                           android:id="@+id/transit1Sign"
+                                           android:layout_width="wrap_content"
+                                           android:layout_height="wrap_content"
+                                           android:layout_alignParentEnd="true"
+                                           android:background="@drawable/open_pill_background"
+                                           android:paddingStart="8dp"
+                                           android:paddingEnd="8dp"
+                                           android:text="Best Route"
+                                           android:textColor="@color/white"
+                                           android:textSize="12sp" />
+                                   </RelativeLayout>
+
+                                   <RelativeLayout
+                                       android:id="@+id/transit2Layout"
+                                       android:visibility="gone"
+                                       android:layout_marginTop="4dp"
+                                       android:layout_width="wrap_content"
+                                       android:layout_height="wrap_content">
+
+                                       <TextView
+                                           android:id="@+id/transit2"
+                                           android:layout_width="wrap_content"
+                                           android:layout_height="wrap_content"
+                                           android:layout_toStartOf="@+id/transit2Sign"
+                                           android:layout_marginEnd="8dp"
+                                           android:text="Via M.Logarta Avenue"
+                                           android:textColor="@color/gray"
+                                           android:maxLines="3" />
+
+                                       <TextView
+                                           android:id="@+id/transit2Sign"
+                                           android:layout_width="wrap_content"
+                                           android:layout_height="wrap_content"
+                                           android:layout_alignParentEnd="true"
+                                           android:background="@drawable/open_pill_background"
+                                           android:paddingStart="8dp"
+                                           android:paddingEnd="8dp"
+                                           android:text="Best Route"
+                                           android:textColor="@color/white"
+                                           android:textSize="12sp" />
+                                   </RelativeLayout>
+
+                                   <RelativeLayout
+                                       android:id="@+id/transit3Layout"
+                                       android:visibility="gone"
+                                       android:layout_marginTop="4dp"
+                                       android:layout_width="wrap_content"
+                                       android:layout_height="wrap_content">
+
+                                       <TextView
+                                           android:id="@+id/transit3"
+                                           android:layout_width="wrap_content"
+                                           android:layout_height="wrap_content"
+                                           android:layout_toStartOf="@+id/transit3Sign"
+                                           android:layout_marginEnd="8dp"
+                                           android:text="Via M.Logarta Avenue"
+                                           android:textColor="@color/gray"
+                                           android:maxLines="3" />
+
+                                       <TextView
+                                           android:id="@+id/transit3Sign"
+                                           android:layout_width="wrap_content"
+                                           android:layout_height="wrap_content"
+                                           android:layout_alignParentEnd="true"
+                                           android:background="@drawable/open_pill_background"
+                                           android:paddingStart="8dp"
+                                           android:paddingEnd="8dp"
+                                           android:text="Best Route"
+                                           android:textColor="@color/white"
+                                           android:textSize="12sp" />
+                                   </RelativeLayout>
+
+                                   <!-- Traffic Condition -->
+                                   <TextView
+                                       android:id="@+id/trafficCondition"
+                                       android:layout_width="wrap_content"
+                                       android:layout_height="wrap_content"
+                                       android:layout_marginTop="4dp"
+                                       android:textColor="@color/dark_gray"
+                                       android:textStyle="bold"
+                                       android:text="A typical traffic"
+                                       android:textSize="12sp" />
+                               </LinearLayout>
+                           </LinearLayout>
+
+                           <!-- Travel Time and Estimated Arrival Time -->
+                           <LinearLayout
+                               android:id="@+id/travelDetails"
+                               android:layout_width="match_parent"
+                               android:layout_height="wrap_content"
+                               android:layout_marginTop="16dp"
+                               android:orientation="vertical">
+
+                               <RelativeLayout
+                                   android:id="@+id/fareLayoutBreakdown"
+                                   android:layout_width="match_parent"
+                                   android:layout_height="wrap_content"
+                                   android:visibility="gone"
+                                   android:layout_marginBottom="8dp">
+
+                                   <ImageView
+                                       android:id="@+id/fareIcon2"
+                                       android:layout_width="24dp"
+                                       android:layout_height="19dp"
+                                       android:layout_alignParentStart="true"
+                                       android:src="@drawable/fare"
+                                       app:tint="@color/gray" />
+
+                                   <TextView
+                                       android:id="@+id/fareLabel2"
+                                       android:layout_width="wrap_content"
+                                       android:layout_height="wrap_content"
+                                       android:layout_gravity="center_vertical"
+                                       android:layout_toEndOf="@id/fareIcon2"
+                                       android:layout_toStartOf="@+id/fareBreakdownValue"
+                                       android:layout_marginStart="8dp"
+                                       android:textColor="@color/gray"
+                                       android:maxLines="3"
+                                       android:text="Fare Breakdown:" />
+
+                                   <TextView
+                                       android:id="@+id/fareBreakdownValue"
+                                       android:layout_width="wrap_content"
+                                       android:layout_alignParentEnd="true"
+                                       android:layout_height="wrap_content"
+                                       android:layout_marginStart="8dp"
+                                       android:textColor="@color/black"
+                                       android:text="13 pesos" />
+                               </RelativeLayout>
+
+                               <RelativeLayout
+                                   android:id="@+id/fareLayout"
+                                   android:layout_width="match_parent"
+                                   android:layout_height="wrap_content"
+                                   android:orientation="horizontal"
+                                   android:visibility="gone"
+                                   android:layout_marginBottom="8dp">
+
+                                   <ImageView
+                                       android:id="@+id/fareIcon"
+                                       android:layout_width="24dp"
+                                       android:layout_height="19dp"
+                                       android:layout_alignParentStart="true"
+                                       android:layout_gravity="center_vertical"
+                                       android:src="@drawable/fare"
+                                       app:tint="@color/gray" />
+
+                                   <TextView
+                                       android:id="@+id/fareLabel"
+                                       android:layout_width="wrap_content"
+                                       android:layout_toEndOf="@+id/fareIcon"
+                                       android:layout_height="wrap_content"
+                                       android:layout_gravity="center_vertical"
+                                       android:layout_marginStart="8dp"
+                                       android:textColor="@color/gray"
+                                       android:text="Estimated Fare:" />
+
+                                   <TextView
+                                       android:id="@+id/fareValue"
+                                       android:layout_alignParentEnd="true"
+                                       android:layout_width="wrap_content"
+                                       android:layout_height="wrap_content"
+                                       android:layout_gravity="center_vertical"
+                                       android:layout_marginStart="8dp"
+                                       android:textColor="@color/black"
+                                       android:text="13 pesos" />
+                               </RelativeLayout>
+
+
+                               <RelativeLayout
+                                   android:layout_width="match_parent"
+                                   android:layout_height="wrap_content"
+                                   android:orientation="horizontal"
+                                   android:layout_marginBottom="8dp">
+
+                                   <ImageView
+                                       android:id="@+id/travelTimeIcon"
+                                       android:layout_width="24dp"
+                                       android:layout_height="19dp"
+                                       android:layout_alignParentStart="true"
+                                       android:layout_gravity="center_vertical"
+                                       android:src="@drawable/travel_time"
+                                       app:tint="@color/gray" />
+
+                                   <TextView
+                                       android:id="@+id/travelTimeLabel"
+                                       android:layout_width="wrap_content"
+                                       android:layout_height="wrap_content"
+                                       android:layout_gravity="center_vertical"
+                                       android:layout_toEndOf="@+id/travelTimeIcon"
+                                       android:layout_marginStart="8dp"
+                                       android:textColor="@color/gray"
+                                       android:text="Travel Time:" />
+
+                                   <TextView
+                                       android:id="@+id/travelTimeValue"
+                                       android:layout_width="wrap_content"
+                                       android:layout_height="wrap_content"
+                                       android:layout_alignParentEnd="true"
+                                       android:layout_gravity="center_vertical"
+                                       android:layout_marginStart="8dp"
+                                       android:textColor="@color/black"
+                                       android:text="45 min" />
+                               </RelativeLayout>
+
+                               <RelativeLayout
+                                   android:layout_width="match_parent"
+                                   android:layout_height="wrap_content"
+                                   android:orientation="horizontal"
+                                   android:layout_marginBottom="8dp">
+
+                                   <ImageView
+                                       android:id="@+id/distanceIcon"
+                                       android:layout_width="24dp"
+                                       android:layout_height="24dp"
+                                       android:layout_alignParentStart="true"
+                                       android:src="@drawable/distance"
+                                       android:layout_gravity="center_vertical"
+                                       app:tint="@color/gray" />
+
+                                   <TextView
+                                       android:id="@+id/distanceLabel"
+                                       android:layout_width="wrap_content"
+                                       android:layout_height="wrap_content"
+                                       android:layout_gravity="center_vertical"
+                                       android:layout_toEndOf="@+id/distanceIcon"
+                                       android:layout_marginStart="8dp"
+                                       android:textColor="@color/gray"
+                                       android:text="Distance:" />
+
+                                   <TextView
+                                       android:id="@+id/distanceValue"
+                                       android:layout_width="wrap_content"
+                                       android:layout_alignParentEnd="true"
+                                       android:layout_height="wrap_content"
+                                       android:layout_gravity="center_vertical"
+                                       android:layout_marginStart="8dp"
+                                       android:textColor="@color/black"
+                                       android:text="1.4 km" />
+                               </RelativeLayout>
+                           </LinearLayout>
+                       </LinearLayout>
+                   </androidx.cardview.widget.CardView>
+
+                   <!-- Steps title -->
+                   <LinearLayout
+                       android:id="@+id/stepsTitleLayout"
+                       android:layout_width="match_parent"
+                       android:layout_height="wrap_content"
+                       android:layout_below="@id/tripInfoCard"
+                       android:orientation="horizontal"
+                       android:layout_marginTop="16dp">
+
+                       <ImageView
+                           android:id="@+id/stepsIcon"
+                           android:layout_width="24dp"
+                           android:layout_height="24dp"
+                           android:src="@drawable/steps"
+                           android:layout_gravity="center_vertical"
+                           app:tint="@color/secondary_color" />
+
+                       <TextView
+                           android:id="@+id/stepsTitle"
+                           android:layout_width="wrap_content"
+                           android:layout_height="wrap_content"
+                           android:layout_gravity="center_vertical"
+                           android:layout_marginStart="8dp"
+                           android:textColor="@color/secondary_color"
+                           android:text="Maneuver Guide"
+                           android:textSize="16sp"
+                           android:textStyle="bold" />
+                   </LinearLayout>
+
+                   <androidx.recyclerview.widget.RecyclerView
+                       android:id="@+id/stepsRecyclerview"
+                       android:layout_width="match_parent"
+                       android:layout_height="wrap_content"
+                       android:layout_below="@+id/stepsTitleLayout"
+                       android:layout_marginTop="8dp"/>
+
+
+               </RelativeLayout>
+
+           </androidx.core.widget.NestedScrollView>
         </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
         <LinearLayout

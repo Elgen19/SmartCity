@@ -252,7 +252,6 @@ class StartNavigationsActivity : AppCompatActivity() {
 
         }
 
-// Handle route result
         handleRouteResult(pendingRoute)
     }
 
@@ -291,6 +290,7 @@ class StartNavigationsActivity : AppCompatActivity() {
                 // Continue to the next waypoint if not at the final destination
                 navigator.continueToNextDestination()
                 navigator.startGuidance()
+
             }
 
         }

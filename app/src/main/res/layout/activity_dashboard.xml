@@ -526,6 +526,17 @@
                 android:layout_marginTop="8dp"
                 android:scrollbars="vertical" />
 
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewPlaces"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/leaderboardRecyclerView"
+                android:layout_marginTop="16dp"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp"
+                android:clipToPadding="false"
+                android:scrollIndicators="none"
+                android:scrollbars="horizontal"/>
 
         </RelativeLayout>
 

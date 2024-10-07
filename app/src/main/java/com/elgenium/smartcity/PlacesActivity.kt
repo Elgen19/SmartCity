@@ -426,6 +426,14 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
                         if (snapshot.exists()) {
                             // Place already exists, show a message or handle accordingly
                             LayoutStateManager.showFailureLayout(this@PlacesActivity, "This place is already save in the Favorites section. Please select another place to save.", "Return to Places", PlacesActivity::class.java)
+                            savedPlace.id?.let { placeId ->
+                                savedPlace.name?.let { placeName ->
+                                    savedPlace.types?.let { placeTypes ->
+                                        logSavedPlace(placeId, placeName, placeTypes)
+                                    }
+                                }
+                            }
+
                         } else {
                             // Proceed to upload images and save the place data
                             uploadPlaceImagesAndSaveData(userRef, placeData, place)
@@ -529,107 +537,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
     }
 
 
-//    private fun fetchAndAddPois(userLatLng: LatLng, category: String? = null) {
-//        // Check if category is null or empty
-//        if (category.isNullOrEmpty()) {
-//            Log.e("PlacesActivity", "No category provided. No POIs will be displayed.")
-//            return // Exit the method if no category is provided
-//        }
-//
-//        // Check for location permission
-//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-//            val apiKey = BuildConfig.MAPS_API_KEY
-//
-//            val retrofit = Retrofit.Builder()
-//                .baseUrl("https://maps.googleapis.com/maps/api/")
-//                .addConverterFactory(GsonConverterFactory.create())
-//                .build()
-//
-//            val service = retrofit.create(PlacesService::class.java)
-//
-//            val location = "${userLatLng.latitude},${userLatLng.longitude}"
-//            val radius = 5000 // Radius in meters
-//
-//            // Define custom icons
-//            val restaurantIcon = createCustomMarker(R.drawable.restaurant)
-//            val hotelIcon = createCustomMarker(R.drawable.hotel)
-//            val barIcon = createCustomMarker(R.drawable.bar)
-//            val defaultIcon = createCustomMarker(R.drawable.marker_custom)
-//
-//            // List with the provided category
-//            val categories = listOf(category)
-//
-//            Log.e("PlacesActivity", "category in list: $categories")
-//
-//            for (type in categories) {
-//                service.getNearbyPlaces(location, radius, type, apiKey).enqueue(object :
-//                    Callback<PlacesResponse> {
-//                    @SuppressLint("PotentialBehaviorOverride")
-//                    override fun onResponse(call: Call<PlacesResponse>, response: Response<PlacesResponse>) {
-//                        if (response.isSuccessful) {
-//                            response.body()?.results?.forEach { place ->
-//                                Log.e("PlacesActivity", "Place: ${response.body()}")
-//                                val latLng = LatLng(place.geometry.location.lat, place.geometry.location.lng)
-//                                val markerOptions = MarkerOptions()
-//                                    .position(latLng)
-//                                    .title(place.name)
-//                                    .snippet("Category: $type")
-//
-//                                // Set the icon based on the category
-//                                when (type) {
-//                                    "restaurant" -> markerOptions.icon(restaurantIcon)
-//                                    "hotel" -> markerOptions.icon(hotelIcon)
-//                                    "bar" -> markerOptions.icon(barIcon)
-//                                    else -> markerOptions.icon(defaultIcon) // Use default icon for other types
-//                                }
-//                                val marker = mMap.addMarker(markerOptions)
-//                                marker?.tag = place.place_id // Ensure place.id is valid
-//
-//// Fetch place details using the placeId
-//                                mMap.setOnMarkerClickListener { markers ->
-//                                    // Retrieve the place ID from the marker's tag
-//                                    val placeId = markers.tag as? String
-//                                    placeId?.let {
-//                                        // Fetch the details for this specific place and show them in the bottom sheet
-//                                        fetchPlaceDetailsFromAPI(it) { fetchedPlace ->
-//                                            fetchedPlace?.let { placeDetails ->
-//                                                showPlaceDetailsInBottomSheet(placeDetails) // Show details in the bottom sheet
-//                                            } ?: run {
-//                                                Log.e("PlacesActivity", "Failed to fetch place details for place ID: $placeId")
-//                                            }
-//                                        }
-//                                    }
-//                                    true // Return true to indicate that we have handled the click
-//                                }
-//
-//
-//
-//// Add marker to the poiMarkers list
-//                                marker?.let { poiMarkers.add(it) }
-//                                Log.d("PlacesActivity", "Marker added with ID: ${place.place_id}")
-//                                Log.d("PlacesActivity", "POI markers on the list: $poiMarkers")
-//
-//
-//                            }
-//                        } else {
-//                            Log.e("PlacesActivity", "Response error for type: $type. Error code: ${response.code()}")
-//                        }
-//                    }
-//
-//                    override fun onFailure(call: Call<PlacesResponse>, t: Throwable) {
-//                        Log.e("PlacesActivity", "Error fetching POI data", t)
-//                    }
-//                })
-//            }
-//        } else {
-//            ActivityCompat.requestPermissions(
-//                this,
-//                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-//                LOCATION_PERMISSION_REQUEST_CODE
-//            )
-//        }
-//    }
-
+    @SuppressLint("PotentialBehaviorOverride")
     private fun fetchAndAddPois(userLatLng: LatLng, category: String? = null) {
         // Check if category is null or empty
         if (category.isNullOrEmpty()) {
@@ -674,14 +582,17 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
                         val markerOptions = MarkerOptions()
                             .position(latLng)
                             .title(place.name)
-                            .snippet("Type: ${place.types.joinToString(", ")}")
+                            .snippet("Type: ${place.placeTypes?.joinToString(", ")}")
 
                         // Set the icon based on the category
-                        when {
-                            place.types!!.contains(Place.Type.RESTAURANT) -> markerOptions.icon(createCustomMarker(R.drawable.restaurant))
-                            place.types.contains(Place.Type.BAR) -> markerOptions.icon(createCustomMarker(R.drawable.bar)) // Add your custom icon for cafes
-                            else -> markerOptions.icon(createCustomMarker(R.drawable.marker_custom)) // Default icon
+                        place.placeTypes?.let { placeTypes ->
+                            when {
+                                placeTypes.contains("restaurant") -> markerOptions.icon(createCustomMarker(R.drawable.restaurant))
+                                placeTypes.contains("bar") -> markerOptions.icon(createCustomMarker(R.drawable.bar))
+                                else -> markerOptions.icon(createCustomMarker(R.drawable.marker_custom))
+                            }
                         }
+
 
                         // Add the marker to the map
                         val marker = mMap.addMarker(markerOptions)
@@ -807,6 +718,12 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
                 putExtra(Intent.EXTRA_TEXT, shareText)
                 type = "text/plain"
             }
+
+            placeIDFromIntent?.let { it1 -> savedPlace.types?.let { it2 ->
+                logSharedPlace(it1, placeName.text.toString(),
+                    it2
+                )
+            } }
             bottomSheetDialogMoreOptions.dismiss()
             startActivity(Intent.createChooser(shareIntent, "Share via"))
         }
@@ -841,7 +758,8 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
             Place.Field.PHOTO_METADATAS,
             Place.Field.RATING,
             Place.Field.OPENING_HOURS,
-            Place.Field.LAT_LNG
+            Place.Field.LAT_LNG,
+            Place.Field.TYPES
         )
         val request = FetchPlaceRequest.builder(placeId, fields).build()
 
@@ -859,7 +777,8 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
                     openingDaysAndTime = place.openingHours?.weekdayText?.joinToString(", "),
                     rating = place.rating?.toString(),
                     websiteUri = place.websiteUri?.toString(),
-                    photoMetadataList = place.photoMetadatas ?: emptyList()
+                    photoMetadataList = place.photoMetadatas ?: emptyList(),
+                    types = place.placeTypes?.toString()
                 )
                 callback(savedPlace) // Return the SavedPlace object via callback
             }
@@ -915,6 +834,15 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         setupCloseButton(bottomSheetView, bottomSheetDialog)
         setupSavedPlaces(bottomSheetView, bottomSheetDialog, place)
         setupGetDirectionsButton(bottomSheetView, bottomSheetDialog, place)
+
+        place.name?.let { placeName ->
+            place.id?.let { placeId ->
+                place.types?.let { placeTypes ->
+                    logViewedPlace(placeId, placeName, placeTypes)
+                }
+            }
+        }
+
 
         // Show the bottom sheet dialog
         bottomSheetDialog.show()
@@ -1267,6 +1195,62 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         }
         return super.dispatchTouchEvent(ev)
     }
+
+    private fun logSharedPlace(placeId: String, placeName: String, placeType: String) {
+        val sharedPlaceData = mapOf(
+            "placeId" to placeId,
+            "placeName" to placeName,
+            "timestamp" to System.currentTimeMillis(),
+            "type" to placeType
+        )
+
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        val database = FirebaseDatabase.getInstance().getReference("Users/$userId/interactions/sharedPlaces")
+        val newKey = database.push().key // Create a unique key for each shared place
+
+        newKey?.let {
+            database.child(it).setValue(sharedPlaceData)
+        }
+    }
+
+    private fun logViewedPlace(placeId: String, placeName: String, placeType: String) {
+        val viewedPlaceData = mapOf(
+            "placeId" to placeId,
+            "placeName" to placeName,
+            "timestamp" to System.currentTimeMillis(),
+            "type" to placeType
+
+        )
+
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        val database = FirebaseDatabase.getInstance().getReference("Users/$userId/interactions/viewedPlaces")
+        val newKey = database.push().key // Create a unique key for each viewed place
+
+        newKey?.let {
+            database.child(it).setValue(viewedPlaceData)
+        }
+    }
+
+
+    private fun logSavedPlace(placeId: String, placeName: String, placeType: String) {
+        val savedPlaceData = mapOf(
+            "placeId" to placeId,
+            "placeName" to placeName,
+            "timestamp" to System.currentTimeMillis(),
+            "type" to placeType
+        )
+
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        val database = FirebaseDatabase.getInstance().getReference("Users/$userId/interactions/savePlaces")
+        val newKey = database.push().key // Create a unique key for each saved place
+
+        newKey?.let {
+            database.child(it).setValue(savedPlaceData)
+        }
+    }
+
+
+
 
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1

@@ -8,8 +8,10 @@ import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.drawable.ColorDrawable
 import android.location.Geocoder
 import android.os.Bundle
+import android.text.Html
 import android.util.Log
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
@@ -17,10 +19,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.elgenium.smartcity.databinding.ActivityDirectionsBinding
 import com.elgenium.smartcity.models.OriginDestinationStops
+import com.elgenium.smartcity.models.Step
+import com.elgenium.smartcity.network_reponses.RouteTravelMode
 import com.elgenium.smartcity.network_reponses.RoutesResponse
 import com.elgenium.smartcity.network_reponses.TravelAdvisory
+import com.elgenium.smartcity.recyclerview_adapter.StepAdapter
 import com.elgenium.smartcity.routes_network_request.Coordinates
 import com.elgenium.smartcity.routes_network_request.ExtraComputation
 import com.elgenium.smartcity.routes_network_request.LatLng
@@ -43,6 +50,7 @@ import com.google.android.gms.maps.model.Polyline
 import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.snackbar.Snackbar
 import com.google.gson.Gson
 import com.google.maps.android.PolyUtil
 import retrofit2.Call
@@ -63,37 +71,41 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
     private var selectedButton: MaterialButton? = null
     private var isUpdated: Boolean = false
     private val stopoverMarkers = mutableListOf<Marker>()
-    private  var stopList: MutableList<OriginDestinationStops> = mutableListOf()
-    private val stopResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val data = result.data
-            stopList = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                data?.getSerializableExtra("STOP_LIST", ArrayList::class.java)?.let {
-                    @Suppress("UNCHECKED_CAST")
-                    it as? ArrayList<OriginDestinationStops>
-                } ?: mutableListOf()
-            } else {
-                @Suppress("DEPRECATION")
-                (data?.getSerializableExtra("STOP_LIST") as? ArrayList<*>)?.let {
-                    @Suppress("UNCHECKED_CAST")
-                    it as? ArrayList<OriginDestinationStops>
-                } ?: mutableListOf()
+    private lateinit var stepsAdapter: StepAdapter
+    private var stepsList: MutableList<Step> = mutableListOf()
+    private var stopList: MutableList<OriginDestinationStops> = mutableListOf()
+    private val stopResultLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val data = result.data
+                stopList =
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                        data?.getSerializableExtra("STOP_LIST", ArrayList::class.java)?.let {
+                            @Suppress("UNCHECKED_CAST")
+                            it as? ArrayList<OriginDestinationStops>
+                        } ?: mutableListOf()
+                    } else {
+                        @Suppress("DEPRECATION")
+                        (data?.getSerializableExtra("STOP_LIST") as? ArrayList<*>)?.let {
+                            @Suppress("UNCHECKED_CAST")
+                            it as? ArrayList<OriginDestinationStops>
+                        } ?: mutableListOf()
+                    }
+
+                isUpdated = data?.getBooleanExtra("IS_UPDATED", false) ?: false
+
+
+                Log.e("DirectionsActivity", "STOP LIST: $stopList")
+                Log.e("DirectionsActivity", "IS UPDATED: $isUpdated")
+
+                updateLatLngList(stopList)
+                updateCourseCard(stopList)
+                fetchRoute()
+
+                Log.e("DirectionsActivity", "LAT LNG LIST: $latLngList")
+
             }
-
-            isUpdated = data?.getBooleanExtra("IS_UPDATED", false) ?: false
-
-
-            Log.e("DirectionsActivity", "STOP LIST: $stopList")
-            Log.e("DirectionsActivity", "IS UPDATED: $isUpdated")
-
-            updateLatLngList(stopList)
-            updateCourseCard(stopList)
-            fetchRoute()
-
-            Log.e("DirectionsActivity", "LAT LNG LIST: $latLngList")
-
         }
-    }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -138,17 +150,35 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         fetchRoute()
 
-       if (!isUpdated) {
-           val places = mutableListOf(
-               OriginDestinationStops(name = "Your Location", address = "", type = "Origin", latlng = originLatLngString, placeid = ""),
-               OriginDestinationStops(name = destinationData[0], address = destinationData[1], type = "Destination", latlng = destinationData[2], placeid = destinationData[3])
-           )
-           for (place in places) {
-               val (name, address, type, latlng, placeid) = place
-               val stop = OriginDestinationStops(name = name, address = address, type = type, latlng = latlng, placeid = placeid)
-               stopList.add(stop)
-           }
-       }
+        if (!isUpdated) {
+            val places = mutableListOf(
+                OriginDestinationStops(
+                    name = "Your Location",
+                    address = originAddressFormatted,
+                    type = "Origin",
+                    latlng = originLatLngString,
+                    placeid = ""
+                ),
+                OriginDestinationStops(
+                    name = destinationData[0],
+                    address = destinationData[1],
+                    type = "Destination",
+                    latlng = destinationData[2],
+                    placeid = destinationData[3]
+                )
+            )
+            for (place in places) {
+                val (name, address, type, latlng, placeid) = place
+                val stop = OriginDestinationStops(
+                    name = name,
+                    address = address,
+                    type = type,
+                    latlng = latlng,
+                    placeid = placeid
+                )
+                stopList.add(stop)
+            }
+        }
 
         Log.e("DirectionsActivity", "STOPLIST AT ON CREATE: $stopList")
     }
@@ -159,8 +189,39 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
             return
         }
 
-        val origin = Location(LatLng(Coordinates(latLngList[0].split(",")[0].toDouble(), latLngList[0].split(",")[1].toDouble())))
-        val destination = Location(LatLng(Coordinates(latLngList.last().split(",")[0].toDouble(), latLngList.last().split(",")[1].toDouble())))
+        val travelMode = getTravelMode(selectedTransportMode)
+        val origin = Location(
+            LatLng(
+                Coordinates(
+                    latLngList[0].split(",")[0].toDouble(),
+                    latLngList[0].split(",")[1].toDouble()
+                )
+            )
+        )
+        val destination = Location(
+            LatLng(
+                Coordinates(
+                    latLngList.last().split(",")[0].toDouble(),
+                    latLngList.last().split(",")[1].toDouble()
+                )
+            )
+        )
+        val isStopOver = if (travelMode == "DRIVE" || travelMode == "TWO_WHEELER") true else false
+        val isSideOfRoad = if (travelMode == "DRIVE" || travelMode == "TWO_WHEELER") true else false
+
+        if (latLngList.size > 2 && travelMode == "TRANSIT") {
+            val snackbar = Snackbar.make(
+                findViewById(android.R.id.content), // Use the root view of your activity
+                "Transit mode of transport does not support stop waypoint. Please remove the stops waypoint.",
+                Snackbar.LENGTH_LONG // Or Snackbar.LENGTH_SHORT
+            )
+            // Show the Snackbar
+            snackbar.show()
+            handleButtonSelection(binding.btnCar)
+            fetchRoute()
+            return
+        }
+
         // Create intermediates for intermediate stops (if any)
         val intermediates: List<Waypoint> = if (latLngList.size > 2) {
             latLngList.subList(1, latLngList.size - 1).map { latLngString ->
@@ -173,10 +234,11 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
                     // Ensure valid latitude and longitude
                     if (latitude != null && longitude != null &&
                         latitude in -90.0..90.0 &&
-                        longitude in -180.0..180.0) {
+                        longitude in -180.0..180.0
+                    ) {
                         Waypoint(
                             location = LatLng(Coordinates(latitude, longitude)),
-                            vehicleStopover = true, // Set to true if it is a stopover
+                            vehicleStopover = isStopOver, // Set to true if it is a stopover
                             sideOfRoad = false // Adjust as needed
                         )
                     } else {
@@ -193,12 +255,17 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
             emptyList() // Return an empty list if there are no intermediates
         }
 
-        val travelMode = getTravelMode(selectedTransportMode)
+
 
         Log.e("DirectionsActivity", "TRAVEL MODE: $travelMode")
 
-        val routingPreference = if (travelMode == "DRIVE" || travelMode == "TWO_WHEELER") "TRAFFIC_AWARE" else null
-        val extraComputations = if (travelMode == "DRIVE" || travelMode == "TWO_WHEELER") listOf(ExtraComputation.TRAFFIC_ON_POLYLINE, ExtraComputation.HTML_FORMATTED_NAVIGATION_INSTRUCTIONS) else null
+        val computeAlternatives = travelMode == "TRANSIT"
+        val routingPreference =
+            if (travelMode == "DRIVE" || travelMode == "TWO_WHEELER") "TRAFFIC_AWARE" else null
+        val extraComputations = if (travelMode == "DRIVE" || travelMode == "TWO_WHEELER") listOf(
+            ExtraComputation.TRAFFIC_ON_POLYLINE,
+            ExtraComputation.HTML_FORMATTED_NAVIGATION_INSTRUCTIONS
+        ) else null
         val request = RoutesRequest(
             origin = origin,
             destination = destination,
@@ -211,119 +278,365 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         Log.d("DirectionsActivity", "Request body: ${Gson().toJson(request)}")
 
-        RetrofitClientRoutes.routesApi.getRoutes(request).enqueue(object : Callback<RoutesResponse> {
-            override fun onResponse(call: Call<RoutesResponse>, response: Response<RoutesResponse>) {
-                if (response.isSuccessful) {
-                    Log.e("DirectionsActivity", "RESPONSE BODY IF: ${response.body()}}")
-                    Log.e("DirectionsActivity", "RESPONSE BODY IF: ${response.raw()}}")
+        RetrofitClientRoutes.routesApi.getRoutes(request)
+            .enqueue(object : Callback<RoutesResponse> {
+                override fun onResponse(
+                    call: Call<RoutesResponse>,
+                    response: Response<RoutesResponse>
+                ) {
+                    if (response.isSuccessful) {
+                        Log.e("DirectionsActivity", "RESPONSE BODY IF: ${response.body()}}")
+                        Log.e("DirectionsActivity", "RESPONSE BODY IF: ${response.raw()}}")
 
 
-                    // Select the best route based on distance or duration
-                    val bestRoute = response.body()?.routes?.firstOrNull()
-
-
-
-                    bestRoute?.let { route ->
-                        val polyline = route.polyline.encodedPolyline
-                        val travelAdvisories = route.travelAdvisory
-
-                        plotPolylineWithWaypoints(polyline, travelAdvisories, travelMode, intermediates)
-
-                        Log.e("DirectionsActivity", "ROUTE TOKEN: ${bestRoute.routeToken}" )
-                        Log.e("DirectionsActivity", "TRAVEL MODE: $travelMode" )
+                        // Select the best route based on distance or duration
+                        val bestRoute = response.body()?.routes?.firstOrNull()
 
 
 
-                        val durationString = route.duration // e.g., "1381s"
-                        val durationInSeconds = durationString.replace("s", "").toInt() // Remove 's' and convert to integer
+                        bestRoute?.let { route ->
+                            val polyline = route.polyline.encodedPolyline
+                            val travelAdvisories = route.travelAdvisory
 
-                        val hours = durationInSeconds / 3600
-                        val minutes = (durationInSeconds % 3600) / 60
-                        val seconds = durationInSeconds % 60
+                            plotPolylineWithWaypoints(
+                                polyline,
+                                travelAdvisories,
+                                travelMode,
+                                intermediates
+                            )
 
-                        // Format the output dynamically
-                        val formattedDuration = buildString {
-                            if (hours > 0) {
-                                append("$hours h ")
+                            Log.e("DirectionsActivity", "ROUTE TOKEN: ${bestRoute.routeToken}")
+                            Log.e("DirectionsActivity", "TRAVEL MODE: $travelMode")
+
+
+                            // Create a list to hold all steps
+                            val allSteps = mutableListOf<Step>()
+
+// Iterate through each leg in the route
+                            for (leg in bestRoute.legs) {
+                                // Get the steps for the current leg
+                                val stepData = leg.steps
+
+                                // Iterate through each step and add to allSteps list
+                                for (step in stepData) {
+                                    val instruction =
+                                        step.navigationInstruction.instructions // This may contain HTML
+                                    val distance =
+                                        "${step.distanceMeters} m" // Adjust the unit as needed
+                                    allSteps.add(Step(instruction, distance))
+                                }
                             }
-                            if (minutes > 0 || hours > 0) { // Include minutes if there are hours
-                                append("$minutes min ")
+
+// Now, allSteps contains steps from all legs of the route
+                            stepsList.clear()
+                            stepsList.addAll(allSteps)
+
+// Initialize the adapter with the stepsList and set it to the RecyclerView
+                            stepsAdapter = StepAdapter(stepsList)
+                            binding.stepsRecyclerview.layoutManager =
+                                LinearLayoutManager(this@DirectionsActivity)
+
+// Create a custom drawable with your desired color
+                            val dividerDrawable = ColorDrawable(
+                                ContextCompat.getColor(
+                                    this@DirectionsActivity,
+                                    R.color.dark_gray
+                                )
+                            )
+
+// Create the DividerItemDecoration and set the drawable
+                            val dividerItemDecoration = DividerItemDecoration(
+                                binding.stepsRecyclerview.context,
+                                LinearLayoutManager.VERTICAL
+                            )
+                            dividerItemDecoration.setDrawable(dividerDrawable)
+
+// Add the custom divider to the RecyclerView
+                            binding.stepsRecyclerview.addItemDecoration(dividerItemDecoration)
+                            binding.stepsRecyclerview.adapter = stepsAdapter
+
+
+                            val durationString = route.duration // e.g., "1381s"
+                            val durationInSeconds = durationString.replace("s", "")
+                                .toInt() // Remove 's' and convert to integer
+
+                            val hours = durationInSeconds / 3600
+                            val minutes = (durationInSeconds % 3600) / 60
+                            val seconds = durationInSeconds % 60
+
+                            // Format the output dynamically, excluding zero values
+                            val formattedDuration = buildString {
+                                if (hours > 0) {
+                                    append("$hours h ")
+                                }
+                                if (minutes > 0) {
+                                    append("$minutes min ")
+                                }
+                                if (seconds > 0 || (hours == 0 && minutes == 0)) { // Always show seconds if hours and minutes are both zero
+                                    append("$seconds s")
+                                }
+                            }.trim()
+
+                            // Set the formatted duration to the desired TextView or log it
+                            Log.d("DirectionsActivity", "Formatted Duration: $formattedDuration")
+
+
+                            binding.travelTimeValue.text = formattedDuration
+
+                            val transitLayouts = listOf(
+                                binding.transit1Layout,
+                                binding.transit2Layout,
+                                binding.transit3Layout
+                            )
+                            if (travelMode == "TRANSIT") {
+                                binding.bestRouteLayout.visibility = View.GONE
+                                transitLayouts.forEach { layout ->
+                                    layout.visibility = View.GONE
+                                }
+
+                                val stepData = bestRoute.legs[0].steps
+
+                                // List of available TextViews for names and short names
+                                val transitNames =
+                                    listOf(binding.transit1, binding.transit2, binding.transit3)
+                                val transitShortNames = listOf(
+                                    binding.transit1Sign,
+                                    binding.transit2Sign,
+                                    binding.transit3Sign
+                                )
+
+                                // Initialize a variable to keep track of the total fare
+                                var totalFare: Double = 0.0
+
+// List to store transit line names and their respective fares
+                                val transitFares =
+                                    mutableListOf<Pair<String, Double>>() // Pair of (Transit Line Name, Fare)
+
+// Iterate through each step and filter for TRANSIT travel modes
+                                stepData.filter { it.travelMode == RouteTravelMode.TRANSIT }
+                                    .forEach { step ->
+                                        // Convert distance from meters to kilometers
+                                        val distanceInKm = step.distanceMeters / 1000.0
+
+                                        // Calculate fare for the current transit step
+                                        val fare: Double = if (distanceInKm <= 4) {
+                                            13.0 // base fare for distances up to 4 km
+                                        } else {
+                                            // For each kilometer beyond the first 4 km, add 1.80
+                                            val additionalKilometers = distanceInKm - 4
+                                            val additionalFare = additionalKilometers * 1.80
+                                            13.0 + additionalFare
+                                        }
+
+                                        // Add the calculated fare to the total fare
+                                        totalFare += fare
+
+                                        // Add the fare to the list of transit fares, along with the transit line name
+                                        val transitLineName =
+                                            step.transitDetails?.transitLine?.name ?: "Unknown Line"
+                                        transitFares.add(Pair(transitLineName, fare))
+                                    }
+
+// Display the total fare in fareValue TextView
+                                binding.fareValue.text =
+                                    String.format("%.2f pesos", totalFare) // Display the total fare
+
+// Only show the fare breakdown if there is more than 1 transit
+                                if (transitFares.size > 1) {
+                                    // Create a string builder for both the line names and the fares
+                                    val lineNamesBuilder = StringBuilder()
+                                    val faresBuilder = StringBuilder()
+
+                                    // Build the breakdown string for both transit lines and fares
+                                    transitFares.forEachIndexed { index, fareData ->
+                                        val (lineName, fare) = fareData
+
+                                        if (index > 0) {
+                                            lineNamesBuilder.append("\n") // Add a new line between entries
+                                            faresBuilder.append("\n")     // Add a new line between entries
+                                        }
+
+                                        // Append the line name and fare
+                                        lineNamesBuilder.append(lineName)
+                                        faresBuilder.append(String.format("%.2f pesos", fare))
+                                    }
+
+                                    // Update the fare breakdown TextViews
+                                    binding.fareLabel2.text = lineNamesBuilder.toString()
+                                    binding.fareBreakdownValue.text = faresBuilder.toString()
+
+                                    // Make the fare breakdown layout visible
+                                    binding.fareLayoutBreakdown.visibility = View.VISIBLE
+                                } else {
+                                    // Hide the fare breakdown if there is only 1 or no transit
+                                    binding.fareLayoutBreakdown.visibility = View.GONE
+                                }
+
+
+                                // Counter to track which TextView to update
+                                var transitIndex = 0
+                                var firstRide = true // To track if this is the first ride
+
+                                stepData.forEach { step ->
+                                    val transitDetails = step.transitDetails
+
+                                    if (transitDetails != null && transitIndex < transitNames.size) {
+                                        val transitLine = transitDetails.transitLine
+
+                                        // Access shortName and name from transitLine
+                                        val shortName = transitLine?.nameShort
+                                        val name = transitLine?.name
+
+                                        // Update UI on the main thread
+                                        runOnUiThread {
+                                            if (firstRide) {
+                                                // First ride, show "Ride + shortName"
+                                                val htmlString = "Ride PUJ with route <b>$name</b>"
+                                                transitNames[transitIndex].text = Html.fromHtml(
+                                                    htmlString,
+                                                    Html.FROM_HTML_MODE_LEGACY
+                                                )
+                                                transitShortNames[transitIndex].text = shortName
+                                                firstRide = false
+                                            } else {
+                                                // For subsequent rides, show "Transfer to + shortName"
+                                                val htmlString =
+                                                    "Transfer to PUJ route <b>$name</b>"
+                                                transitNames[transitIndex].text = Html.fromHtml(
+                                                    htmlString,
+                                                    Html.FROM_HTML_MODE_LEGACY
+                                                )
+                                                transitShortNames[transitIndex].text = shortName
+                                            }
+
+                                            // Make the views visible
+                                            transitLayouts[transitIndex].visibility = View.VISIBLE
+                                            binding.fareLayout.visibility = View.VISIBLE
+                                        }
+
+                                        Log.e("DirectionsActivity", "SHORTNAME: $shortName")
+
+                                        // Increment the index for the next set of TextViews
+                                        transitIndex++
+                                    }
+                                }
+                            } else {
+                                binding.bestRouteText.text = Html.fromHtml(
+                                    "Via <b>${route.description}</b>",
+                                    Html.FROM_HTML_MODE_LEGACY
+                                )
+                                // Set all transit layouts to GONE
+                                transitLayouts.forEach { layout ->
+                                    layout.visibility = View.GONE
+                                }
+                                binding.fareLayout.visibility = View.GONE
+                                binding.fareLayoutBreakdown.visibility = View.GONE
+                                binding.bestRouteLayout.visibility = View.VISIBLE
+
                             }
-                            append("$seconds s")
-                        }.trim()
-
-                        binding.travelTimeValue.text = formattedDuration
 
 
-                       if (route.description == null) {
-                           binding.bestRouteText.visibility = View.GONE
-                           binding.bestRouteLabel.visibility = View.GONE
-                       } else {
-                           binding.bestRouteText.text = "Via ${route.description}"
-                           binding.bestRouteText.visibility = View.VISIBLE
-                           binding.bestRouteLabel.visibility = View.VISIBLE
-                       }
+                            val distanceInMeters =
+                                route.distanceMeters.toDouble() // Ensure it's a double for accurate division
+                            val distanceInKilometers =
+                                distanceInMeters / 1000 // Convert to kilometers
+                            binding.distanceValue.text = String.format(
+                                "%.2f km",
+                                distanceInKilometers
+                            ) // Format to 2 decimal places
 
-                        val distanceInMeters = route.distanceMeters.toDouble() // Ensure it's a double for accurate division
-                        val distanceInKilometers = distanceInMeters / 1000 // Convert to kilometers
-                        binding.distanceValue.text = String.format("%.2f km", distanceInKilometers) // Format to 2 decimal places
-
-                        if (travelMode == "TWO_WHEELER" || travelMode == "DRIVE") {
-                            binding.trafficCondition.text = determineOverallTrafficCondition(travelAdvisories)
-                        } else {
-                            binding.trafficCondition.text = "A typical traffic"
-                            binding.trafficCondition.setTextColor(resources.getColor(R.color.dark_gray))
-                        }
-
-                        var routeToken = bestRoute.routeToken
-
-                        if (travelMode == "WALK" || travelMode == "TRANSIT") {
-                            routeToken = "NO ROUTE TOKEN"
-                        }
-                        // Create a list of place IDs from the stopList, excluding entries with empty place IDs
-                        val placeIds = stopList.mapNotNull { stop ->
-                            stop.placeid.ifEmpty { null }
-                        }
-
-                        binding.startNavigationButton.setOnClickListener {
-                            // Log or check the filtered placeIds if needed
-                             Log.e("Place IDs", placeIds.joinToString())
-
-                            // Create the intent for starting the navigation activity
-                            val intent = Intent(this@DirectionsActivity, StartNavigationsActivity::class.java).apply {
-                                putExtra("ROUTE_TOKEN", routeToken)
-                                putExtra("IS_SIMULATED", false )
-                                putExtra("TRAVEL_MODE", travelMode)
-                                putStringArrayListExtra("PLACE_IDS", ArrayList(placeIds))  // Pass place IDs as an extra
+                            if (travelMode == "TWO_WHEELER" || travelMode == "DRIVE") {
+                                binding.trafficCondition.text =
+                                    determineOverallTrafficCondition(travelAdvisories)
+                            } else {
+                                binding.trafficCondition.text = "A typical traffic"
+                                binding.trafficCondition.setTextColor(resources.getColor(R.color.dark_gray))
                             }
-                            startActivity(intent)
-                        }
 
-                        binding.simulateButton.setOnClickListener{
-                            val intent = Intent(this@DirectionsActivity, StartNavigationsActivity::class.java).apply {
-                                putExtra("ROUTE_TOKEN", routeToken)
-                                putExtra("IS_SIMULATED", true )
-                                putExtra("TRAVEL_MODE", travelMode)
-                                putStringArrayListExtra("PLACE_IDS", ArrayList(placeIds))  // Pass place IDs as an extra
+
+                            var routeToken = bestRoute.routeToken
+
+                            if (travelMode == "WALK" || travelMode == "TRANSIT") {
+                                routeToken = "NO ROUTE TOKEN"
                             }
-                            startActivity(intent)
-                        }
+                            // Create a list of place IDs from the stopList, excluding entries with empty place IDs
+                            val placeIds = stopList.mapNotNull { stop ->
+                                stop.placeid.ifEmpty { null }
+                            }
 
-                    } ?: run {
-                        Log.e("DirectionsActivity", "No routes found in response.")
+                            binding.startNavigationButton.setOnClickListener {
+                                // Log or check the filtered placeIds if needed
+                                Log.e("Place IDs", placeIds.joinToString())
+
+                                // Create the intent for starting the navigation activity
+                                val intent = Intent(
+                                    this@DirectionsActivity,
+                                    StartNavigationsActivity::class.java
+                                ).apply {
+                                    putExtra("ROUTE_TOKEN", routeToken)
+                                    putExtra("IS_SIMULATED", false)
+                                    putExtra("TRAVEL_MODE", travelMode)
+                                    putStringArrayListExtra(
+                                        "PLACE_IDS",
+                                        ArrayList(placeIds)
+                                    )  // Pass place IDs as an extra
+                                }
+                                startActivity(intent)
+                            }
+
+                            binding.simulateButton.setOnClickListener {
+                                val intent = Intent(
+                                    this@DirectionsActivity,
+                                    StartNavigationsActivity::class.java
+                                ).apply {
+                                    putExtra("ROUTE_TOKEN", routeToken)
+                                    putExtra("IS_SIMULATED", true)
+                                    putExtra("TRAVEL_MODE", travelMode)
+                                    putStringArrayListExtra(
+                                        "PLACE_IDS",
+                                        ArrayList(placeIds)
+                                    )  // Pass place IDs as an extra
+                                }
+                                startActivity(intent)
+                            }
+
+                        } ?: run {
+                            Log.e("DirectionsActivity", "No routes found in response.")
+                        }
+                    } else {
+                        Log.e("DirectionsActivity", "RESPONSE BODY ELSE: ${response.raw()}")
                     }
-                } else {
-                    Log.e("DirectionsActivity", "RESPONSE BODY ELSE: ${response.raw()}")
                 }
-            }
 
-            override fun onFailure(call: Call<RoutesResponse>, t: Throwable) {
-                Log.e("DirectionsActivity", "API call failed: ${t.message}")
-            }
-        })
+                override fun onFailure(call: Call<RoutesResponse>, t: Throwable) {
+                    Log.e("DirectionsActivity", "API call failed: ${t.message}")
+                }
+            })
     }
 
-    private fun plotPolylineWithWaypoints(encodedPolyline: String, travelAdvisory: TravelAdvisory?, travelMode: String, intermediates: List<Waypoint>) {
+    private fun getFormattedDuration(durationString: String): String {
+        val durationInSeconds =
+            durationString.replace("s", "").toInt() // Remove 's' and convert to integer
+
+        val hours = durationInSeconds / 3600
+        val minutes = (durationInSeconds % 3600) / 60
+        val seconds = durationInSeconds % 60
+
+        // Format the output dynamically, excluding zero values
+        return buildString {
+            if (hours > 0) append("$hours h ")
+            if (minutes > 0) append("$minutes min ")
+            if (seconds > 0 || (hours == 0 && minutes == 0)) append("$seconds s")
+        }.trim()
+    }
+
+
+    private fun plotPolylineWithWaypoints(
+        encodedPolyline: String,
+        travelAdvisory: TravelAdvisory?,
+        travelMode: String,
+        intermediates: List<Waypoint>
+    ) {
         // Map intermediates (waypoints) to their LatLng objects
         val stopoverLatLngs = intermediates.map { waypoint ->
             com.google.android.gms.maps.model.LatLng(
@@ -362,9 +675,15 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    private fun plotPolyline(encodedPolyline: String, travelAdvisory: TravelAdvisory?, travelMode: String, intermediates: List<com.google.android.gms.maps.model.LatLng>) {
+    private fun plotPolyline(
+        encodedPolyline: String,
+        travelAdvisory: TravelAdvisory?,
+        travelMode: String,
+        intermediates: List<com.google.android.gms.maps.model.LatLng>
+    ) {
         // Decode the polyline points
-        val polylinePoints: List<com.google.android.gms.maps.model.LatLng> = PolyUtil.decode(encodedPolyline)
+        val polylinePoints: List<com.google.android.gms.maps.model.LatLng> =
+            PolyUtil.decode(encodedPolyline)
 
         // Clear previous polylines and markers
         clearPolylines()
@@ -381,18 +700,23 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         // Only overlay colored segments for DRIVE and TWO_WHEELER
         if (travelMode == "DRIVE" || travelMode == "TWO_WHEELER") {
             travelAdvisory?.speedReadingIntervals?.forEach { interval ->
-                val segmentPoints = polylinePoints.subList(interval.startPolylinePointIndex, interval.endPolylinePointIndex)
+                val segmentPoints = polylinePoints.subList(
+                    interval.startPolylinePointIndex,
+                    interval.endPolylinePointIndex
+                )
 
                 // Create polyline options based on speed
                 val polylineOptions = PolylineOptions().apply {
                     addAll(segmentPoints)
                     width(10f)
-                    color(when (interval.speed) {
-                        "NORMAL" -> getColor(R.color.traffic_light_color)
-                        "SLOW" -> getColor(R.color.traffic_moderate_color)
-                        "TRAFFIC_JAM" -> getColor(R.color.traffic_heavy_color)
-                        else -> getColor(R.color.brand_color)
-                    })
+                    color(
+                        when (interval.speed) {
+                            "NORMAL" -> getColor(R.color.traffic_light_color)
+                            "SLOW" -> getColor(R.color.traffic_moderate_color)
+                            "TRAFFIC_JAM" -> getColor(R.color.traffic_heavy_color)
+                            else -> getColor(R.color.brand_color)
+                        }
+                    )
                 }
 
                 val trafficPolyline = mMap.addPolyline(polylineOptions) // Create colored polyline
@@ -403,7 +727,8 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         // Add a marker at the destination
         destinationMarker?.remove()
         val destinationLatLng = polylinePoints.last()
-        destinationMarker = mMap.addMarker(MarkerOptions().position(destinationLatLng).title("Destination"))
+        destinationMarker =
+            mMap.addMarker(MarkerOptions().position(destinationLatLng).title("Destination"))
 
         // Create bounds to focus the camera on the polyline and markers
         val builder = LatLngBounds.Builder().apply {
@@ -426,7 +751,11 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun getScaledIcon(drawableResId: Int, width: Int, height: Int): BitmapDescriptor {
         // Convert the drawable resource into a Bitmap
         val drawable = ResourcesCompat.getDrawable(resources, drawableResId, null)
-        val bitmap = Bitmap.createBitmap(drawable!!.intrinsicWidth, drawable.intrinsicHeight, Bitmap.Config.ARGB_8888)
+        val bitmap = Bitmap.createBitmap(
+            drawable!!.intrinsicWidth,
+            drawable.intrinsicHeight,
+            Bitmap.Config.ARGB_8888
+        )
         val canvas = Canvas(bitmap)
         drawable.setBounds(0, 0, canvas.width, canvas.height)
         drawable.draw(canvas)
@@ -474,10 +803,12 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
                 binding.trafficCondition.setTextColor(getColor(R.color.traffic_heavy_color))
                 "Heavy Traffic"
             }
+
             slowCount > normalCount -> {
                 binding.trafficCondition.setTextColor(getColor(R.color.traffic_moderate_color))
                 "Moderate Traffic"
             }
+
             else -> {
                 binding.trafficCondition.setTextColor(getColor(R.color.traffic_light_color))
                 "Light Traffic"
@@ -556,10 +887,14 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
 
-       // setMapStyle()
+        // setMapStyle()
 
         // Check for location permission
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
             // Enable the My Location layer
             mMap.isMyLocationEnabled = true
 
@@ -569,11 +904,19 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         } else {
             // Request location permission
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQUEST_CODE)
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                LOCATION_PERMISSION_REQUEST_CODE
+            )
         }
     }
 
-    private fun setupBottomSheet(originAddress: String, originLatLng: String, destinationData: List<String>) {
+    private fun setupBottomSheet(
+        originAddress: String,
+        originLatLng: String,
+        destinationData: List<String>
+    ) {
         // Find the bottom sheet view from the activity layout using binding
         val bottomSheet = binding.bottomsheet
 

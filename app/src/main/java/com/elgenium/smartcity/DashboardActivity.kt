@@ -18,11 +18,13 @@ import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.elgenium.smartcity.databinding.ActivityDashboardBinding
 import com.elgenium.smartcity.models.Leaderboard
+import com.elgenium.smartcity.models.RecommendedPlace
 import com.elgenium.smartcity.network.OpenWeatherApiService
 import com.elgenium.smartcity.network.RoadsApiService
 import com.elgenium.smartcity.network.TomTomApiService
@@ -31,13 +33,18 @@ import com.elgenium.smartcity.network_reponses.RoadsResponse
 import com.elgenium.smartcity.network_reponses.TrafficResponse
 import com.elgenium.smartcity.network_reponses.WeatherResponse
 import com.elgenium.smartcity.recyclerview_adapter.LeaderboardAdapter
+import com.elgenium.smartcity.recyclerview_adapter.RecommendedPlaceAdapter
 import com.elgenium.smartcity.singletons.BottomNavigationManager
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
+import com.elgenium.smartcity.singletons.PlacesNewClientSingleton
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.net.SearchByTextRequest
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -58,6 +65,7 @@ class DashboardActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var database: DatabaseReference
     private lateinit var apiService: OpenWeatherApiService
+    private val placesClient by lazy { PlacesNewClientSingleton.getPlacesClient(this) }
     private lateinit var apiServiceForTraffic: TomTomApiService
     private lateinit var apiServiceForRoads: RoadsApiService
     private val locationRequestCode = 1001
@@ -69,6 +77,8 @@ class DashboardActivity : AppCompatActivity() {
     private val COOLDOWN_TIME_MS: Long = 60 * 1000 // 1 minute in milliseconds
     private var lastActiveUpdateTime: Long = 0 // To track the last update time
     private val ACTIVE_TIMEFRAME_MS: Long = 2 * 60 * 1000 // 5 minutes in milliseconds
+    private lateinit var recommendedPlaces: List<RecommendedPlace>
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -132,6 +142,12 @@ class DashboardActivity : AppCompatActivity() {
         fetchNearestRoad(apiServiceForRoads, apiServiceForTraffic)
 
         fetchLeaderboardData()
+
+
+        // Set up RecyclerView with an empty adapter initially
+        binding.recyclerViewPlaces.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        binding.recyclerViewPlaces.adapter = RecommendedPlaceAdapter(emptyList())
+        getFilteredPlacesForRecommendationBasedOnType()
     }
 
     private fun fetchLeaderboardData() {
@@ -159,7 +175,7 @@ class DashboardActivity : AppCompatActivity() {
                     }
                 }
 
-                // Sort by points descending and then by userId for tiebreaking
+                // Sort by points descending and then by userId for tie breaking
                 val sortedLeaderboardList = leaderboardList.sortedWith(
                     compareByDescending<Leaderboard> { it.points }
                         .thenBy { it.userId } // Use userId as a tiebreaker
@@ -577,6 +593,182 @@ class DashboardActivity : AppCompatActivity() {
             }
         })
     }
+
+    private fun getFilteredPlacesForRecommendationBasedOnType() {
+        Log.e("DashboardActivity", "Fetching user preferences for recommendations...")
+        fetchUserPreferences { preferredPlaces ->
+            if (preferredPlaces.isEmpty()) {
+                Log.e("DashboardActivity", "No preferred places found for recommendations.")
+                return@fetchUserPreferences
+            }
+
+            Log.e("DashboardActivity", "Preferred places: $preferredPlaces")
+
+            val placeFields = listOf(
+                Place.Field.ID,
+                Place.Field.NAME,
+                Place.Field.ADDRESS,
+                Place.Field.TYPES,
+                Place.Field.RATING,
+                Place.Field.USER_RATINGS_TOTAL,
+                Place.Field.LAT_LNG
+            )
+
+            val query = preferredPlaces.joinToString(" OR ")
+            Log.e("DashboardActivity", "Search query for places: $query")
+
+            val searchByTextRequest = SearchByTextRequest.builder(query, placeFields)
+                .setMaxResultCount(20)
+                .build()
+
+            placesClient.searchByText(searchByTextRequest)
+                .addOnSuccessListener { response ->
+                    Log.e("DashboardActivity", "Successfully retrieved places. Total places found: ${response.places.size}")
+
+                    val places: List<Place> = response.places
+                    val placesList = mutableListOf<RecommendedPlace>()
+
+                    // Get the current user location
+                    getCurrentLocation { userLocation ->
+                        Log.e("DashboardActivity", "User location retrieved: $userLocation")
+
+                        places.forEach { place ->
+                            // Ensure place.types is not null and convert to a list of strings
+                            val placeTypes = place.types?.map { it.toString() } ?: emptyList()
+
+                            // Calculate the score based on the weighted sum
+                            val score = calculateScore(place, placeTypes, preferredPlaces, userLocation)
+                            Log.e("DashboardActivity", "Place: ${place.name}, Score: $score")
+
+                            val placeModel = place.id?.let {
+                                RecommendedPlace(
+                                    placeId = it,
+                                    name = place.name ?: "",
+                                    address = place.address ?: "",
+                                    placeTypes = placeTypes,
+                                    score = score, // Assign calculated score
+                                    rating = place.rating ?: 0.0, // Store rating
+                                    numReviews = place.userRatingsTotal ?: 0, // Store number of reviews
+                                    distance = calculateDistance(userLocation, place.latLng ?: LatLng(0.0, 0.0)) // Store distance
+                                )
+                            }
+                            if (placeModel != null) {
+                                placesList.add(placeModel)
+                            }
+                        }
+
+                        // Sort places based on the calculated score in descending order
+                        placesList.sortByDescending { it.score }
+
+                        // Get top 10 places based on score
+                        val topPlaces = placesList.take(10)
+                        Log.e("DashboardActivity", "Top recommended places: $topPlaces")
+
+                        // Update the places variable and display them in RecyclerView
+                        recommendedPlaces = topPlaces
+                        displayPlaces(recommendedPlaces)
+                    }
+                }
+                .addOnFailureListener { exception ->
+                    Log.e("DashboardActivity", "Error retrieving places", exception)
+                }
+        }
+    }
+
+    private fun calculateScore(place: Place, placeTypes: List<String>, preferredPlaces: List<String>, userLocation: LatLng): Double {
+        // Define weights for the preferred types
+        val weights = mutableMapOf<String, Double>().apply {
+            // Initialize base weight for all place types
+            placeTypes.forEach { type -> this[type] = 0.5 } // Base weight
+            preferredPlaces.forEach { placeType ->
+                this[placeType] = (this[placeType] ?: 0.5) + 0.5 // Increase weight for preferred types
+            }
+        }
+
+        // Extract ratings and number of reviews
+        val rating = place.rating ?: 0.0
+        val numReviews = place.userRatingsTotal ?: 0
+
+        // Calculate distance (if latitude and longitude are available)
+        val placeLocation = place.latLng
+        val distance = placeLocation?.let { calculateDistance(userLocation, it) } ?: 0.0
+
+        // Calculate the score based on the weighted sum
+        return placeTypes.sumOf { type -> weights[type] ?: 0.0 } +
+                (rating * 0.5) +  // Weight for rating
+                (numReviews / 100.0) - // Normalize number of reviews
+                (distance / 1000.0) // Normalize distance (in kilometers
+    }
+
+
+
+    private fun getCurrentLocation(callback: (LatLng) -> Unit) {
+        // Check if the location permission is granted
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            // Permission is granted, get the location
+            fusedLocationClient.lastLocation
+                .addOnSuccessListener { location: Location? ->
+                    location?.let {
+                        // Convert Location to LatLng
+                        val latLng = LatLng(it.latitude, it.longitude)
+                        callback(latLng) // Return the location through the callback
+                    }
+                }
+                .addOnFailureListener { exception ->
+                    Log.e("SearchActivity", "Failed to get location", exception)
+                }
+        } else {
+            // Permission is not granted, request it
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                1
+            )
+        }
+    }
+
+
+
+    private fun calculateDistance(start: LatLng, end: LatLng): Double {
+        val results = FloatArray(1)
+        Location.distanceBetween(start.latitude, start.longitude, end.latitude, end.longitude, results)
+        return results[0].toDouble() // Distance in meters
+    }
+
+
+
+    private fun fetchUserPreferences(callback: (preferredPlaces: List<String>) -> Unit) {
+        val userId = auth.currentUser?.uid
+        val database = FirebaseDatabase.getInstance().reference
+        val userPreferencesRef = userId?.let { database.child("Users").child(it).child("preferredVisitPlaces") }
+
+        userPreferencesRef?.get()?.addOnSuccessListener { snapshot ->
+            if (snapshot.exists()) {
+                val preferencesList = mutableListOf<String>()
+                snapshot.children.forEach { it ->
+                    val placeType = it.getValue(String::class.java)
+                    placeType?.let { preferencesList.add(it) }
+                }
+                callback(preferencesList)
+            } else {
+                Log.e("DashboardActivity", "No preferences found for user.")
+                callback(emptyList()) // Return empty list if no preferences are found
+            }
+        }?.addOnFailureListener { exception ->
+            Log.e("DashboardActivity", "Error fetching preferences: ", exception)
+        }
+    }
+
+    private fun displayPlaces(places: List<RecommendedPlace>) {
+        val adapter = RecommendedPlaceAdapter(places)
+        binding.recyclerViewPlaces.adapter = adapter
+    }
+
+
 
 
 }

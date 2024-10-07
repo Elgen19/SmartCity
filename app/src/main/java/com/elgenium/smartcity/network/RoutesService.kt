@@ -31,7 +31,11 @@ interface RoutesService {
                 "routes.legs.steps.navigationInstruction," +
                 "routes.legs.steps.startLocation," +
                 "routes.legs.steps.endLocation," +
-                "routes.routeToken"
+                "routes.routeToken," +
+                "routes.legs.steps.transitDetails," +
+                "routes.legs.steps.travelMode," +
+                "routes.routeLabels"
+
 
 
 

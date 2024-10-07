@@ -28,14 +28,16 @@ class PreferencesActivity : AppCompatActivity() {
         binding = ActivityPreferencesBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // sets the color of the navigation bar making it more personalized
+        // Set the color of the navigation bar
         NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
 
         isNewUser = intent.getBooleanExtra("IS_NEW_USER", false)
 
-        if (!isNewUser) {
-            binding.backButton.visibility = View.VISIBLE
-        } else {
+        // Configure back button visibility
+        binding.backButton.visibility = if (!isNewUser) View.VISIBLE else View.GONE
+
+        // Adjust layout parameters for the title if needed
+        if (isNewUser) {
             val layoutParams = binding.preferencesTitle.layoutParams as LinearLayout.LayoutParams
             layoutParams.marginStart = 0
             binding.preferencesTitle.layoutParams = layoutParams
@@ -47,15 +49,16 @@ class PreferencesActivity : AppCompatActivity() {
             return
         } else {
             userRef = FirebaseDatabase.getInstance().getReference("Users").child(user.uid)
-
             loadPreferences()
         }
 
-        binding.backButton.setOnClickListener { 
+        // Set click listener for back button
+        binding.backButton.setOnClickListener {
             ActivityNavigationUtils.navigateToActivity(this, SettingsActivity::class.java, true)
         }
 
-        binding.buttonSave.setOnClickListener {
+        // Set click listener for save button
+        binding.submitButton.setOnClickListener {
             collectPreferences()?.let { preferences ->
                 savePreferences(preferences)
             } ?: run {
@@ -66,49 +69,89 @@ class PreferencesActivity : AppCompatActivity() {
 
     private fun loadPreferences() {
         userRef.get().addOnSuccessListener { dataSnapshot ->
-            val preferredTransport = dataSnapshot.child("preferredTransport").children.map { it.value.toString() }
+            // Pre-fill checkboxes with saved preferences
+            val preferredPlaces = dataSnapshot.child("preferredPlaces").children.map { it.value.toString() }
+            binding.checkboxDiscoverPlaces.isChecked = preferredPlaces.contains("Discover new places (Restaurants, Cafes, Parks, etc.)")
+            binding.checkboxFindEvents.isChecked = preferredPlaces.contains("Find events happening around me (Concerts, Festivals, etc.)")
+            binding.checkboxExploreThingsToDo.isChecked = preferredPlaces.contains("Explore things to do in a new location (for tourists or travelers)")
+            binding.checkboxKeepUpWithLocalHappenings.isChecked = preferredPlaces.contains("Keep up with local happenings and activities")
+
+            val dailyActivities = dataSnapshot.child("dailyActivities").children.map { it.value.toString() }
+            binding.checkboxWork.isChecked = dailyActivities.contains("Work")
+            binding.checkboxSchool.isChecked = dailyActivities.contains("School")
+            binding.checkboxSocializing.isChecked = dailyActivities.contains("Socializing")
+            binding.checkboxOutdoorActivities.isChecked = dailyActivities.contains("Outdoor activities")
+            binding.checkboxHobbies.isChecked = dailyActivities.contains("Hobbies (e.g., sports, arts)")
+
+            val preferredVisitPlaces = dataSnapshot.child("preferredVisitPlaces").children.map { it.value.toString() }
+            binding.checkboxCafesRestaurants.isChecked = preferredVisitPlaces.contains("Cafes and restaurants")
+            binding.checkboxParksOutdoorSpaces.isChecked = preferredVisitPlaces.contains("Parks and outdoor spaces")
+            binding.checkboxCulturalHistoricalSites.isChecked = preferredVisitPlaces.contains("Cultural and historical sites")
+            binding.checkboxShoppingAreas.isChecked = preferredVisitPlaces.contains("Shopping areas and malls")
+            binding.checkboxWorkspacesStudyAreas.isChecked = preferredVisitPlaces.contains("Workspaces or study areas")
+            binding.checkboxEntertainmentVenues.isChecked = preferredVisitPlaces.contains("Entertainment venues (theaters, clubs)")
+
             val preferredEvents = dataSnapshot.child("preferredEvents").children.map { it.value.toString() }
+            binding.checkboxMusicEvents.isChecked = preferredEvents.contains("Music events (concerts, festivals)")
+            binding.checkboxArtExhibitions.isChecked = preferredEvents.contains("Art exhibitions and galleries")
+            binding.checkboxSportsEvents.isChecked = preferredEvents.contains("Sports events and matches")
+            binding.checkboxCommunityEvents.isChecked = preferredEvents.contains("Community events and festivals")
+            binding.checkboxWorkshopsSeminars.isChecked = preferredEvents.contains("Workshops and seminars")
 
-            // Pre-fill transport checkboxes
-            binding.checkboxPublicTransport.isChecked = preferredTransport.contains("Public Transport")
-            binding.checkboxCar.isChecked = preferredTransport.contains("Car")
-            binding.checkboxWalking.isChecked = preferredTransport.contains("Walking")
-            binding.checkboxMotor.isChecked = preferredTransport.contains("Motor")
-
-            // Pre-fill event checkboxes
-            binding.checkboxWeatherAdvisories.isChecked = preferredEvents.contains("Weather Advisories")
-            binding.checkboxFoodHubs.isChecked = preferredEvents.contains("Popular Food Hubs/Stalls")
-            binding.checkboxHealthFitness.isChecked = preferredEvents.contains("Health and Fitness")
-            binding.checkboxFestivalsConcerts.isChecked = preferredEvents.contains("Festivals and Concerts")
-            binding.checkboxTrafficAlerts.isChecked = preferredEvents.contains("Traffic Alerts")
-            binding.checkboxPublicTransits.isChecked = preferredEvents.contains("Public Transits")
+            val preferredEventSize = dataSnapshot.child("preferredEventSize").children.map { it.value.toString() }
+            binding.checkboxLargeEvents.isChecked = preferredEventSize.contains("Large events (e.g., concerts, festivals)")
+            binding.checkboxSmallerEvents.isChecked = preferredEventSize.contains("Smaller, intimate gatherings")
         }
     }
 
-
     private fun collectPreferences(): Map<String, Any>? {
-        val selectedTransport = getSelectedOptions(
-            binding.checkboxPublicTransport,
-            binding.checkboxCar,
-            binding.checkboxWalking,
-            binding.checkboxMotor
+        // Collect selected options for preferences
+        val selectedPlaces = getSelectedOptions(
+            binding.checkboxDiscoverPlaces,
+            binding.checkboxFindEvents,
+            binding.checkboxExploreThingsToDo,
+            binding.checkboxKeepUpWithLocalHappenings,
+        )
+
+        val placeToVisit = getSelectedOptions(
+            binding.checkboxCafesRestaurants,
+            binding.checkboxParksOutdoorSpaces,
+            binding.checkboxCulturalHistoricalSites,
+            binding.checkboxShoppingAreas,
+            binding.checkboxWorkspacesStudyAreas,
+            binding.checkboxEntertainmentVenues
+        )
+
+        val selectedActivities = getSelectedOptions(
+            binding.checkboxWork,
+            binding.checkboxSchool,
+            binding.checkboxSocializing,
+            binding.checkboxOutdoorActivities,
+            binding.checkboxHobbies
         )
 
         val selectedEvents = getSelectedOptions(
-            binding.checkboxWeatherAdvisories,
-            binding.checkboxFoodHubs,
-            binding.checkboxHealthFitness,
-            binding.checkboxFestivalsConcerts,
-            binding.checkboxTrafficAlerts,
-            binding.checkboxPublicTransits
+            binding.checkboxMusicEvents,
+            binding.checkboxArtExhibitions,
+            binding.checkboxSportsEvents,
+            binding.checkboxCommunityEvents,
+            binding.checkboxWorkshopsSeminars,
         )
 
-        return if (selectedTransport.isEmpty() || selectedEvents.isEmpty()) {
+        val eventSize = getSelectedOptions(
+            binding.checkboxLargeEvents,
+            binding.checkboxSmallerEvents
+        )
+
+        return if (selectedPlaces.isEmpty() || selectedActivities.isEmpty() || selectedEvents.isEmpty()) {
             null
         } else {
             mapOf(
-                "preferredTransport" to selectedTransport,
-                "preferredEvents" to selectedEvents
+                "preferredPlaces" to selectedPlaces,
+                "dailyActivities" to selectedActivities,
+                "preferredVisitPlaces" to placeToVisit,
+                "preferredEvents" to selectedEvents,
+                "preferredEventSize" to eventSize,
             )
         }
     }
@@ -122,19 +165,16 @@ class PreferencesActivity : AppCompatActivity() {
         // Update the user's preferences in Firebase
         userRef.updateChildren(preferences).addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                // Mark preferences as set
                 userRef.child("preferencesSet").setValue(true)
 
                 if (!isNewUser) {
-                    LayoutStateManager.showSuccessLayout(this, "Preferences Updated!", "Your preferences was successfully updated.",  DashboardActivity::class.java)
+                    LayoutStateManager.showSuccessLayout(this, "Preferences Updated!", "Your preferences were successfully updated.", DashboardActivity::class.java)
                 } else {
                     ActivityNavigationUtils.navigateToActivity(this, DashboardActivity::class.java, true)
                 }
-
             } else {
-                LayoutStateManager.showFailureLayout(this, "Failed to update preferences. Please tru again.", "Return to Settings")
+                LayoutStateManager.showFailureLayout(this, "Failed to update preferences. Please try again.", "Return to Settings")
             }
         }
     }
-
 }
