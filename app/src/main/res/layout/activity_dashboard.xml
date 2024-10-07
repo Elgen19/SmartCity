@@ -7,7 +7,7 @@
     tools:context=".DashboardActivity">
 
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:id="@+id/scroll_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -526,11 +526,24 @@
                 android:layout_marginTop="8dp"
                 android:scrollbars="vertical" />
 
+            <!-- Weather Updates Title TextView -->
+            <TextView
+                android:id="@+id/recommendedPlacesTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/leaderboardRecyclerView"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:text="Recommended For You"
+                android:textColor="@color/secondary_color"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerViewPlaces"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/leaderboardRecyclerView"
+                android:layout_below="@id/recommendedPlacesTitle"
                 android:layout_marginTop="16dp"
                 android:orientation="horizontal"
                 android:layout_marginBottom="16dp"
@@ -540,7 +553,7 @@
 
         </RelativeLayout>
 
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
     <!-- Bottom Navigation View -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
