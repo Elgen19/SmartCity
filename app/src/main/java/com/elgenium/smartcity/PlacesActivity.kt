@@ -95,7 +95,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
     private var isFollowingUser = true
     private var currentRedMarker: Marker? = null
     private val poiMarkers = mutableListOf<Marker>()
-    private var placeIDFromIntent: String?= "No Place ID"
+    private var placeIDFromSearchActivity: String?= "No Place ID"
     private var savedPlace: SavedPlace = SavedPlace()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -132,15 +132,31 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
             resetMapToDefaultLocation()
         }
 
-        // Fetch the place ID from intent
-        placeIDFromIntent = intent.getStringExtra("PLACE_ID")
+        // Fetch the place ID passed from the Dashboard
+        val placeIDFromDashboard = intent.getStringExtra("DASHBOARD_RECOMMENDED_PLACE_ID")
 
-        placeIDFromIntent?.let { it ->
+        // If placeIDFromDashboard is not null or empty, proceed to fetch place details
+        if (!placeIDFromDashboard.isNullOrEmpty()) {
+            fetchPlaceDetailsFromAPI(placeIDFromDashboard) { savedPlace ->
+                savedPlace?.let {
+                    this.savedPlace = it
+                    plotMarkerOnMap(placeIDFromDashboard, savedPlace)
+                    showPlaceDetailsInBottomSheet(savedPlace)
+                } ?: run {
+                    Log.e("PlacesActivity", "Failed to fetch place details from dashboard")
+                }
+            }
+        }
+
+        // Fetch the place ID from intent
+        placeIDFromSearchActivity = intent.getStringExtra("PLACE_ID")
+
+        placeIDFromSearchActivity?.let { it ->
             fetchPlaceDetailsFromAPI(it) { savedPlace ->
                 savedPlace?.let {
                     this.savedPlace = it
                     // Update UI or do something with the savedPlace
-                    plotMarkerOnMap(placeIDFromIntent!!, savedPlace) // Use the Place object to plot the marker
+                    plotMarkerOnMap(placeIDFromSearchActivity!!, savedPlace) // Use the Place object to plot the marker
                     showPlaceDetailsInBottomSheet(it) // Use the Place object to show details
                 } ?: run {
                     // Handle the case where savedPlace is null
@@ -148,7 +164,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
                 }
             }
         }
-        Log.d("PlacesActivity", "On create place id:  $placeIDFromIntent")
+        Log.d("PlacesActivity", "On create place id:  $placeIDFromSearchActivity")
         Log.d("PlacesActivity", "Inside of place data:  $savedPlace")
 
 
@@ -402,7 +418,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
                 val placeDistance = bottomSheetView.findViewById<TextView>(R.id.placeDistance).text.toString()
 
                 // Prepare place data
-                val placeData = placeIDFromIntent?.let {
+                val placeData = placeIDFromSearchActivity?.let {
                     SavedPlace(
                         id = it,
                         name = placeName,
@@ -719,7 +735,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
                 type = "text/plain"
             }
 
-            placeIDFromIntent?.let { it1 -> savedPlace.types?.let { it2 ->
+            placeIDFromSearchActivity?.let { it1 -> savedPlace.types?.let { it2 ->
                 logSharedPlace(it1, placeName.text.toString(),
                     it2
                 )
@@ -1119,8 +1135,8 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         // Fetch each photo
         photoMetadatas.forEach { photoMetadata ->
             val photoRequest = FetchPhotoRequest.builder(photoMetadata)
-                .setMaxWidth(400)
-                .setMaxHeight(400)
+                .setMaxWidth(800)
+                .setMaxHeight(800)
                 .build()
             placesClient.fetchPhoto(photoRequest)
                 .addOnSuccessListener { response ->
