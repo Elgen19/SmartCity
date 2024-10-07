@@ -205,7 +205,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun navigateToDashboard() {
-        val intent = Intent(this, DashboardActivity::class.java)
+        val intent = Intent(this, SettingsActivity::class.java)
         startActivity(intent)
         finish()
     }

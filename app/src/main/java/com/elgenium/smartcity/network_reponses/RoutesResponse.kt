@@ -36,7 +36,52 @@ data class Step(
     val polyline: Polyline,
     val navigationInstruction: NavigationInstruction,
     val startLocation: Locations,
-    val endLocation: Locations
+    val endLocation: Locations,
+    val transitDetails: TransitDetails,
+    val travelMode: RouteTravelMode
+) : Parcelable
+
+
+enum class RouteTravelMode {
+    TRAVEL_MODE_UNSPECIFIED,
+    DRIVE,
+    BICYCLE,
+    WALK,
+    TWO_WHEELER,
+    TRANSIT
+}
+
+
+@Parcelize
+data class TransitDetails(
+    val stopDetails: TransitStopDetails,
+    val headsign: String,
+    val headway: String?,
+    val transitLine: TransitLine?,
+    val stopCount: Int,
+    val tripShortText: String?
+) : Parcelable
+
+@Parcelize
+data class TransitLine(
+    val name: String?,
+    val uri: String?,
+    val color: String?,
+    val iconUri: String?,
+    val nameShort: String?,
+    val textColor: String?,
+) : Parcelable
+
+
+@Parcelize
+data class TransitStopDetails(
+   val arrivalStop: TransitStop
+) : Parcelable
+
+@Parcelize
+data class TransitStop(
+    val name: String,
+    val location: Locations
 ) : Parcelable
 
 @Parcelize

@@ -107,9 +107,17 @@ class SearchActivity : AppCompatActivity() {
             val placeId = selectedPlace.id // Assuming selectedPlace has id property
             val placeName = selectedPlace.name // Assuming selectedPlace has name property
             val placeAddress = selectedPlace.address // Assuming selectedPlace has address property
+            val placeType = selectedPlace.placeTypes
 
-            if (placeName != null && placeAddress != null && placeId != null) {
-                saveRecentSearch(placeName, placeAddress, placeId)
+            Log.e("SearchActivity", "PLACE TYPE: $placeType")
+            Log.e("SearchActivity", "PLACE NAME: $placeName")
+
+
+
+            if (placeName != null && placeAddress != null && placeId != null && placeType != null) {
+                saveRecentSearch(placeName, placeAddress, placeId, placeType.toString())
+                trackSearchAction(placeName, placeType.toString())
+
             }
 
             if (fromDirectionsActivity == "yes") {
@@ -141,7 +149,9 @@ class SearchActivity : AppCompatActivity() {
             val placeId = recentSearch.placeId
             val placeName = recentSearch.placeName
             val placeAddress = recentSearch.placeAddress
+            val placeType = recentSearch.placeType
 
+            trackSearchAction(placeName, placeType)
 
             if (fromDirectionsActivity == "yes") {
                 // Create an intent to send data back
@@ -191,6 +201,28 @@ class SearchActivity : AppCompatActivity() {
 
     }
 
+    private fun trackSearchAction(query: String, type: String) {
+        val userId = auth.currentUser?.uid
+        val userRef =
+            userId?.let { FirebaseDatabase.getInstance().reference.child("Users").child(it).child("interactions").child("searchedPlaces") }
+
+        // Generate a unique ID for this search (could use a timestamp or any unique identifier)
+        val searchId = userRef?.push()?.key // Generate a unique key
+        val searchData = mapOf(
+            "query" to query,
+            "timestamp" to System.currentTimeMillis(),
+            "type" to type
+        )
+
+        searchId?.let {
+            userRef.child(it).setValue(searchData).addOnSuccessListener {
+                Log.e("DashboardActivity", "Search action tracked successfully for query: $query")
+            }.addOnFailureListener { exception ->
+                Log.e("DashboardActivity", "Error tracking search action: $exception")
+            }
+        }
+    }
+
 
     private fun setupCategoryButtonListeners() {
         binding.btnHotels.setOnClickListener { launchCategoryIntent("hotel") }
@@ -232,11 +264,13 @@ class SearchActivity : AppCompatActivity() {
         closeIcon.setColorFilter(ContextCompat.getColor(this, R.color.red))
     }
 
-    private fun saveRecentSearch(placeName: String, placeAddress: String, placeId: String) {
+    private fun saveRecentSearch(placeName: String, placeAddress: String, placeId: String, placeType: String) {
         val timestamp = SimpleDateFormat("EEEE, MMMM d, yyyy 'at' h:mm a", Locale.getDefault()).format(Date())
 
         // Create a new Search object with the updated timestamp
-        val search = Search(placeName, placeAddress, timestamp, placeId )
+        val search = Search(placeName, placeAddress, timestamp, placeId, placeType )
+        Log.e("SearchActivity", "Search: $search")
+
 
         // Query the database to check if the search already exists
         database.orderByChild("location").equalTo(placeName).get().addOnSuccessListener { dataSnapshot ->
@@ -360,11 +394,12 @@ class SearchActivity : AppCompatActivity() {
 
                     binding.lottieAnimation.visibility = View.VISIBLE
 
-                    val placeFields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.ADDRESS)
+                    val placeFields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.ADDRESS, Place.Field.TYPES)
 
                     // Use the builder to create a SearchByTextRequest object
                     val searchByTextRequest = SearchByTextRequest.builder(searchText, placeFields)
                         .setMaxResultCount(15)
+                        .setPlaceFields(placeFields)
                         .build()
 
                     Log.e("SearchActivity", "SEARCH TEXT IS: $searchText")
@@ -377,7 +412,7 @@ class SearchActivity : AppCompatActivity() {
                             // Process the List of Place objects returned
                             Log.e("SearchActivity", "Found ${places.size} places.")
                             places.forEach { place ->
-                                Log.e("SearchActivity", "Place ID: ${place.id}, Name: ${place.name}")
+                                Log.e("SearchActivity", "Place ID: ${place.id}, Name: ${place.name}, TYPES: ${place.placeTypes}")
                             }
                             binding.textSearchRecyclerView.visibility = View.VISIBLE
                             textSearchAdapter.updatePlaces(places)
@@ -410,12 +445,11 @@ class SearchActivity : AppCompatActivity() {
                         binding.recentSearchesLabel.visibility = View.GONE
                         binding.recentSearchRecyclerView.visibility = View.GONE
 
-                        val placeFields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.ADDRESS)
+                        val placeFields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.ADDRESS, Place.Field.TYPES)
 
                         // Use the builder to create a SearchByTextRequest object
                         val searchByTextRequest = SearchByTextRequest.builder(query, placeFields)
                             .setMaxResultCount(15)
-                            .setLocationRestriction(locationBias)
                             .build()
 
                         // Call PlacesClient.searchByText() to perform the search
@@ -475,3 +509,5 @@ class SearchActivity : AppCompatActivity() {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1
     }
 }
+
+

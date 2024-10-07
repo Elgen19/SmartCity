@@ -9,36 +9,40 @@
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_above="@id/bottom_navigation">
+        android:layout_height="wrap_content"
+        android:layout_above="@id/bottom_navigation"
+        android:fillViewport="true"
+        android:fitsSystemWindows="true"
+        android:layoutMode="clipBounds"
+        android:scrollbarAlwaysDrawHorizontalTrack="true">
 
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-          <LinearLayout
-              android:id="@+id/header"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent"
-              android:background="@color/secondary_color"
-              android:padding="16dp"
-              android:gravity="center">
+            <LinearLayout
+                android:id="@+id/header"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@color/secondary_color"
+                android:gravity="center"
+                android:padding="16dp">
 
-              <!-- Title TextView -->
-              <TextView
-                  android:id="@+id/titleTextView"
-                  android:layout_width="wrap_content"
-                  android:layout_height="wrap_content"
-                  android:text="@string/settings"
-                  android:textStyle="bold"
-                  android:textColor="@color/primary_color"
-                  android:textSize="32sp"
-                  android:layout_alignParentTop="true"
-                  android:layout_centerHorizontal="true"
-                  android:layout_marginStart="8dp"
-                  android:layout_centerVertical="true" />
+                <!-- Title TextView -->
+                <TextView
+                    android:id="@+id/titleTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentTop="true"
+                    android:layout_centerHorizontal="true"
+                    android:layout_centerVertical="true"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/settings"
+                    android:textColor="@color/primary_color"
+                    android:textSize="32sp"
+                    android:textStyle="bold" />
 
-          </LinearLayout>
+            </LinearLayout>
 
             <!-- App Settings Title -->
             <TextView
@@ -46,8 +50,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_below="@id/header"
-                android:layout_marginTop="16dp"
                 android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
                 android:layout_marginEnd="16dp"
                 android:text="@string/app_settings"
                 android:textColor="@color/brand_color"
@@ -61,10 +65,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_below="@id/appSettingsTitle"
-                android:backgroundTint="@color/white"
-                android:layout_marginTop="8dp"
                 android:layout_marginStart="16dp"
+                android:layout_marginTop="8dp"
                 android:layout_marginEnd="16dp"
+                android:backgroundTint="@color/white"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="4dp">
 
@@ -77,17 +81,17 @@
                     <!-- Turn on push notifications -->
                     <RelativeLayout
                         android:layout_width="match_parent"
-                        android:layout_marginBottom="8dp"
-                        android:layout_height="wrap_content">
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp">
 
                         <TextView
                             android:id="@+id/turnOnPushNotificationsLabel"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/turn_on_push_notifications"
-                            android:textSize="16sp"
-                            android:textColor="@android:color/black"
                             android:layout_centerVertical="true"
+                            android:text="@string/turn_on_push_notifications"
+                            android:textColor="@android:color/black"
+                            android:textSize="16sp"
                             tools:ignore="RelativeOverlap" />
 
                         <com.google.android.material.switchmaterial.SwitchMaterial
@@ -104,17 +108,17 @@
                     <!-- Enable traffic update notifications -->
                     <RelativeLayout
                         android:layout_width="match_parent"
-                        android:layout_marginBottom="8dp"
-                        android:layout_height="wrap_content">
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp">
 
                         <TextView
                             android:id="@+id/enableTrafficUpdateNotificationsLabel"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/enable_traffic_update_notifications"
-                            android:textSize="16sp"
-                            android:textColor="@android:color/black"
                             android:layout_centerVertical="true"
+                            android:text="@string/enable_traffic_update_notifications"
+                            android:textColor="@android:color/black"
+                            android:textSize="16sp"
                             tools:ignore="RelativeOverlap" />
 
                         <com.google.android.material.switchmaterial.SwitchMaterial
@@ -122,26 +126,26 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
                             app:thumbTint="@color/switch_thumb_color_state_list"
                             app:trackTint="@color/switch_track_color_state_list"
-                            android:layout_centerVertical="true"
                             tools:ignore="TouchTargetSizeCheck" />
                     </RelativeLayout>
 
                     <!-- Enable events notifications -->
                     <RelativeLayout
                         android:layout_width="match_parent"
-                        android:layout_marginBottom="8dp"
-                        android:layout_height="wrap_content">
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp">
 
                         <TextView
                             android:id="@+id/enableEventsNotificationsLabel"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/enable_events_notifications"
-                            android:textSize="16sp"
-                            android:textColor="@android:color/black"
                             android:layout_centerVertical="true"
+                            android:text="@string/enable_events_notifications"
+                            android:textColor="@android:color/black"
+                            android:textSize="16sp"
                             tools:ignore="RelativeOverlap" />
 
                         <com.google.android.material.switchmaterial.SwitchMaterial
@@ -164,8 +168,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_below="@id/settingsCard"
-                android:layout_marginTop="16dp"
                 android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
                 android:layout_marginEnd="16dp"
                 android:text="@string/contextual_suggestions"
                 android:textColor="@color/brand_color"
@@ -179,10 +183,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_below="@id/settingsCard"
-                android:backgroundTint="@color/white"
                 android:layout_marginStart="16dp"
-                android:layout_marginEnd="16dp"
                 android:layout_marginTop="48dp"
+                android:layout_marginEnd="16dp"
+                android:backgroundTint="@color/white"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="4dp">
 
@@ -195,17 +199,17 @@
                     <!-- Meal reminder suggestions -->
                     <RelativeLayout
                         android:layout_width="match_parent"
-                        android:layout_marginBottom="8dp"
-                        android:layout_height="wrap_content">
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp">
 
                         <TextView
                             android:id="@+id/mealReminderLabel"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/meal_reminder_suggestions"
-                            android:textSize="16sp"
-                            android:textColor="@android:color/black"
                             android:layout_centerVertical="true"
+                            android:text="@string/meal_reminder_suggestions"
+                            android:textColor="@android:color/black"
+                            android:textSize="16sp"
                             tools:ignore="RelativeOverlap" />
 
                         <com.google.android.material.switchmaterial.SwitchMaterial
@@ -222,17 +226,17 @@
                     <!-- Exercise reminder -->
                     <RelativeLayout
                         android:layout_width="match_parent"
-                        android:layout_marginBottom="8dp"
-                        android:layout_height="wrap_content">
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp">
 
                         <TextView
                             android:id="@+id/exerciseReminderLabel"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/exercise_reminder"
-                            android:textSize="16sp"
-                            android:textColor="@android:color/black"
                             android:layout_centerVertical="true"
+                            android:text="@string/exercise_reminder"
+                            android:textColor="@android:color/black"
+                            android:textSize="16sp"
                             tools:ignore="RelativeOverlap" />
 
                         <com.google.android.material.switchmaterial.SwitchMaterial
@@ -249,17 +253,17 @@
                     <!-- New event reminders -->
                     <RelativeLayout
                         android:layout_width="match_parent"
-                        android:layout_marginBottom="8dp"
-                        android:layout_height="wrap_content">
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp">
 
                         <TextView
                             android:id="@+id/newEventRemindersLabel"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/new_event_reminders"
-                            android:textSize="16sp"
-                            android:textColor="@android:color/black"
                             android:layout_centerVertical="true"
+                            android:text="@string/new_event_reminders"
+                            android:textColor="@android:color/black"
+                            android:textSize="16sp"
                             tools:ignore="RelativeOverlap" />
 
                         <com.google.android.material.switchmaterial.SwitchMaterial
@@ -282,10 +286,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_below="@id/contextualSuggestionsCard"
-                android:layout_marginTop="16dp"
-                android:text="@string/app_feedback_rating"
                 android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
                 android:layout_marginEnd="16dp"
+                android:text="@string/app_feedback_rating"
                 android:textColor="@color/brand_color"
                 android:textSize="20sp"
                 android:textStyle="bold"
@@ -297,14 +301,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_below="@id/feedbackTitle"
-                android:layout_marginTop="8dp"
-                app:cardCornerRadius="8dp"
                 android:layout_marginStart="16dp"
+                android:layout_marginTop="8dp"
                 android:layout_marginEnd="16dp"
-                app:cardElevation="4dp"
                 android:clickable="true"
                 android:focusable="true"
-                app:cardBackgroundColor="@color/white">
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp">
 
                 <RelativeLayout
                     android:layout_width="match_parent"
@@ -343,8 +347,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_below="@id/feedbackCard"
-                android:layout_marginTop="16dp"
                 android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
                 android:layout_marginEnd="16dp"
                 android:text="@string/frequently_asked_questions"
                 android:textColor="@color/brand_color"
@@ -358,14 +362,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_below="@id/feedbackCard"
-                android:layout_marginTop="48dp"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="4dp"
-                android:clickable="true"
                 android:layout_marginStart="16dp"
+                android:layout_marginTop="48dp"
                 android:layout_marginEnd="16dp"
+                android:clickable="true"
                 android:focusable="true"
-                app:cardBackgroundColor="@color/white">
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp">
 
                 <RelativeLayout
                     android:layout_width="match_parent"
@@ -404,8 +408,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_below="@id/FAQCard"
-                android:layout_marginTop="16dp"
                 android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
                 android:layout_marginEnd="16dp"
                 android:text="User Preferences"
                 android:textColor="@color/brand_color"
@@ -419,15 +423,15 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_below="@id/editPreferencesTitle"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="8dp"
                 android:layout_marginStart="16dp"
+                android:layout_marginTop="8dp"
                 android:layout_marginEnd="16dp"
-                app:cardElevation="4dp"
+                android:layout_marginBottom="16dp"
                 android:clickable="true"
                 android:focusable="true"
-                app:cardBackgroundColor="@color/white">
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp">
 
                 <RelativeLayout
                     android:layout_width="match_parent"

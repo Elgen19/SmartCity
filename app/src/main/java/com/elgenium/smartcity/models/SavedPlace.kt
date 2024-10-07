@@ -16,5 +16,6 @@ data class SavedPlace(
     val distance: String? = "",
     val openingStatus: String? = "",
     val photoMetadataList: List<PhotoMetadata> = emptyList(), // List of photo metadata
-    val imageUrls: List<String> = emptyList()
+    val imageUrls: List<String> = emptyList(),
+    val types: String?= ""
 )

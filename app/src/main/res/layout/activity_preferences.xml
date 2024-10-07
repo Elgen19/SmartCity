@@ -1,291 +1,344 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
+    android:background="@color/primary_color"
     android:layout_height="match_parent"
-    android:background="@color/primary_color">
+    android:fillViewport="true">
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
 
         <!-- Title Section -->
-    <!-- Title Section -->
-    <LinearLayout
-        android:id="@+id/titleSection"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/secondary_color"
-        android:orientation="vertical"
-        android:paddingTop="16dp"
-        android:paddingBottom="16dp"
-        android:layout_marginBottom="8dp">
-
-        <!-- Row with Back Button and Title -->
         <LinearLayout
+            android:id="@+id/titleSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp">
+            android:background="@color/secondary_color"
+            android:orientation="vertical"
+            android:paddingTop="16dp"
+            android:paddingBottom="16dp"
+            android:layout_marginBottom="8dp">
 
-            <!-- Back Image Button -->
-            <ImageButton
-                android:id="@+id/backButton"
-                android:layout_width="wrap_content"
+            <!-- Row with Back Button and Title -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/baseline_arrow_back_24"
-                android:layout_gravity="start"
-                android:padding="8dp"
-                android:visibility="gone"
-                app:tint="@color/primary_color" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp">
 
-            <!-- Title TextView -->
+                <!-- Back Image Button -->
+                <ImageButton
+                    android:id="@+id/backButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/baseline_arrow_back_24"
+                    android:layout_gravity="start"
+                    android:padding="8dp"
+                    android:visibility="gone"
+                    app:tint="@color/primary_color" />
+
+                <!-- Title TextView -->
+                <TextView
+                    android:id="@+id/preferencesTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/personalize_your_experience"
+                    android:textColor="@color/brand_color"
+                    android:textSize="32sp"
+                    android:textStyle="bold"
+                    android:layout_marginStart="16dp"/>
+            </LinearLayout>
+
+            <!-- Subtitle TextView -->
             <TextView
-                android:id="@+id/preferencesTitle"
+                android:id="@+id/signinSubtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/personalize_your_experience"
-                android:textColor="@color/brand_color"
-                android:textSize="32sp"
-                android:textStyle="bold"
-                android:layout_marginStart="16dp"/>
+                android:textColor="@color/white"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:text="To enhance your recommendations, please take a moment to answer the following questions."
+                android:textSize="16sp" />
+
         </LinearLayout>
 
-        <!-- Subtitle TextView -->
+        <!-- Question 1 -->
         <TextView
-            android:id="@+id/signinSubtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="@color/white"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:text="1. What’s your primary reason for using this app?"
+            android:textSize="16sp"
+            android:layout_marginBottom="8dp"
+            android:layout_marginTop="16dp" />
+
+        <CheckBox
+            android:id="@+id/checkbox_discover_places"
+            android:layout_width="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:layout_height="wrap_content"
+            android:text="Discover new places (Restaurants, Cafes, Parks, etc.)" />
+
+        <CheckBox
+            android:id="@+id/checkbox_find_events"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:text="Find events happening around me (Concerts, Festivals, etc.)" />
+
+        <CheckBox
+            android:id="@+id/checkbox_explore_things_to_do"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:text="Explore things to do in a new location (for tourists or travelers)" />
+
+        <CheckBox
+            android:id="@+id/checkbox_keep_up_with_local_happenings"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:text="Keep up with local happenings and activities" />
+
+        <!-- Question 2 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="2. What activities do you engage in daily?"
+            android:textSize="16sp"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
-            android:text="@string/supporting_text_pref"
-            android:textSize="16sp" />
+            android:textColor="@color/gray"
+            android:layout_marginBottom="8dp"
+            android:layout_marginTop="16dp" />
+
+        <CheckBox
+            android:id="@+id/checkbox_work"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:text="Work" />
+
+        <CheckBox
+            android:id="@+id/checkbox_school"
+            android:layout_width="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:layout_height="wrap_content"
+            android:text="School" />
+
+        <CheckBox
+            android:id="@+id/checkbox_socializing"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:text="Socializing" />
+
+        <CheckBox
+            android:id="@+id/checkbox_outdoor_activities"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:text="Outdoor activities" />
+
+        <CheckBox
+            android:id="@+id/checkbox_hobbies"
+            android:layout_width="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:layout_height="wrap_content"
+            android:text="Hobbies (e.g., sports, arts)" />
+
+        <!-- Question 3 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:text="3. What type of places do you prefer to visit?"
+            android:textSize="16sp"
+            android:layout_marginBottom="8dp"
+            android:layout_marginTop="16dp" />
+
+        <CheckBox
+            android:id="@+id/checkbox_cafes_restaurants"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:text="Cafes and restaurants" />
+
+        <CheckBox
+            android:id="@+id/checkbox_parks_outdoor_spaces"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:text="Parks and outdoor spaces" />
+
+        <CheckBox
+            android:id="@+id/checkbox_cultural_historical_sites"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:text="Cultural and historical sites" />
+
+        <CheckBox
+            android:id="@+id/checkbox_shopping_areas"
+            android:layout_width="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:layout_height="wrap_content"
+            android:text="Shopping areas and malls" />
+
+        <CheckBox
+            android:id="@+id/checkbox_workspaces_study_areas"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:text="Workspaces or study areas" />
+
+        <CheckBox
+            android:id="@+id/checkbox_entertainment_venues"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:text="Entertainment venues (theaters, clubs)" />
+
+        <!-- Question 4 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:text="4. What types of events are you most interested in?"
+            android:textSize="16sp"
+            android:layout_marginBottom="8dp"
+            android:layout_marginTop="16dp" />
+
+        <CheckBox
+            android:id="@+id/checkbox_music_events"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:text="Music events (concerts, festivals)" />
+
+        <CheckBox
+            android:id="@+id/checkbox_art_exhibitions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:text="Art exhibitions and galleries" />
+
+        <CheckBox
+            android:id="@+id/checkbox_sports_events"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:text="Sports events and matches" />
+
+        <CheckBox
+            android:id="@+id/checkbox_community_events"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:text="Community events and festivals" />
+
+        <CheckBox
+            android:id="@+id/checkbox_workshops_seminars"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:text="Workshops and seminars" />
+
+        <!-- Question 5 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:text="5. Do you prefer large events or smaller, intimate gatherings?"
+            android:textSize="16sp"
+            android:layout_marginBottom="8dp"
+            android:layout_marginTop="16dp" />
+
+        <CheckBox
+            android:id="@+id/checkbox_large_events"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:text="Large events (e.g., concerts, festivals)" />
+
+        <CheckBox
+            android:id="@+id/checkbox_smaller_events"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:text="Smaller, intimate gatherings" />
+
+        <!-- Submit Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/submit_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:text="Get Started"
+            android:backgroundTint="@color/secondary_color"
+            android:paddingTop="16dp"
+            android:paddingBottom="16dp"
+            app:rippleColor="@color/brand_color"
+            app:cornerRadius="8dp"
+            android:textColor="@color/white" />
 
     </LinearLayout>
-
-    <!-- First Card for Preferred Mode of Transport -->
-        <androidx.cardview.widget.CardView
-            android:id="@+id/transportCard"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardBackgroundColor="@color/white"
-            android:layout_below="@id/titleSection"
-            android:elevation="4dp"
-            android:padding="16dp"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            app:cardCornerRadius="8dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <!-- Title TextView -->
-                <TextView
-                    android:id="@+id/title_preferred_mode"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingBottom="8dp"
-                    android:text="@string/preferred_mode_of_transport"
-                    android:textColor="@color/brand_color"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    tools:ignore="TextContrastCheck" />
-
-                <!-- CheckBox Row 1 -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:paddingBottom="8dp"
-                    android:weightSum="2">
-
-                    <CheckBox
-                        android:id="@+id/checkbox_public_transport"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/gray"
-                        android:layout_weight="1"
-                        android:text="@string/public_transport" />
-
-                    <CheckBox
-                        android:id="@+id/checkbox_car"
-                        android:layout_width="0dp"
-                        android:textColor="@color/gray"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/car"
-                        tools:ignore="VisualLintButtonSize" />
-                </LinearLayout>
-
-                <!-- CheckBox Row 2 -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:weightSum="2">
-
-                    <CheckBox
-                        android:id="@+id/checkbox_walking"
-                        android:layout_width="0dp"
-                        android:textColor="@color/gray"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/walking" />
-
-                    <CheckBox
-                        android:id="@+id/checkbox_motor"
-                        android:layout_width="0dp"
-                        android:textColor="@color/gray"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/motor" />
-                </LinearLayout>
-
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <!-- Third Card for Preferred Events and Notifications -->
-        <androidx.cardview.widget.CardView
-            android:layout_below="@id/transportCard"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="4dp"
-            android:clickable="true"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:focusable="true">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@color/white"
-                android:padding="16dp">
-
-                <!-- Title TextView -->
-                <TextView
-                    android:id="@+id/title_preferred_events"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingBottom="8dp"
-                    android:text="@string/preferred_events_and_notifications"
-                    android:textColor="@color/brand_color"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    tools:ignore="TextContrastCheck" />
-
-                <!-- CheckBox List -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <!-- First Row -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:weightSum="2"
-                        android:paddingBottom="8dp">
-
-                        <CheckBox
-                            android:id="@+id/checkbox_weather_advisories"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:textColor="@color/gray"
-                            android:text="@string/weather_advisories" />
-
-                        <CheckBox
-                            android:id="@+id/checkbox_food_hubs"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="@string/popular_food_hubs_stalls"
-                            android:textColor="@color/gray"
-                            tools:ignore="TouchTargetSizeCheck" />
-                    </LinearLayout>
-
-                    <!-- Second Row -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:weightSum="2"
-                        android:paddingBottom="8dp">
-
-                        <CheckBox
-                            android:id="@+id/checkbox_health_fitness"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:textColor="@color/gray"
-                            android:layout_weight="1"
-                            android:text="@string/health_and_fitness" />
-
-                        <CheckBox
-                            android:id="@+id/checkbox_festivals_concerts"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="@string/festivals_and_concerts"
-                            android:textColor="@color/gray"
-                            tools:ignore="TouchTargetSizeCheck" />
-                    </LinearLayout>
-
-                    <!-- Third Row -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:weightSum="2"
-                        android:paddingBottom="8dp">
-
-                        <CheckBox
-                            android:id="@+id/checkbox_traffic_alerts"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:textColor="@color/gray"
-                            android:layout_weight="1"
-                            android:text="@string/traffic_alerts" />
-
-                        <CheckBox
-                            android:id="@+id/checkbox_public_transits"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:textColor="@color/gray"
-                            android:layout_weight="1"
-                            android:text="@string/public_transits" />
-                    </LinearLayout>
-                </LinearLayout>
-
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-
-    <!-- Save Button -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/button_save"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_marginTop="24dp"
-        android:layout_marginBottom="16dp"
-        android:backgroundTint="@color/secondary_color"
-        android:padding="16dp"
-        android:text="@string/save"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        app:rippleColor="@color/brand_color"
-        android:textColor="@color/white"
-        app:cornerRadius="8dp"
-        tools:ignore="VisualLintButtonSize" />
-
-</RelativeLayout>
+</ScrollView>

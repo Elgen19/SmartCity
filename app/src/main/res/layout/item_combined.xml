@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical">
+
+    <!-- Best Route and Traffic Condition -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/tripInfoCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp"
+        android:layout_marginTop="8dp"
+        app:cardBackgroundColor="@color/white">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/routeAndTraffic"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <!-- Vertical Line -->
+                <View
+                    android:id="@+id/verticalLine"
+                    android:layout_width="8dp"
+                    android:layout_height="match_parent"
+                    android:background="@color/brand_color" />
+
+                <!-- Best Route Text and Label -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:id="@+id/bestRouteLayout"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/bestRouteText"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="8dp"
+                            android:text="Via M.Logarta Avenue"
+                            android:textColor="@color/gray"
+                            android:maxLines="3" />
+
+                        <TextView
+                            android:id="@+id/bestRouteLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/open_pill_background"
+                            android:paddingStart="8dp"
+                            android:paddingEnd="8dp"
+                            android:text="Best Route"
+                            android:textColor="@color/white"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <RelativeLayout
+                        android:visibility="gone"
+                        android:id="@+id/transit1Layout"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            android:id="@+id/transit1"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentStart="true"
+                            android:layout_toStartOf="@+id/transit1Sign"
+                            android:layout_marginEnd="8dp"
+                            android:text="Via M.Logarta Avenue"
+                            android:textColor="@color/gray"
+                            android:maxLines="3" />
+
+                        <TextView
+                            android:id="@+id/transit1Sign"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:background="@drawable/open_pill_background"
+                            android:paddingStart="8dp"
+                            android:paddingEnd="8dp"
+                            android:text="Best Route"
+                            android:textColor="@color/white"
+                            android:textSize="12sp" />
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:id="@+id/transit2Layout"
+                        android:visibility="gone"
+                        android:layout_marginTop="4dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            android:id="@+id/transit2"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_toStartOf="@+id/transit2Sign"
+                            android:layout_marginEnd="8dp"
+                            android:text="Via M.Logarta Avenue"
+                            android:textColor="@color/gray"
+                            android:maxLines="3" />
+
+                        <TextView
+                            android:id="@+id/transit2Sign"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:background="@drawable/open_pill_background"
+                            android:paddingStart="8dp"
+                            android:paddingEnd="8dp"
+                            android:text="Best Route"
+                            android:textColor="@color/white"
+                            android:textSize="12sp" />
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:id="@+id/transit3Layout"
+                        android:visibility="gone"
+                        android:layout_marginTop="4dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            android:id="@+id/transit3"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_toStartOf="@+id/transit3Sign"
+                            android:layout_marginEnd="8dp"
+                            android:text="Via M.Logarta Avenue"
+                            android:textColor="@color/gray"
+                            android:maxLines="3" />
+
+                        <TextView
+                            android:id="@+id/transit3Sign"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:background="@drawable/open_pill_background"
+                            android:paddingStart="8dp"
+                            android:paddingEnd="8dp"
+                            android:text="Best Route"
+                            android:textColor="@color/white"
+                            android:textSize="12sp" />
+                    </RelativeLayout>
+
+                    <!-- Traffic Condition -->
+                    <TextView
+                        android:id="@+id/trafficCondition"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textColor="@color/dark_gray"
+                        android:textStyle="bold"
+                        android:text="A typical traffic"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Travel Time and Estimated Arrival Time -->
+            <LinearLayout
+                android:id="@+id/travelDetails"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:id="@+id/fareLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:visibility="gone"
+                    android:layout_marginBottom="8dp">
+
+                    <ImageView
+                        android:id="@+id/fareIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="19dp"
+                        android:layout_gravity="center_vertical"
+                        android:src="@drawable/fare"
+                        app:tint="@color/gray" />
+
+                    <TextView
+                        android:id="@+id/fareLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginStart="8dp"
+                        android:textColor="@color/gray"
+                        android:text="Estimated Fare:" />
+
+                    <TextView
+                        android:id="@+id/fareValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginStart="8dp"
+                        android:textColor="@color/black"
+                        android:text="13 pesos" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <ImageView
+                        android:id="@+id/travelTimeIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="19dp"
+                        android:layout_gravity="center_vertical"
+                        android:src="@drawable/travel_time"
+                        app:tint="@color/gray" />
+
+                    <TextView
+                        android:id="@+id/travelTimeLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginStart="8dp"
+                        android:textColor="@color/gray"
+                        android:text="Travel Time:" />
+
+                    <TextView
+                        android:id="@+id/travelTimeValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginStart="8dp"
+                        android:textColor="@color/black"
+                        android:text="45 min" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <ImageView
+                        android:id="@+id/distanceIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/distance"
+                        android:layout_gravity="center_vertical"
+                        app:tint="@color/gray" />
+
+                    <TextView
+                        android:id="@+id/distanceLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginStart="8dp"
+                        android:textColor="@color/gray"
+                        android:text="Distance:" />
+
+                    <TextView
+                        android:id="@+id/distanceValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginStart="8dp"
+                        android:textColor="@color/black"
+                        android:text="1.4 km" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Steps -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/stepsRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/btnClearAll"
+        android:layout_marginTop="16dp"/>
+</LinearLayout>
