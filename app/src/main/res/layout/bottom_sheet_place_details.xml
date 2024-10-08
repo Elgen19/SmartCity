@@ -1,291 +1,326 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:fillViewport="true"
     android:background="@drawable/bottom_sheet_round_corners"
     android:padding="16dp">
 
-    <!-- Existing components -->
-
-    <!-- Top Components: Place Name and Close Button -->
-    <LinearLayout
-        android:id="@+id/topComponents"
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:layout_height="wrap_content">
 
-        <!-- Place Name TextView -->
-        <TextView
-            android:id="@+id/placeName"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="Place Name"
-            android:textColor="@color/gray"
-            android:textStyle="bold"
-            android:textSize="20sp"
-            android:layout_weight="1"
-            android:layout_gravity="center_vertical" />
+        <!-- Existing components -->
 
-        <!-- Close Button ImageButton -->
-        <ImageButton
-            android:id="@+id/closeButton"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/baseline_close_24"
-            android:contentDescription="@string/back"
-            app:tint="@color/red"
-            android:layout_gravity="center_vertical" />
-    </LinearLayout>
-
-    <!-- Address TextView -->
-    <TextView
-        android:id="@+id/placeAddress"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Place Address"
-        android:textColor="@color/gray"
-        android:textSize="14sp"
-        android:layout_below="@id/topComponents"
-        android:layout_marginTop="8dp" />
-
-    <!-- Open Status and Distance Row -->
-    <LinearLayout
-        android:id="@+id/openStatusDistanceRow"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_below="@id/placeAddress"
-        android:layout_marginTop="8dp"
-        android:gravity="center_vertical">
-
-        <!-- Open Status TextView (Rounded) -->
-        <TextView
-            android:id="@+id/openStatus"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Open"
-            android:textColor="@color/primary_color"
-            android:background="@drawable/open_pill_background"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:textSize="14sp"
-            android:layout_marginEnd="16dp" />
-
-        <!-- Distance with Icon -->
-        <TextView
-            android:id="@+id/placeDistance"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="48 km from location"
-            android:textColor="@color/gray"
-            android:textSize="14sp"
-            android:layout_marginStart="8dp" />
-    </LinearLayout>
-
-    <!-- ViewPager2 for displaying photos -->
-    <androidx.viewpager2.widget.ViewPager2
-        android:id="@+id/viewPager"
-        android:layout_width="match_parent"
-        android:layout_height="200dp"
-        android:layout_below="@id/openStatusDistanceRow"
-        android:layout_marginTop="16dp" />
-
-    <!-- Buttons Row -->
-    <LinearLayout
-        android:id="@+id/rowOfButtons"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/viewPager"
-        android:orientation="horizontal"
-        android:gravity="center_horizontal"
-        android:layout_marginTop="16dp"
-        android:paddingStart="0dp"
-        android:paddingEnd="0dp">
-
-        <!-- Get Directions Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnGetDirections"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="Start"
-            app:icon="@drawable/directions"
-            app:iconTint="@color/primary_color"
-            app:iconGravity="top"
-            android:textColor="@color/primary_color"
-            app:iconPadding="8dp"
-            app:cornerRadius="8dp"
-            android:layout_marginEnd="4dp"
-            app:backgroundTint="@color/secondary_color"
-            android:layout_weight="1" />
-
-        <!-- Save Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSave"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="Save"
-            app:icon="@drawable/favorite"
-            app:iconTint="@color/secondary_color"
-            app:iconGravity="top"
-            app:iconPadding="8dp"
-            app:cornerRadius="8dp"
-            android:textColor="@color/secondary_color"
-            app:strokeColor="@color/secondary_color"
-            app:strokeWidth="2dp"
-            android:layout_marginEnd="4dp"
-            app:backgroundTint="@color/primary_color"
-            app:rippleColor="@color/brand_color"
-            android:layout_weight="1" />
-
-        <!-- More Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnMore"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="More"
-            app:icon="@drawable/more"
-            app:iconTint="@color/secondary_color"
-            app:iconGravity="top"
-            app:iconPadding="8dp"
-            app:cornerRadius="8dp"
-            android:textColor="@color/secondary_color"
-            app:strokeColor="@color/secondary_color"
-            app:strokeWidth="2dp"
-            app:backgroundTint="@color/primary_color"
-            app:rippleColor="@color/brand_color"
-            android:layout_weight="1" />
-    </LinearLayout>
-
-
-
-
-    <!-- Place Phone with Icon -->
-    <LinearLayout
-        android:id="@+id/placePhoneLayout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_below="@id/rowOfButtons"
-        android:layout_marginTop="16dp">
-
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/phone" />
-
-        <TextView
-            android:id="@+id/placePhone"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Place Phone Number"
-            android:textColor="@color/gray"
-            android:textSize="14sp"
-            android:layout_marginStart="8dp" />
-    </LinearLayout>
-
-    <!-- Additional Information: Website -->
-    <LinearLayout
-        android:id="@+id/placeWebsiteLayout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_below="@id/placePhoneLayout"
-        android:layout_marginTop="8dp">
-
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/web" />
-
-        <TextView
-            android:id="@+id/placeWebsite"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Place Website"
-            android:textColor="@color/gray"
-            android:textSize="14sp"
-            android:layout_marginStart="8dp" />
-    </LinearLayout>
-
-    <!-- Additional Information: Rating -->
-    <LinearLayout
-        android:id="@+id/placeRatingLayout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_below="@id/placeWebsiteLayout"
-        android:layout_marginTop="8dp">
-
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/rating" />
-
-        <TextView
-            android:id="@+id/placeRating"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="4.5 star ratings"
-            android:textColor="@color/gray"
-            android:textSize="14sp"
-            android:layout_marginStart="8dp" />
-    </LinearLayout>
-
-    <TextView
-        android:id="@+id/openingHoursLabel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:layout_below="@+id/placeRatingLayout"
-        android:text="Opening Hours"
-        android:textColor="@color/gray"
-        android:textStyle="bold"
-        android:textSize="16sp" />
-
-    <!-- Additional Information: Opening Hours -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/placeHoursCard"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/openingHoursLabel"
-        android:backgroundTint="@color/white"
-        android:layout_marginTop="8dp"
-        app:cardCornerRadius="8dp"
-        app:cardElevation="4dp">
-
-        <RelativeLayout
+        <!-- Top Components: Place Name and Close Button -->
+        <LinearLayout
+            android:id="@+id/topComponents"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp">
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-            <!-- Days TextView aligned to the start -->
+            <!-- Place Name TextView -->
             <TextView
-                android:id="@+id/placeHoursDays"
+                android:id="@+id/placeName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Place Name"
+                android:textColor="@color/gray"
+                android:textStyle="bold"
+                android:textSize="20sp"
+                android:layout_weight="1"
+                android:layout_gravity="center_vertical" />
+
+            <!-- Close Button ImageButton -->
+            <ImageButton
+                android:id="@+id/closeButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/baseline_close_24"
+                android:contentDescription="@string/back"
+                app:tint="@color/red"
+                android:layout_gravity="center_vertical" />
+        </LinearLayout>
+
+        <!-- Address TextView -->
+        <TextView
+            android:id="@+id/placeAddress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Place Address"
+            android:textColor="@color/gray"
+            android:textSize="14sp"
+            android:layout_below="@id/topComponents"
+            android:layout_marginTop="8dp" />
+
+        <!-- Open Status and Distance Row -->
+        <LinearLayout
+            android:id="@+id/openStatusDistanceRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_below="@id/placeAddress"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical">
+
+            <!-- Open Status TextView (Rounded) -->
+            <TextView
+                android:id="@+id/openStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Days"
-                android:textColor="@color/gray"
+                android:text="Open"
+                android:textColor="@color/primary_color"
+                android:background="@drawable/open_pill_background"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
                 android:textSize="14sp"
-                android:layout_alignParentStart="true" />
+                android:layout_marginEnd="16dp" />
 
-            <!-- Time TextView aligned to the end -->
+            <!-- Distance with Icon -->
             <TextView
-                android:id="@+id/placeHoursTime"
+                android:id="@+id/placeDistance"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Time"
+                android:text="48 km from location"
                 android:textColor="@color/gray"
                 android:textSize="14sp"
-                android:layout_alignParentEnd="true" />
-        </RelativeLayout>
-    </com.google.android.material.card.MaterialCardView>
+                android:layout_marginStart="8dp" />
+        </LinearLayout>
 
-</RelativeLayout>
+        <!-- ViewPager2 for displaying photos -->
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/viewPager"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_below="@id/openStatusDistanceRow"
+            android:layout_marginTop="16dp" />
+
+        <!-- Buttons Row -->
+        <LinearLayout
+            android:id="@+id/rowOfButtons"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/viewPager"
+            android:orientation="horizontal"
+            android:gravity="center_horizontal"
+            android:layout_marginTop="16dp"
+            android:paddingStart="0dp"
+            android:paddingEnd="0dp">
+
+            <!-- Get Directions Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGetDirections"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Start"
+                app:icon="@drawable/directions"
+                app:iconTint="@color/primary_color"
+                app:iconGravity="top"
+                android:textColor="@color/primary_color"
+                app:iconPadding="8dp"
+                app:cornerRadius="8dp"
+                android:layout_marginEnd="4dp"
+                app:backgroundTint="@color/secondary_color"
+                android:layout_weight="1" />
+
+            <!-- Save Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSave"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Save"
+                app:icon="@drawable/favorite"
+                app:iconTint="@color/secondary_color"
+                app:iconGravity="top"
+                app:iconPadding="8dp"
+                app:cornerRadius="8dp"
+                android:textColor="@color/secondary_color"
+                app:strokeColor="@color/secondary_color"
+                app:strokeWidth="2dp"
+                android:layout_marginEnd="4dp"
+                app:backgroundTint="@color/primary_color"
+                app:rippleColor="@color/brand_color"
+                android:layout_weight="1" />
+
+            <!-- More Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnMore"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="More"
+                app:icon="@drawable/more"
+                app:iconTint="@color/secondary_color"
+                app:iconGravity="top"
+                app:iconPadding="8dp"
+                app:cornerRadius="8dp"
+                android:textColor="@color/secondary_color"
+                app:strokeColor="@color/secondary_color"
+                app:strokeWidth="2dp"
+                app:backgroundTint="@color/primary_color"
+                app:rippleColor="@color/brand_color"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+
+
+
+        <!-- Place Phone with Icon -->
+        <LinearLayout
+            android:id="@+id/placePhoneLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_below="@id/rowOfButtons"
+            android:layout_marginTop="16dp">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/phone" />
+
+            <TextView
+                android:id="@+id/placePhone"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Place Phone Number"
+                android:textColor="@color/gray"
+                android:textSize="14sp"
+                android:layout_marginStart="8dp" />
+        </LinearLayout>
+
+        <!-- Additional Information: Website -->
+        <LinearLayout
+            android:id="@+id/placeWebsiteLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_below="@id/placePhoneLayout"
+            android:layout_marginTop="8dp">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/web" />
+
+            <TextView
+                android:id="@+id/placeWebsite"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Place Website"
+                android:textColor="@color/gray"
+                android:textSize="14sp"
+                android:layout_marginStart="8dp" />
+        </LinearLayout>
+
+        <!-- Additional Information: Rating -->
+        <LinearLayout
+            android:id="@+id/placeRatingLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_below="@id/placeWebsiteLayout"
+            android:layout_marginTop="8dp">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/rating" />
+
+            <TextView
+                android:id="@+id/placeRating"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="4.5 star ratings"
+                android:textColor="@color/gray"
+                android:textSize="14sp"
+                android:layout_marginStart="8dp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/openingHoursLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_below="@+id/placeRatingLayout"
+            android:text="Opening Hours"
+            android:textColor="@color/gray"
+            android:textStyle="bold"
+            android:textSize="16sp" />
+
+        <!-- Additional Information: Opening Hours -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/placeHoursCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/openingHoursLabel"
+            android:backgroundTint="@color/white"
+            android:layout_marginTop="8dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp">
+
+                <!-- Days TextView aligned to the start -->
+                <TextView
+                    android:id="@+id/placeHoursDays"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Days"
+                    android:textColor="@color/gray"
+                    android:textSize="14sp"
+                    android:layout_alignParentStart="true" />
+
+                <!-- Time TextView aligned to the end -->
+                <TextView
+                    android:id="@+id/placeHoursTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Time"
+                    android:textColor="@color/gray"
+                    android:textSize="14sp"
+                    android:layout_alignParentEnd="true" />
+            </RelativeLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:id="@+id/recommendationTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_below="@+id/placeHoursCard"
+            android:text="Explore Similar Places"
+            android:textColor="@color/gray"
+            android:textStyle="bold"
+            android:textSize="16sp" />
+
+
+        <!-- RecyclerView for Notifications -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recommendationRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/recommendationTitle"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp"
+            android:clipToPadding="false"
+            android:scrollIndicators="none"
+            android:scrollbars="horizontal"
+            android:layout_marginTop="16dp"/>
+
+    </RelativeLayout>
+
+
+
+</androidx.core.widget.NestedScrollView>
+
+
