@@ -591,13 +591,11 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
 
             // Define included and excluded types
             val includedTypes = listOf(category) // Only include "bar"
-            val excludedTypes = listOf("pizza_restaurant", "american_restaurant") // Exclude specific types
 
-// Build the SearchNearbyRequest
+            // Build the SearchNearbyRequest
             val searchNearbyRequest = SearchNearbyRequest.builder(circle, placeFields)
                 .setIncludedTypes(includedTypes) // Only bars will be included
-                .setExcludedTypes(excludedTypes)
-                .setMaxResultCount(10)
+                .setMaxResultCount(15)
                 .build()
 
             // Call placesClient.searchNearby() to perform the search
@@ -621,7 +619,12 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
                         place.placeTypes?.let { placeTypes ->
                             when {
                                 placeTypes.contains("restaurant") -> markerOptions.icon(createCustomMarker(R.drawable.restaurant))
-                                placeTypes.contains("bar") -> markerOptions.icon(createCustomMarker(R.drawable.bar))
+                                placeTypes.contains("hotel") -> markerOptions.icon(createCustomMarker(R.drawable.hotel))
+                                placeTypes.contains("pharmacy") -> markerOptions.icon(createCustomMarker(R.drawable.pharmacy))
+                                placeTypes.contains("atm") -> markerOptions.icon(createCustomMarker(R.drawable.atm))
+                                placeTypes.contains("gas_station") -> markerOptions.icon(createCustomMarker(R.drawable.gas_station))
+                                placeTypes.contains("supermarket") -> markerOptions.icon(createCustomMarker(R.drawable.market))
+
                                 else -> markerOptions.icon(createCustomMarker(R.drawable.marker_custom))
                             }
                         }

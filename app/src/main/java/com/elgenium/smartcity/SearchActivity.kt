@@ -226,10 +226,10 @@ class SearchActivity : AppCompatActivity() {
 
     private fun setupCategoryButtonListeners() {
         binding.btnHotels.setOnClickListener { launchCategoryIntent("hotel") }
-        binding.btnBars.setOnClickListener { launchCategoryIntent("bar") }
         binding.btnRestaurants.setOnClickListener { launchCategoryIntent("restaurant") }
-        binding.btnCoffee.setOnClickListener { launchCategoryIntent("coffee_shop") }
-        binding.btnGroceries.setOnClickListener { launchCategoryIntent("grocery_store") }
+        binding.btnPharmacy.setOnClickListener { launchCategoryIntent("pharmacy") }
+        binding.btnATM.setOnClickListener { launchCategoryIntent("atm") }
+        binding.btnSuperMarket.setOnClickListener { launchCategoryIntent("supermarket") }
         binding.btnGas.setOnClickListener { launchCategoryIntent("gas_station") }
     }
 

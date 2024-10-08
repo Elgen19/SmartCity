@@ -76,19 +76,21 @@
                 android:textColor="@color/gray"
                 app:strokeColor="@color/gray"
                 app:icon="@drawable/hotel"
+                app:rippleColor="@color/brand_color"
                 android:drawablePadding="8dp"
                 android:padding="12dp"
                 android:layout_marginEnd="8dp" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnBars"
+                android:id="@+id/btnPharmacy"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Bars"
+                android:text="Pharmacy"
                 app:iconTint="@color/secondary_color"
                 android:textColor="@color/gray"
-                app:icon="@drawable/bar"
+                app:icon="@drawable/pharmacy"
+                app:rippleColor="@color/brand_color"
                 app:strokeColor="@color/gray"
                 android:drawablePadding="8dp"
                 android:padding="12dp"
@@ -102,6 +104,7 @@
                 android:text="Restaurants"
                 app:iconTint="@color/secondary_color"
                 app:strokeColor="@color/gray"
+                app:rippleColor="@color/brand_color"
                 android:textColor="@color/gray"
                 app:icon="@drawable/restaurant"
                 android:drawablePadding="8dp"
@@ -109,30 +112,32 @@
                 android:layout_marginEnd="8dp" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnCoffee"
+                android:id="@+id/btnATM"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Coffee"
-                app:icon="@drawable/coffee"
+                android:text="ATM"
+                app:icon="@drawable/atm"
                 app:iconTint="@color/secondary_color"
                 app:strokeColor="@color/gray"
                 android:textColor="@color/gray"
                 android:drawablePadding="8dp"
+                app:rippleColor="@color/brand_color"
                 android:padding="12dp"
                 android:layout_marginEnd="8dp" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnGroceries"
+                android:id="@+id/btnSuperMarket"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:drawablePadding="8dp"
-                android:text="Groceries"
+                android:text="Super Market"
                 app:strokeColor="@color/gray"
                 app:iconTint="@color/secondary_color"
+                app:rippleColor="@color/brand_color"
                 android:textColor="@color/gray"
-                app:icon="@drawable/grocery"
+                app:icon="@drawable/market"
                 android:padding="12dp"
                 android:layout_marginEnd="8dp" />
 
@@ -145,7 +150,8 @@
                 app:iconTint="@color/secondary_color"
                 app:strokeColor="@color/gray"
                 android:textColor="@color/gray"
-                app:icon="@drawable/gas"
+                app:rippleColor="@color/brand_color"
+                app:icon="@drawable/gas_station"
                 android:drawablePadding="8dp"
                 android:padding="12dp"
                 android:layout_marginEnd="8dp" />
