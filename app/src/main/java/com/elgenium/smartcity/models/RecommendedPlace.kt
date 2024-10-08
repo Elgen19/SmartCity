@@ -11,5 +11,6 @@ data class RecommendedPlace(
     var rating: Double = 0.0, // Rating of the place
     var numReviews: Int = 0, // Number of reviews
     var distance: Double = 0.0, // Distance to the user (in meters)
-    val photoMetadata: PhotoMetadata?
+    var distanceString: String = "",
+    val photoMetadata: PhotoMetadata?= null
 )

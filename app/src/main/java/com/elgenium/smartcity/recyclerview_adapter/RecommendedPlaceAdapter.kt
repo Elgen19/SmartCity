@@ -1,4 +1,5 @@
 
+import android.graphics.Color
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -23,6 +24,7 @@ class RecommendedPlaceAdapter(
         val placeName: TextView = view.findViewById(R.id.placeName)
         val placeAddress: TextView = view.findViewById(R.id.placeAddress)
         val placeImage: ImageView = view.findViewById(R.id.placeImage) // Add ImageView here
+        val placeDistance: TextView = view.findViewById(R.id.placeDistance)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PlaceViewHolder {
@@ -36,6 +38,34 @@ class RecommendedPlaceAdapter(
         holder.placeName.text = place.name
         holder.placeAddress.text = place.address
 
+        Log.e("PlacesActivity", "DISTANCE: ${place.distanceString}")
+
+        // Extract the numeric part from the distance string (e.g., "2.9 km" becomes "2.9")
+        val distanceNumericString = place.distanceString.replace("[^\\d.]".toRegex(), "")
+
+        // Ensure the extracted distance is valid
+        if (distanceNumericString.isNotEmpty()) {
+            val distanceInKm = distanceNumericString.toDoubleOrNull() ?: 0.0
+
+            // Convert to meters for comparison (1 km = 1000 meters)
+            val distanceInMeters = distanceInKm * 1000
+
+            // Format distance for display
+            val formattedDistance = String.format("%.2f km", distanceInKm) // Keep two decimal places
+            holder.placeDistance.text = formattedDistance
+
+            // Set text color based on the numeric distance in meters
+            holder.placeDistance.setTextColor(when {
+                distanceInMeters <= 1000 -> Color.GREEN // Walkable distance (≤ 1000 meters)
+                distanceInMeters <= 2000 -> Color.YELLOW // Moderate distance (1001 - 2000 meters)
+                else -> Color.RED // Far distance (> 1500 meters)
+            })
+        } else {
+            // Handle case where distance is not available or invalid
+            holder.placeDistance.text = holder.itemView.context.getString(R.string.distance_not_available)
+            holder.placeDistance.setTextColor(Color.GRAY) // Default color for unavailable distance
+        }
+
         // Load the photo if available
         place.photoMetadata?.let { photoMetadata ->
             fetchPhoto(photoMetadata, holder.placeImage) // Pass ImageView directly
@@ -46,12 +76,12 @@ class RecommendedPlaceAdapter(
                 .into(holder.placeImage)
         }
 
-
         // Set click listener for the item view
         holder.itemView.setOnClickListener {
             onPlaceClick(place)  // Trigger the click callback with the place data
         }
     }
+
 
     override fun getItemCount() = places.size
 

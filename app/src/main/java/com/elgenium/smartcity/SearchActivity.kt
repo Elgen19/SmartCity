@@ -444,6 +444,8 @@ class SearchActivity : AppCompatActivity() {
                         binding.textSearchRecyclerView.visibility = View.VISIBLE
                         binding.recentSearchesLabel.visibility = View.GONE
                         binding.recentSearchRecyclerView.visibility = View.GONE
+                        binding.emptyDataLabel.visibility = View.GONE
+                        binding.lotifyAnimation.visibility = View.GONE
 
                         val placeFields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.ADDRESS, Place.Field.TYPES)
 
