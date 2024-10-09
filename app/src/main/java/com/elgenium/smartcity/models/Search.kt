@@ -5,5 +5,6 @@ data class Search(
     val placeAddress: String = "",
     val timestamp: String = "",
     val placeId: String = "",
-    val placeType: String = ""
+    val placeType: String = "",
+    val placeLatlng: String = "",
 )

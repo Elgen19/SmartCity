@@ -2,62 +2,63 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:background="@color/primary_color"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/primary_color">
 
     <!-- Search SearchView with drawable icon and filter ImageButton -->
     <RelativeLayout
         android:id="@+id/search_layout"
         android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:background="@color/secondary_color"
-        android:padding="16dp"
-        android:layout_height="wrap_content">
+        android:padding="16dp">
 
         <androidx.appcompat.widget.SearchView
             android:id="@+id/search_event"
             android:layout_width="0dp"
             android:layout_height="48dp"
-            android:layout_toStartOf="@id/filter_button"
             android:layout_alignParentStart="true"
             android:layout_marginEnd="8dp"
+            android:layout_toStartOf="@id/filter_button"
+            android:background="@drawable/search_bar_bg"
             app:iconifiedByDefault="false"
-            app:queryHint="Search for an event"
             app:queryBackground="@android:color/transparent"
-            app:submitBackground="@android:color/transparent"
-            android:background="@drawable/search_bar_bg" />
+            app:queryHint="Search for an event"
+            app:submitBackground="@android:color/transparent" />
 
         <ImageButton
             android:id="@+id/filter_button"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:scaleType="fitCenter"
-            app:tint="@color/primary_color"
-            android:src="@drawable/more_vertical"
             android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Filter Events"
-            android:layout_centerVertical="true"/>
+            android:scaleType="fitCenter"
+            android:src="@drawable/more_vertical"
+            app:tint="@color/primary_color" />
     </RelativeLayout>
 
 
     <!-- Horizontal ScrollView for event categories -->
     <HorizontalScrollView
-        android:id="@+id/category_scroll"
+        android:id="@+id/scrollViewButtons"
+        android:layout_below="@+id/search_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/search_layout"
+        android:scrollbars="none"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
         android:layout_marginEnd="16dp"
-        android:scrollbars="none">
+        android:layout_marginTop="8dp">
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
+            <!-- Event Type Buttons -->
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/buttonFestival"
+                android:id="@+id/btnFestival"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Festival"
@@ -68,63 +69,78 @@
                 android:textColor="@color/gray"
                 app:strokeColor="@color/gray"
                 app:cornerRadius="8dp"
-                android:layout_marginEnd="8dp"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/buttonTrafficAccidents"
+                android:id="@+id/btnSales"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Traffic Accidents"
-                app:icon="@drawable/traffic_accident"
+                android:text="Sales"
+                app:icon="@drawable/fare"
                 app:iconTint="@color/secondary_color"
-                app:iconGravity="textStart"
                 android:textAllCaps="false"
+                app:iconGravity="textStart"
+                android:layout_marginStart="8dp"
                 android:textColor="@color/gray"
                 app:strokeColor="@color/gray"
                 app:cornerRadius="8dp"
-                android:layout_marginEnd="8dp"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
 
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnWorkShop"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/buttonFlooding"
-                android:text="Flooding"
-                app:icon="@drawable/flooding"
+                android:text="Workshop"
+                app:icon="@drawable/workshop"
                 app:iconTint="@color/secondary_color"
                 app:iconGravity="textStart"
                 android:textAllCaps="false"
+                android:layout_marginStart="8dp"
                 android:textColor="@color/gray"
                 app:strokeColor="@color/gray"
                 app:cornerRadius="8dp"
-                android:layout_marginEnd="8dp"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
 
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnConcert"
                 android:layout_width="wrap_content"
-                android:id="@+id/buttonConcert"
                 android:layout_height="wrap_content"
                 android:text="Concert"
                 app:icon="@drawable/concert"
                 app:iconTint="@color/secondary_color"
-                app:iconGravity="textStart"
                 android:textAllCaps="false"
+                app:iconGravity="textStart"
+                android:layout_marginStart="8dp"
                 android:textColor="@color/gray"
                 app:strokeColor="@color/gray"
                 app:cornerRadius="8dp"
-                android:layout_marginEnd="8dp"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
 
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnOutdoor"
                 android:layout_width="wrap_content"
-                android:id="@+id/buttonOthers"
+                android:layout_height="wrap_content"
+                android:text="Outdoor Events"
+                app:icon="@drawable/outdoor"
+                app:iconTint="@color/secondary_color"
+                android:textAllCaps="false"
+                app:iconGravity="textStart"
+                android:layout_marginStart="8dp"
+                android:textColor="@color/gray"
+                app:strokeColor="@color/gray"
+                app:cornerRadius="8dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnOthers"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Others"
-                app:icon="@drawable/more"
                 app:iconTint="@color/secondary_color"
-                app:iconGravity="textStart"
+                app:icon="@drawable/more"
                 android:textAllCaps="false"
+                app:iconGravity="textStart"
+                android:layout_marginStart="8dp"
                 android:textColor="@color/gray"
                 app:strokeColor="@color/gray"
                 app:cornerRadius="8dp"
@@ -136,10 +152,11 @@
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:id="@+id/mapContainer"
         android:layout_width="match_parent"
-        android:layout_below="@id/search_layout"
+        android:layout_height="wrap_content"
         android:layout_above="@id/bottom_navigation"
-        android:visibility="gone"
-        android:layout_height="wrap_content">
+        android:layout_below="@id/search_layout"
+        android:visibility="gone">
+
         <fragment
             android:id="@+id/map"
             android:name="com.google.android.gms.maps.SupportMapFragment"
@@ -148,49 +165,65 @@
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
 
-
     <!-- RecyclerView for list of events -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/events_recycler_view"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="16dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/category_scroll"
-        android:layout_above="@id/bottom_navigation" />
+        android:layout_above="@id/bottom_navigation"
+        android:layout_below="@id/scrollViewButtons"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp" />
 
     <!-- LottieAnimationView for loading indicator -->
     <com.airbnb.lottie.LottieAnimationView
         android:id="@+id/lottieAnimation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="40dp"
+        android:layout_below="@id/scrollViewButtons"
         android:layout_centerHorizontal="true"
-        android:layout_below="@id/category_scroll"
-        app:lottie_cacheComposition="true"
-        app:lottie_rawRes="@raw/no_data"
         android:layout_marginStart="16dp"
+        android:layout_marginTop="40dp"
         android:layout_marginEnd="16dp"
+        android:visibility="visible"
         app:lottie_autoPlay="true"
+        app:lottie_cacheComposition="true"
         app:lottie_loop="true"
-        android:visibility="visible"/>
+        app:lottie_rawRes="@raw/no_data" />
 
     <TextView
         android:id="@+id/emptyDataLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/lottieAnimation"
-        android:textAlignment="center"
+        android:layout_centerHorizontal="true"
         android:layout_marginTop="-56dp"
-        android:textColor="@color/gray"
-        android:textSize="14sp"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
-        android:layout_centerHorizontal="true"
         android:text="There are no events in this category"
-        android:visibility="visible"/>
+        android:textAlignment="center"
+        android:textColor="@color/gray"
+        android:textSize="14sp"
+        android:visibility="visible" />
+
+    <!-- Floating Action Button -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAddEvent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="16dp"
+        android:layout_above="@+id/bottom_navigation"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="16dp"
+        android:backgroundTint="@color/secondary_color"
+        android:contentDescription="Create Event"
+        android:src="@drawable/add"
+        app:tint="@color/primary_color"
+        app:fabSize="normal"
+        app:rippleColor="@color/brand_color" />
 
     <!-- Bottom Navigation View -->
     <com.google.android.material.bottomnavigation.BottomNavigationView

@@ -100,7 +100,9 @@ class SearchActivity : AppCompatActivity() {
         // Add the custom divider to the RecyclerView
         binding.textSearchRecyclerView.addItemDecoration(dividerItemDecoration)
 
-        val fromDirectionsActivity = intent.getStringExtra("fromDirectionsActivity") ?: ""
+        val fromStopManagementActivity = intent.getBooleanExtra("FROM_STOP_MANAGEMENT_ACTIVITY", false)
+        val fromReportEventActivity = intent.getBooleanExtra("FROM_REPORT_EVENTS_ACTIVITY", false)
+
 
         textSearchAdapter = TextSearchAdapter(emptyList()) { selectedPlace ->
             // Save recent search
@@ -108,24 +110,30 @@ class SearchActivity : AppCompatActivity() {
             val placeName = selectedPlace.name // Assuming selectedPlace has name property
             val placeAddress = selectedPlace.address // Assuming selectedPlace has address property
             val placeType = selectedPlace.placeTypes
+            val placeLatlng = selectedPlace.latLng?.toString()
+
 
             Log.e("SearchActivity", "PLACE TYPE: $placeType")
             Log.e("SearchActivity", "PLACE NAME: $placeName")
+            Log.e("SearchActivity", "PLACE LATLNG: $placeLatlng")
 
 
 
-            if (placeName != null && placeAddress != null && placeId != null && placeType != null) {
-                saveRecentSearch(placeName, placeAddress, placeId, placeType.toString())
+
+            if (placeName != null && placeAddress != null && placeId != null && placeType != null && placeLatlng != null) {
+                saveRecentSearch(placeName, placeAddress, placeId, placeType.toString(), placeLatlng.toString())
                 trackSearchAction(placeName, placeType.toString())
 
             }
 
-            if (fromDirectionsActivity == "yes") {
+            if (fromStopManagementActivity || fromReportEventActivity) {
                 // Create an intent to send data back
                 val resultIntent = Intent().apply {
                     putExtra("PLACE_ID", placeId)
                     putExtra("PLACE_NAME", placeName)
                     putExtra("PLACE_ADDRESS", placeAddress)
+                    putExtra("PLACE_LATLNG", placeLatlng)
+
                 }
                 setResult(Activity.RESULT_OK, resultIntent)
                 finish() // Close SearchActivity and return to StopManagementActivity
@@ -150,15 +158,19 @@ class SearchActivity : AppCompatActivity() {
             val placeName = recentSearch.placeName
             val placeAddress = recentSearch.placeAddress
             val placeType = recentSearch.placeType
+            val placeLatlng = recentSearch.placeLatlng
+
 
             trackSearchAction(placeName, placeType)
 
-            if (fromDirectionsActivity == "yes") {
+            if (fromStopManagementActivity || fromReportEventActivity) {
                 // Create an intent to send data back
                 val resultIntent = Intent().apply {
                     putExtra("PLACE_ID", placeId)
                     putExtra("PLACE_NAME", placeName)
                     putExtra("PLACE_ADDRESS", placeAddress)
+                    putExtra("PLACE_LATLNG", placeLatlng)
+
                 }
                 setResult(Activity.RESULT_OK, resultIntent)
                 finish() // Close SearchActivity and return to StopManagementActivity
@@ -223,7 +235,6 @@ class SearchActivity : AppCompatActivity() {
         }
     }
 
-
     private fun setupCategoryButtonListeners() {
         binding.btnHotels.setOnClickListener { launchCategoryIntent("hotel") }
         binding.btnRestaurants.setOnClickListener { launchCategoryIntent("restaurant") }
@@ -264,11 +275,17 @@ class SearchActivity : AppCompatActivity() {
         closeIcon.setColorFilter(ContextCompat.getColor(this, R.color.red))
     }
 
-    private fun saveRecentSearch(placeName: String, placeAddress: String, placeId: String, placeType: String) {
+    private fun saveRecentSearch(
+        placeName: String,
+        placeAddress: String,
+        placeId: String,
+        placeType: String,
+        placeLatlng: String
+    ) {
         val timestamp = SimpleDateFormat("EEEE, MMMM d, yyyy 'at' h:mm a", Locale.getDefault()).format(Date())
 
         // Create a new Search object with the updated timestamp
-        val search = Search(placeName, placeAddress, timestamp, placeId, placeType )
+        val search = Search(placeName, placeAddress, timestamp, placeId, placeType, placeLatlng)
         Log.e("SearchActivity", "Search: $search")
 
 
@@ -376,9 +393,6 @@ class SearchActivity : AppCompatActivity() {
         locationBias = RectangularBounds.newInstance(southwest, northeast)
     }
 
-
-
-
     private fun setupAutocomplete() {
         // Define a debounce delay (in milliseconds)
         val debounceDelay: Long = 500 // Adjust this value as needed
@@ -394,7 +408,7 @@ class SearchActivity : AppCompatActivity() {
 
                     binding.lottieAnimation.visibility = View.VISIBLE
 
-                    val placeFields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.ADDRESS, Place.Field.TYPES)
+                    val placeFields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.ADDRESS, Place.Field.TYPES, Place.Field.LAT_LNG)
 
                     // Use the builder to create a SearchByTextRequest object
                     val searchByTextRequest = SearchByTextRequest.builder(searchText, placeFields)
@@ -447,7 +461,7 @@ class SearchActivity : AppCompatActivity() {
                         binding.emptyDataLabel.visibility = View.GONE
                         binding.lotifyAnimation.visibility = View.GONE
 
-                        val placeFields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.ADDRESS, Place.Field.TYPES)
+                        val placeFields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.ADDRESS, Place.Field.TYPES, Place.Field.LAT_LNG)
 
                         // Use the builder to create a SearchByTextRequest object
                         val searchByTextRequest = SearchByTextRequest.builder(query, placeFields)
@@ -461,7 +475,7 @@ class SearchActivity : AppCompatActivity() {
                                 textSearchAdapter.updatePlaces(places)
                                 Log.e("SearchActivity", "Found ${places.size} places.")
                                 places.forEach { place ->
-                                    Log.e("SearchActivity", "Place ID: ${place.id}, Name: ${place.name}")
+                                    Log.e("SearchActivity", "Place ID: ${place.id}, Name: ${place.name}, LATLNG: ${place.latLng}")
                                 }
                             }
                             .addOnFailureListener { exception ->
@@ -513,3 +527,24 @@ class SearchActivity : AppCompatActivity() {
 }
 
 
+//Events {
+//    -O8KNz-i3mP_DmBR114- {
+//        additionalInfo:"7 Mt. Malindang St., Singson Village, Mandaue City, 6014 Cebu, Philippines",
+//        checker:"sale_Godfather Shoes Cebu",
+//        endedDateTime:"04/10/2024 10:37 AM",
+//        eventCategory:"Other: Shoe sale",
+//        eventDescription:"A shoe sale of leather boots at 2000 pesos only",
+//        eventName:"sale",
+//        images{
+//            0: https://firebasestorage.googleapis.com/v0/b/smartcity-6d63f.appspot.com/o/event_images%2Fsale_1728009460303_f56a7e16-fca5-47a8-b5c8-651e6b1b796b.jpg?alt=media&token=36593e4f-d92d-4676-b34c-a21f312458f1
+//        }
+//        location:"Godfather Shoes Cebu",
+//        placeId:"ChIJ08lCzECZqTMRlKbrcKcPpU0",
+//        placeLatLng:"lat/lng: (10.3276984,123.9257247)",
+//        startedDateTime:"04/10/2024 10:37 AM",
+//        submittedAt:"2024-10-04 10:37:44",
+//        submittedBy:"Elgen Prestosa"
+//
+//
+//    }
+//}

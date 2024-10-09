@@ -61,17 +61,32 @@ class ReportEventActivity : AppCompatActivity() {
     private val imageList = mutableListOf<ReportImages>()
     private lateinit var placeLatLng: String
     private lateinit var placeId: String
+    private  var fromEventsActivityLat: Double = 0.0
+    private  var fromEventsActivityLng: Double = 0.0
+
+
 
     private val searchActivityLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val data = result.data
             val placeName = data?.getStringExtra("PLACE_NAME")
             val placeAddress = data?.getStringExtra("PLACE_ADDRESS")
+            placeLatLng = data?.getStringExtra("PLACE_LATLNG").toString()
+            placeId = data?.getStringExtra("PLACE_ID").toString()
 
             binding.tvLocation.visibility = View.VISIBLE
+            binding.tvAdditionalInfo.visibility = View.VISIBLE
             Log.d("ReportEventActivity", "Place name from intent: $placeName and $placeAddress and $placeLatLng")
             binding.tvLocation.text = placeName
             binding.tvAdditionalInfo.text = placeAddress
+
+            Log.e("ReportEventActivity", "PLACE ADDRESS: $placeAddress")
+            Log.e("ReportEventActivity", "PLACE NAME: $placeName")
+            Log.e("ReportEventActivity", "PLACE LATLNG: $placeLatLng")
+            Log.e("ReportEventActivity", "PLACE id: $placeId")
+
+
+
         } else {
             Log.d("ReportEventActivity", "SearchActivity result not OK: ${result.resultCode}")
         }
@@ -109,15 +124,20 @@ class ReportEventActivity : AppCompatActivity() {
         binding = ActivityReportEventBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        placeName = intent.getStringExtra("PLACE_NAME").toString()
-        placeAddress = intent.getStringExtra("PLACE_ADDRESS").toString()
-        placeLatLng = intent.getStringExtra("PLACE_LATLNG").toString()
-        placeId = intent.getStringExtra("PLACE_ID").toString()
+        placeName = intent.getStringExtra("PLACE_NAME") ?: ""
+        placeAddress = intent.getStringExtra("PLACE_ADDRESS") ?: ""
+        placeLatLng = intent.getStringExtra("PLACE_LATLNG") ?: ""
+        placeId = intent.getStringExtra("PLACE_ID") ?: ""
+
+        fromEventsActivityLat = intent.getDoubleExtra("FROM_EVENTS_LATITUDE", 0.0)
+        fromEventsActivityLng = intent.getDoubleExtra("FROM_EVENTS_LONGITUDE", 0.0)
+
+
 
         Log.d("ReportEventActivity", "place name: $placeName")
         Log.d("ReportEventActivity", "place address: $placeAddress")
         Log.d("ReportEventActivity", "place latlng: $placeLatLng")
-        Log.d("ReportEventActivity", "place latlng: $placeId")
+        Log.d("ReportEventActivity", "place id: $placeId")
 
 
 
@@ -311,14 +331,21 @@ class ReportEventActivity : AppCompatActivity() {
             binding.tvAdditionalInfo.text = placeAddress
             binding.tvAdditionalInfo.visibility = View.VISIBLE
             binding.btnGetLocation.visibility = View.GONE
+            Log.e("ReportEventActivity", "PLACE NAME IS NOT NULL")
+            Log.e("ReportEventActivity", "place name: $placeName")
+            Log.e("ReportEventActivity", "place address: $placeAddress")
+
+
         } else {
             // this only means that not a specific place is reported
             // this can happen in the Events activity
-            getCurrentLocation()
+            Log.e("ReportEventActivity", "PLACE NAME IS NULL")
             binding.btnGetLocation.visibility = View.VISIBLE
+            getCurrentLocation()
             binding.btnGetLocation.setOnClickListener {
-                Log.d("ReportEventActivity", "Get Location button clicked")
+                Log.e("ReportEventActivity", "Get Location button clicked")
                 val intent = Intent(this, SearchActivity::class.java)
+                intent.putExtra("FROM_REPORT_EVENTS_ACTIVITY", true)
                 searchActivityLauncher.launch(intent)
             }
         }
@@ -328,8 +355,18 @@ class ReportEventActivity : AppCompatActivity() {
         }
 
         val buttons = listOf(
-            binding.btnFestival, binding.btnTrafficAccident, binding.btnFlooding,
+            binding.btnFestival, binding.btnOutdoor, binding.btnSales, binding.btnWorkShop,
             binding.btnConcert, binding.btnOthers
+        )
+
+        // Create a map of button texts to user preferences
+        val buttonToPreferenceMap = mapOf(
+            "Festival" to "Festivals & Celebrations",
+            "Outdoor Events" to "Outdoor & Adventure Events",
+            "Sales" to "Sales & Promotions",
+            "Workshop" to "Workshops & Seminars",
+            "Concert" to "Concerts & Live Performances",
+            "Others" to "Others"
         )
 
         var selectedButtonInfo = ""
@@ -349,7 +386,9 @@ class ReportEventActivity : AppCompatActivity() {
                 button.strokeColor = ColorStateList.valueOf(getColor(R.color.primary_color))
 
 
-                selectedButtonInfo = button.text.toString()
+                // Get the corresponding user preference for the selected button
+                selectedButtonInfo = buttonToPreferenceMap[button.text.toString()] ?: ""
+                Log.d("ReportEventActivity", "Selected Preference: $selectedButtonInfo")
 
                 if (button == binding.btnOthers) {
                     showOthersAlertDialog()
@@ -475,11 +514,11 @@ class ReportEventActivity : AppCompatActivity() {
             uploadImageToFirebaseStorage(eventName, uri,
                 onSuccess = { url ->
                     promise.complete(url)
-                    LayoutStateManager.showSuccessLayout(this, "Event saved successfully!", "Thank you for your valuable contribution! You've earned 5 points for your efforts.")
+                    LayoutStateManager.showSuccessLayout(this, "Event saved successfully!", "Thank you for your valuable contribution! You've earned 5 points for your efforts.", EventsActivity::class.java)
                 },
                 onFailure = { e ->
                     promise.completeExceptionally(e)
-                    LayoutStateManager.showFailureLayout(this, "Something went wrong. Please check your connection or try again.", "Return to Events")
+                    LayoutStateManager.showFailureLayout(this, "Something went wrong. Please check your connection or try again.", "Return to Events", EventsActivity::class.java)
                 }
             )
             promise
@@ -614,7 +653,9 @@ class ReportEventActivity : AppCompatActivity() {
                         if (addresses.isNotEmpty()) {
                             val address = addresses[0].getAddressLine(0)  // Full address
                             Log.d("ReportEventActivity", "Address found: $address")
-                            binding.tvLocation.text = address
+                            binding.tvAdditionalInfo.visibility = View.VISIBLE
+                            binding.tvLocation.text = "My Location"
+                            binding.tvAdditionalInfo.text = address
                         } else {
                             Log.d("ReportEventActivity", "No address found")
                             binding.tvLocation.text = getString(R.string.address_not_found)
