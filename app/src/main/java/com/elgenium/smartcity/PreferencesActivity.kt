@@ -92,11 +92,13 @@ class PreferencesActivity : AppCompatActivity() {
             binding.checkboxEntertainmentVenues.isChecked = preferredVisitPlaces.contains("Entertainment venues (theaters, clubs)")
 
             val preferredEvents = dataSnapshot.child("preferredEvents").children.map { it.value.toString() }
-            binding.checkboxMusicEvents.isChecked = preferredEvents.contains("Music events (concerts, festivals)")
-            binding.checkboxArtExhibitions.isChecked = preferredEvents.contains("Art exhibitions and galleries")
-            binding.checkboxSportsEvents.isChecked = preferredEvents.contains("Sports events and matches")
-            binding.checkboxCommunityEvents.isChecked = preferredEvents.contains("Community events and festivals")
-            binding.checkboxWorkshopsSeminars.isChecked = preferredEvents.contains("Workshops and seminars")
+            // Step 3: Check the mapped categories and update the checkboxes
+            binding.checkboxConcerts.isChecked = preferredEvents.contains("Concerts & Live Performances")
+            binding.checkboxFestivals.isChecked = preferredEvents.contains("Festivals & Celebrations")
+            binding.checkboxSales.isChecked = preferredEvents.contains("Sales & Promotions")
+            binding.checkboxWorkshops.isChecked = preferredEvents.contains("Workshops & Seminars")
+            binding.checkboxCommunity.isChecked = preferredEvents.contains("Community Events")
+            binding.checkboxOutdoorEvents.isChecked = preferredEvents.contains("Outdoor & Adventure Events")
 
             val preferredEventSize = dataSnapshot.child("preferredEventSize").children.map { it.value.toString() }
             binding.checkboxLargeEvents.isChecked = preferredEventSize.contains("Large events (e.g., concerts, festivals)")
@@ -131,11 +133,12 @@ class PreferencesActivity : AppCompatActivity() {
         )
 
         val selectedEvents = getSelectedOptions(
-            binding.checkboxMusicEvents,
-            binding.checkboxArtExhibitions,
-            binding.checkboxSportsEvents,
-            binding.checkboxCommunityEvents,
-            binding.checkboxWorkshopsSeminars,
+            binding.checkboxConcerts,
+            binding.checkboxFestivals,
+            binding.checkboxSales,
+            binding.checkboxWorkshops,
+            binding.checkboxCommunity,
+            binding.checkboxOutdoorEvents,
         )
 
         val eventSize = getSelectedOptions(

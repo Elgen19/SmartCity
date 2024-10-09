@@ -113,7 +113,7 @@
     </androidx.cardview.widget.CardView>
 
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:layout_below="@+id/cardLocationSelection"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -188,11 +188,11 @@
                         style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
 
                     <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnTrafficAccident"
+                        android:id="@+id/btnSales"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Traffic Accident"
-                        app:icon="@drawable/traffic_accident"
+                        android:text="Sales"
+                        app:icon="@drawable/fare"
                         app:iconTint="@color/secondary_color"
                         android:textAllCaps="false"
                         app:iconGravity="textStart"
@@ -203,11 +203,11 @@
                         style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
 
                     <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnFlooding"
+                        android:id="@+id/btnWorkShop"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Flooding"
-                        app:icon="@drawable/flooding"
+                        android:text="Workshop"
+                        app:icon="@drawable/workshop"
                         app:iconTint="@color/secondary_color"
                         app:iconGravity="textStart"
                         android:textAllCaps="false"
@@ -223,6 +223,21 @@
                         android:layout_height="wrap_content"
                         android:text="Concert"
                         app:icon="@drawable/concert"
+                        app:iconTint="@color/secondary_color"
+                        android:textAllCaps="false"
+                        app:iconGravity="textStart"
+                        android:layout_marginStart="8dp"
+                        android:textColor="@color/gray"
+                        app:strokeColor="@color/gray"
+                        app:cornerRadius="8dp"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnOutdoor"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Outdoor Events"
+                        app:icon="@drawable/outdoor"
                         app:iconTint="@color/secondary_color"
                         android:textAllCaps="false"
                         app:iconGravity="textStart"
@@ -377,5 +392,5 @@
 
 
         </RelativeLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 </RelativeLayout>

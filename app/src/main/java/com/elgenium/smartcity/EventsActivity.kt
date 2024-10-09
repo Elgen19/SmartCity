@@ -73,6 +73,7 @@ class EventsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var mapFragment: SupportMapFragment
 
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -111,6 +112,26 @@ class EventsActivity : AppCompatActivity(), OnMapReadyCallback {
         // Add the custom divider to the RecyclerView
         binding.eventsRecyclerView.addItemDecoration(dividerItemDecoration)
         binding.eventsRecyclerView.adapter = eventAdapter
+
+        binding.fabAddEvent.setOnClickListener {
+            getUserLocation { latLng ->
+                if (latLng != null) {
+                    // Create an Intent to start ReportEventActivity
+                    val intent = Intent(this, ReportEventActivity::class.java)
+
+                    // Add the latitude and longitude as extras
+                    intent.putExtra("FROM_EVENTS_LATITUDE", latLng.latitude)
+                    intent.putExtra("FROM_EVENTS_LONGITUDE", latLng.longitude)
+
+                    // Start the ReportEventActivity
+                    startActivity(intent)
+                } else {
+                    // Handle the case when location is null (optional)
+                    Toast.makeText(this, "Unable to get current location", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
 
         // Load events from Firebase
         loadEventsFromFirebase()
@@ -668,18 +689,20 @@ class EventsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun setupCategoryButtons() {
-        val buttonFestival = binding.buttonFestival
-        val buttonTrafficAccidents = binding.buttonTrafficAccidents
-        val buttonFlooding = binding.buttonFlooding
-        val buttonConcert = binding.buttonConcert
-        val buttonOthers = binding.buttonOthers
+        val buttonFestival = binding.btnFestival
+        val buttonSales = binding.btnSales
+        val buttonConcert = binding.btnConcert
+        val buttonOutdoor = binding.btnOutdoor
+        val buttonWorkshop = binding.btnWorkShop
+        val buttonOthers = binding.btnOthers
 
         val categoryButtons = listOf(
             buttonFestival,
-            buttonTrafficAccidents,
-            buttonFlooding,
+            buttonSales,
+            buttonOutdoor,
             buttonConcert,
-            buttonOthers
+            buttonWorkshop,
+            buttonOthers,
         )
 
         categoryButtons.forEach { button ->
@@ -723,10 +746,11 @@ class EventsActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun filterEventsByCategory(category: String) {
         val filteredEvents = eventList.filter { event ->
             when (category) {
-                "Festival" -> event.eventCategory?.contains("Festival", ignoreCase = true) == true
-                "Traffic Accidents" -> event.eventCategory?.contains("Traffic Accidents", ignoreCase = true) == true
-                "Flooding" -> event.eventCategory?.contains("Flooding", ignoreCase = true) == true
-                "Concert" -> event.eventCategory?.contains("Concert", ignoreCase = true) == true
+                "Festival" -> event.eventCategory?.contains("Festivals & Celebrations", ignoreCase = true) == true
+                "Concert" -> event.eventCategory?.contains("Concerts & Live Performances", ignoreCase = true) == true
+                "Sales" -> event.eventCategory?.contains("Sales & Promotions", ignoreCase = true) == true
+                "Workshop" -> event.eventCategory?.contains("Workshop & Seminars", ignoreCase = true) == true
+                "Outdoor Events" -> event.eventCategory?.startsWith("Outdoor & Adventure Events", ignoreCase = true) == true
                 "Others" -> event.eventCategory?.startsWith("Others:", ignoreCase = true) == true
                 else -> false
             }

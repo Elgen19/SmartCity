@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.elgenium.smartcity.R
@@ -57,7 +58,7 @@ class RecommendedPlaceAdapter(
             // Set text color based on the numeric distance in meters
             holder.placeDistance.setTextColor(when {
                 distanceInMeters <= 1000 -> Color.GREEN // Walkable distance (≤ 1000 meters)
-                distanceInMeters <= 2000 -> Color.YELLOW // Moderate distance (1001 - 2000 meters)
+                distanceInMeters <= 2000 -> ContextCompat.getColor(holder.itemView.context, R.color.traffic_moderate_color) // Moderate distance (1001 - 2000 meters)
                 else -> Color.RED // Far distance (> 1500 meters)
             })
         } else {

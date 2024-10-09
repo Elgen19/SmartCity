@@ -526,7 +526,6 @@
                 android:layout_marginTop="8dp"
                 android:scrollbars="vertical" />
 
-            <!-- Weather Updates Title TextView -->
             <TextView
                 android:id="@+id/recommendedPlacesTitle"
                 android:layout_width="wrap_content"
@@ -534,6 +533,7 @@
                 android:layout_below="@id/leaderboardRecyclerView"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="16dp"
+                android:visibility="gone"
                 android:text="Recommended For You"
                 android:textColor="@color/secondary_color"
                 android:textSize="18sp"
@@ -547,6 +547,33 @@
                 android:layout_marginTop="16dp"
                 android:orientation="horizontal"
                 android:layout_marginBottom="16dp"
+                android:visibility="gone"
+                android:clipToPadding="false"
+                android:scrollIndicators="none"
+                android:scrollbars="horizontal"/>
+
+            <TextView
+                android:id="@+id/recommendedEventsTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/recyclerViewPlaces"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:text="Events Tailored to You"
+                android:textColor="@color/secondary_color"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewEvents"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/recommendedEventsTitle"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
                 android:clipToPadding="false"
                 android:scrollIndicators="none"
                 android:scrollbars="horizontal"/>

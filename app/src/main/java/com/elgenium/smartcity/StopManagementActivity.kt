@@ -98,7 +98,7 @@ class StopManagementActivity : AppCompatActivity() {
 
         binding.addStopsButton.setOnClickListener {
             val intent = Intent(this, SearchActivity::class.java).apply {
-                putExtra("fromDirectionsActivity", "yes")
+                putExtra("FROM_STOP_MANAGEMENT_ACTIVITY", true)
             }
             getPlaceResultLauncher.launch(intent)
         }

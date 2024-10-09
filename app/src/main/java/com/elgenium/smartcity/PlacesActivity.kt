@@ -771,6 +771,15 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
             val intent = Intent(this, ReportEventActivity::class.java)
             intent.putExtra("PLACE_NAME", savedPlace.name)
             intent.putExtra("PLACE_ADDRESS", savedPlace.address)
+            val regex = """lat/lng: \((-?\d+\.\d+),(-?\d+\.\d+)\)""".toRegex()
+            val destinationLatLng =
+                savedPlace.latLngString?.let {
+                    regex.find(it)?.let { matchResult ->
+                        "${matchResult.groupValues[1]},${matchResult.groupValues[2]}"
+                    }
+                }
+            intent.putExtra("PLACE_LATLNG",destinationLatLng)
+            intent.putExtra("PLACE_ID", savedPlace.id)
             val options = ActivityOptions.makeCustomAnimation(
                 this,
                 R.anim.fade_in,
@@ -867,9 +876,9 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
 
 
         // Fetch recommendations based on place type
-        place.types?.let { savedPlaceType ->
-            getFilteredPlacesForRecommendationBasedOnType(savedPlaceType, bottomSheetView, bottomSheetDialog)
-        }
+//        place.types?.let { savedPlaceType ->
+//            getFilteredPlacesForRecommendationBasedOnType(savedPlaceType, bottomSheetView, bottomSheetDialog)
+//        }
 
         // Update the UI with place details immediately
         updatePlaceDetailsUI(place, bottomSheetView)
@@ -1382,7 +1391,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
             .build()
 
         // Get the current location first
-        getCurrentLocation { userLocation ->
+        getCurrentLocation {
             placesClient.searchByText(searchByTextRequest)
                 .addOnSuccessListener { response ->
                     Log.e("PlacesActivity", "Successfully retrieved places. Total places found: ${response.places.size}")
@@ -1405,9 +1414,12 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
 
                         // Calculate distance from user's current location using callback
                         val placeLatLng = place.latLng
+
                         if (placeLatLng != null) {
                             checkLocationPermissionAndFetchDistance(null, null, placeLatLng) { distance ->
                                 val placeModel = place.id?.let {
+                                    val cleanDistance = distance.replace("[^\\d.]".toRegex(), "")
+                                    val distanceDouble = if (cleanDistance.isNotEmpty()) cleanDistance.toDouble() else 0.0
                                     RecommendedPlace(
                                         placeId = it,
                                         name = place.name ?: "",
@@ -1417,7 +1429,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
                                         rating = place.rating ?: 0.0, // Store rating
                                         numReviews = place.userRatingsTotal ?: 0, // Store number of reviews
                                         photoMetadata = place.photoMetadatas?.firstOrNull(),
-                                        distance = distance.replace("[^\\d.]".toRegex(), "").toDouble(),
+                                        distance = distanceDouble,
                                         distanceString = distance, // Use distance from callback,
                                     )
                                 }
