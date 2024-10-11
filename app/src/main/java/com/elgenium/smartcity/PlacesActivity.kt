@@ -1,7 +1,7 @@
 package com.elgenium.smartcity
 
 import PlacesClientSingleton
-import RecommendedPlaceAdapter
+import com.elgenium.smartcity.recyclerview_adapter.RecommendedPlaceAdapter
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.ActivityOptions
@@ -894,13 +894,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         setupGetDirectionsButton(bottomSheetView, bottomSheetDialog, place)
 
         // Log viewed place details
-        place.name?.let { placeName ->
-            place.id?.let { placeId ->
-                place.types?.let { placeTypes ->
-                    logViewedPlace(placeId, placeName, placeTypes)
-                }
-            }
-        }
+      logViewedPlace(place.id.toString(), place.name.toString(), place.types.toString(), place.latLngString.toString(), place.address.toString())
 
         // Fetch the distance asynchronously and update the UI when it's ready
         val placeLatLng = place.latLng
@@ -1325,10 +1319,12 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         }
     }
 
-    private fun logViewedPlace(placeId: String, placeName: String, placeType: String) {
+    private fun logViewedPlace(placeId: String, placeName: String, placeType: String, placeLatLng: String, placeAddress: String) {
         val viewedPlaceData = mapOf(
             "placeId" to placeId,
             "placeName" to placeName,
+            "placeAddress" to placeAddress,
+            "placeLatLng" to placeLatLng,
             "timestamp" to System.currentTimeMillis(),
             "type" to placeType
 

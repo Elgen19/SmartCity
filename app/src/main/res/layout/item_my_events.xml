@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:orientation="horizontal">
+
+    <!-- Event Image -->
+    <ImageView
+        android:id="@+id/imageViewEvent"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:scaleType="centerCrop"
+        android:contentDescription="Event Image"
+        android:src="@drawable/placeholder_viewpager_photos" />
+
+    <!-- Event Info -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_gravity="center_vertical"
+        android:orientation="vertical"
+        android:layout_marginStart="16dp">
+
+        <!-- Event Name -->
+        <TextView
+            android:id="@+id/textViewEventName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Event Name"
+            android:textColor="@color/secondary_color"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <!-- Place Name -->
+        <TextView
+            android:id="@+id/textViewAdditionalInfo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Place Name"
+            android:textColor="@color/gray2"
+            android:textSize="14sp"
+            android:layout_marginTop="4dp" />
+
+
+        <TextView
+            android:id="@+id/textViewSubmittedAt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Submitted at"
+            android:textColor="@color/dark_gray"
+            android:textSize="12sp"
+            android:layout_marginTop="8dp" />
+    </LinearLayout>
+</LinearLayout>

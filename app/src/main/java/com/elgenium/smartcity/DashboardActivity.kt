@@ -1,6 +1,5 @@
 package com.elgenium.smartcity
 
-import RecommendedPlaceAdapter
 import android.Manifest
 import android.app.ActivityOptions
 import android.content.Context
@@ -36,6 +35,7 @@ import com.elgenium.smartcity.network_reponses.TrafficResponse
 import com.elgenium.smartcity.network_reponses.WeatherResponse
 import com.elgenium.smartcity.recyclerview_adapter.LeaderboardAdapter
 import com.elgenium.smartcity.recyclerview_adapter.RecommendedEventAdapter
+import com.elgenium.smartcity.recyclerview_adapter.RecommendedPlaceAdapter
 import com.elgenium.smartcity.singletons.BottomNavigationManager
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.singletons.PlacesNewClientSingleton

@@ -12,6 +12,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.core.app.ActivityCompat
@@ -23,6 +24,7 @@ import com.elgenium.smartcity.databinding.BottomSheetEventDetailsBinding
 import com.elgenium.smartcity.models.Event
 import com.elgenium.smartcity.network.PlaceDistanceService
 import com.elgenium.smartcity.recyclerview_adapter.EventAdapter
+import com.elgenium.smartcity.recyclerview_adapter.MyEventsAdapter
 import com.elgenium.smartcity.singletons.ActivityNavigationUtils
 import com.elgenium.smartcity.singletons.BottomNavigationManager
 import com.elgenium.smartcity.singletons.LayoutStateManager
@@ -71,6 +73,7 @@ class EventsActivity : AppCompatActivity(), OnMapReadyCallback {
     private val LOCATION_PERMISSION_REQUEST_CODE = 1
     private lateinit var googleMap: GoogleMap
     private lateinit var mapFragment: SupportMapFragment
+    private lateinit var myEventsAdapter: MyEventsAdapter
 
 
 
@@ -118,10 +121,8 @@ class EventsActivity : AppCompatActivity(), OnMapReadyCallback {
                 if (latLng != null) {
                     // Create an Intent to start ReportEventActivity
                     val intent = Intent(this, ReportEventActivity::class.java)
-
-                    // Add the latitude and longitude as extras
-                    intent.putExtra("FROM_EVENTS_LATITUDE", latLng.latitude)
-                    intent.putExtra("FROM_EVENTS_LONGITUDE", latLng.longitude)
+                    intent.putExtra("PLACE_LATLNG", latLng.toString())
+                    Log.e("EventsActivity",latLng.toString())
 
                     // Start the ReportEventActivity
                     startActivity(intent)
@@ -614,6 +615,78 @@ class EventsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
+    private fun showOptionsBottomSheet(checker: String) {
+        val bottomSheetView = LayoutInflater.from(this).inflate(R.layout.bottom_sheet_options, binding.root, false)
+
+        // Create BottomSheetDialog and set the inflated view
+        val bottomSheetDialog = BottomSheetDialog(this)
+        bottomSheetDialog.setContentView(bottomSheetView)
+
+        val optionEdit = bottomSheetView.findViewById<LinearLayout>(R.id.optionEdit)
+        val optionDelete = bottomSheetView.findViewById<LinearLayout>(R.id.optionDelete)
+
+        optionEdit.setOnClickListener {
+            bottomSheetDialog.dismiss()
+            val intent = Intent(this, ReportEventActivity::class.java)
+            intent.putExtra("FROM_EVENTS_ACTIVITY", checker)
+            startActivity(intent)
+        }
+
+        optionDelete.setOnClickListener {
+            bottomSheetDialog.dismiss()
+            confirmDeleteEvent(checker)
+        }
+
+        bottomSheetDialog.show()
+    }
+
+    private fun confirmDeleteEvent(checker: String) {
+        // Create a custom alert dialog layout for confirmation
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_confirm_delete, null)
+        val alertDialogBuilder = AlertDialog.Builder(this)
+            .setView(dialogView)
+
+        val dialog = alertDialogBuilder.create()
+
+        val buttonCancel = dialogView.findViewById<MaterialButton>(R.id.buttonCancel)
+        val buttonDelete = dialogView.findViewById<MaterialButton>(R.id.buttonDelete)
+
+        buttonCancel.setOnClickListener {
+            dialog.dismiss() // Dismiss the dialog
+        }
+
+        buttonDelete.setOnClickListener {
+            deleteEventByChecker(checker)
+            dialog.dismiss() // Dismiss the dialog after deletion
+        }
+
+        dialog.show()
+    }
+
+    private fun deleteEventByChecker(checker: String) {
+        val eventsRef = FirebaseDatabase.getInstance().getReference("Events")
+        eventsRef.orderByChild("checker").equalTo(checker).addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                for (eventSnapshot in snapshot.children) {
+                    // Delete the event with the matching checker
+                    eventSnapshot.ref.removeValue().addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            Log.e("DeleteEvent", "Event with checker $checker deleted successfully.")
+                            // Optionally, notify the adapter to refresh the UI
+                            loadUserEvents() // Refresh the event list
+                        } else {
+                            Log.e("DeleteEvent", "Failed to delete event: ${task.exception?.message}")
+                        }
+                    }
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("DeleteEvent", "Failed to load events: ${error.message}")
+            }
+        })
+    }
+
     private fun setupBottomSheetMainOptions(){
         val bottomSheetView = LayoutInflater.from(this).inflate(R.layout.bottom_sheet_events_main_options, binding.root, false)
 
@@ -625,6 +698,7 @@ class EventsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         val optionViewHideMap = bottomSheetView.findViewById<LinearLayout>(R.id.optionChangeView)
         val optionFilter = bottomSheetView.findViewById<LinearLayout>(R.id.optionFilter)
+        val optionViewHideMyEvents = bottomSheetView.findViewById<LinearLayout>(R.id.optionShowMyEvents)
 
         optionFilter.setOnClickListener {
             bottomSheetDialog.dismiss()
@@ -639,6 +713,40 @@ class EventsActivity : AppCompatActivity(), OnMapReadyCallback {
                binding.mapContainer.visibility = View.VISIBLE
                binding.eventsRecyclerView.visibility = View.GONE
            }
+
+            bottomSheetDialog.dismiss()
+        }
+
+        optionViewHideMyEvents.setOnClickListener {
+            if (binding.myEventsRecyclerview.visibility == View.GONE) {
+                binding.eventsRecyclerView.visibility = View.GONE
+                binding.myEventsRecyclerview.visibility = View.VISIBLE
+                binding.eventLabelTitle.text = "Events you reported"
+
+                myEventsAdapter = MyEventsAdapter(
+                    events = eventList,
+                    onItemLongClick = { event ->
+                        event.checker?.let { checker ->
+                            showOptionsBottomSheet(checker)  // Handle click
+                        }
+                    },
+                    onItemClick = { event ->
+                       showEventDetailsBottomSheetDialog(event)
+                    }
+                )
+
+                binding.myEventsRecyclerview.layoutManager = LinearLayoutManager(this)
+                binding.myEventsRecyclerview.adapter = myEventsAdapter
+
+                binding.myEventsRecyclerview.layoutManager = LinearLayoutManager(this)
+                binding.myEventsRecyclerview.adapter = myEventsAdapter
+                loadUserEvents()
+            } else {
+                binding.myEventsRecyclerview.visibility = View.GONE
+                binding.eventsRecyclerView.visibility = View.VISIBLE
+                binding.eventLabelTitle.text = "All Events"
+
+            }
 
             bottomSheetDialog.dismiss()
         }
@@ -789,6 +897,33 @@ class EventsActivity : AppCompatActivity(), OnMapReadyCallback {
             // User is not authenticated
             Log.e("EventsActivity", "User is not authenticated. Unable to load events.")
             // Optionally handle the UI for non-authenticated state
+        }
+    }
+
+    private fun loadUserEvents() {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId != null) {
+            val eventsRef = FirebaseDatabase.getInstance().getReference("Events")
+            eventsRef.orderByChild("userId").equalTo(userId).addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    eventList.clear() // Clear the list before adding new items
+                    for (eventSnapshot in snapshot.children) {
+                        val event = eventSnapshot.getValue(Event::class.java)
+                        if (event != null) {
+                            eventList.add(event)
+                        }
+                    }
+                    myEventsAdapter.notifyDataSetChanged() // Notify adapter of data change
+                    Log.e("Events", "Events: $eventList")
+
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("Events", "Failed to load events: ${error.message}")
+                }
+            })
+        } else {
+            Log.e("Events", "User is not signed in.")
         }
     }
 

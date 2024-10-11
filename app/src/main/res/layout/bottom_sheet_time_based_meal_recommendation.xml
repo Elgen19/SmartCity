@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@color/primary_color">
+
+    <!-- Row for Title and Close Button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingBottom="8dp">
+
+        <!-- Recommendation Title -->
+        <TextView
+            android:id="@+id/textViewRecommendationTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Meal Place Recommendations"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/brand_color" />
+
+        <!-- Close Button (X icon) -->
+        <ImageButton
+            android:id="@+id/buttonClose"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/baseline_close_24"
+            app:tint="@color/red"
+            android:contentDescription="Close"
+            android:padding="8dp" />
+    </LinearLayout>
+
+    <!-- Supporting Text for Recommendation -->
+    <TextView
+        android:id="@+id/textViewRecommendationDescription"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Here are some meal places recommended for you based on the time of day."
+        android:textSize="14sp"
+        android:textColor="@color/gray"
+        android:paddingBottom="16dp"/>
+
+    <!-- RecyclerView for Meal Recommendations -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewMealRecommendations"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:clipToPadding="false"
+        android:paddingBottom="16dp"/>
+</LinearLayout>
