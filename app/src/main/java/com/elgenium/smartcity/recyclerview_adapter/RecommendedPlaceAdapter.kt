@@ -1,3 +1,4 @@
+package com.elgenium.smartcity.recyclerview_adapter
 
 import android.graphics.Color
 import android.util.Log
@@ -58,7 +59,7 @@ class RecommendedPlaceAdapter(
             // Set text color based on the numeric distance in meters
             holder.placeDistance.setTextColor(when {
                 distanceInMeters <= 1000 -> Color.GREEN // Walkable distance (≤ 1000 meters)
-                distanceInMeters <= 2000 -> ContextCompat.getColor(holder.itemView.context, R.color.traffic_moderate_color) // Moderate distance (1001 - 2000 meters)
+                distanceInMeters <= 2000 -> ContextCompat.getColor(holder.itemView.context, R.color.bronze) // Moderate distance (1001 - 2000 meters)
                 else -> Color.RED // Far distance (> 1500 meters)
             })
         } else {

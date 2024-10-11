@@ -6,9 +6,10 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 
 interface GeocodingService {
-    @GET("geocode/json")
-    fun getGeocoding(
-        @Query("address") address: String,
+    @GET("maps/api/geocode/json")
+    fun getCityName(
+        @Query("latlng") latLng: String,
         @Query("key") apiKey: String
     ): Call<GeocodingResponse>
 }
+

@@ -13,5 +13,6 @@ data class Event(
     val checker: String? = null,
     val placeId: String? = null,
     val submittedBy: String? = null,
-    val submittedAt: String? = null
+    val submittedAt: String? = null,
+    val userId: String?= null,
 )

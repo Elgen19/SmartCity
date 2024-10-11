@@ -6,15 +6,11 @@ data class GeocodingResponse(
 )
 
 data class Result(
-    val geometry: Geometries
+    val address_components: List<AddressComponent>
 )
 
-data class Geometries(
-    val location: PlaceLocation
-)
-
-data class PlaceLocation(
-    val lat: Double,
-    val lng: Double
+data class AddressComponent(
+    val types: List<String>,
+    val long_name: String
 )
 
