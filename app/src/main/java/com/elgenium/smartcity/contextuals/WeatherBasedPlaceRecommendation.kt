@@ -19,11 +19,11 @@ import com.elgenium.smartcity.R
 import com.elgenium.smartcity.databinding.BottomSheetContextualRecommendationBinding
 import com.elgenium.smartcity.models.RecommendedPlace
 import com.elgenium.smartcity.network.GeocodingService
+import com.elgenium.smartcity.network.OpenWeatherAPIService
 import com.elgenium.smartcity.network.PlaceDistanceService
-import com.elgenium.smartcity.network.WeatherAPIService
 import com.elgenium.smartcity.network_reponses.GeocodingResponse
 import com.elgenium.smartcity.network_reponses.PlaceDistanceResponse
-import com.elgenium.smartcity.network_reponses.WeatherAPIResponse
+import com.elgenium.smartcity.network_reponses.WeatherResponse
 import com.elgenium.smartcity.recyclerview_adapter.RecommendedPlaceAdapter
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -45,28 +45,23 @@ class WeatherBasedPlaceRecommendation(
 ) {
     private val fusedLocationClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(context)
-    private var weatherCode = 0
+    private var weatherCondition = ""
 
-    private fun createWeatherApiServiceWithWeatherAPI(): WeatherAPIService {
+    private fun createWeatherApiService(): OpenWeatherAPIService {
         val retrofit = Retrofit.Builder()
-            .baseUrl("https://api.weatherapi.com/v1/") // Updated base URL for WeatherAPI
+            .baseUrl("https://api.openweathermap.org/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
 
-        return retrofit.create(WeatherAPIService::class.java)
+        return retrofit.create(OpenWeatherAPIService::class.java)
     }
 
-
     // Function to get recommendations based on weather conditions
-    private fun mapWeatherToPlaceTypes(weatherCode: Int, timeOfDay: String): List<String> {
-        Log.e(
-            "WeatherBasedPlaceRecommendation",
-            "Fetching recommendations for weather code: $weatherCode at $timeOfDay"
-        )
+    private fun mapWeatherToPlaceTypes(weatherCondition: String, timeOfDay: String): List<String> {
 
-        return when (weatherCode) {
+        return when (weatherCondition) {
             // Sunny or clear conditions
-            1000 -> {
+            "Clear" -> {
                 when (timeOfDay) {
                     "morning" -> listOf("coffee_shop", "bakery", "gym", "park", "fast_food_restaurant", "resort_hotel", "convenience_store")
                     "afternoon" -> listOf("cafe", "shopping_mall", "cafe near the mountain",  "amusement_park", "tourist_attraction", "beach", "tourist_spots", "restaurant")
@@ -75,8 +70,8 @@ class WeatherBasedPlaceRecommendation(
                 }
             }
 
-            // Partly cloudy
-            1003, 1006, 1009 -> {
+            //  cloudy
+            "Clouds" -> {
                 when (timeOfDay) {
                     "morning" -> listOf(
                         "park",
@@ -95,34 +90,25 @@ class WeatherBasedPlaceRecommendation(
 
 
             // Mist or foggy conditions
-            1030, 1135, 1147 -> {
+            "Atmosphere" -> {
                 listOf("coffee_shop", "soup", "shopping_mall", "gym", "food park", "food stall", "outdoor dining", "cafe near the mountain", "restaurants near the mountain")
             }
 
-            // Light rain conditions
-            1063, 1150, 1153, 1180, 1183, 1240 -> {
+            // Light rain conditions to heavy rain
+           "Drizzle", "Rain", "Thunderstorm" -> {
                 listOf("meal_delivery", "meal_takeaway", "cafe", "take out", "soup", "popular foods")
             }
 
-            // Moderate to heavy rain or thunderstorms
-            1186, 1189, 1192, 1195, 1243, 1246, 1273, 1276 -> {
-                listOf("meal_delivery", "meal_takeaway", "cafe",  "take out", "soup", "popular foods")
-            }
-
-            // Dust, sand, or ash conditions
-            1069, 1072, 1087 -> {
-                listOf("library", "cafe", "shopping_mall", "fitness_center")
-            }
 
             // Default case for other weather codes
             else -> listOf("restaurants", "cafe", "shopping_malls")
         }
     }
 
-    private fun generateRecommendationText(weatherCode: Int, timeOfDay: String): Pair<String, String> {
-        return when (weatherCode) {
+    private fun generateRecommendationText(weatherCondition: String, timeOfDay: String): Pair<String, String> {
+        return when (weatherCondition) {
             // Sunny and Clear conditions
-            1000 -> when (timeOfDay) {
+            "Clear" -> when (timeOfDay) {
                 "morning" -> "Start Your Sunny Day Right" to "Grab a coffee or enjoy a hearty breakfast at these cool and cozy spots."
                 "afternoon" -> "Beat the Heat with Cool Spots" to "Relax at these air-conditioned venues or treat yourself to a refreshing meal."
                 "evening" -> "Wind Down on a Clear Evening" to "Enjoy a delightful dinner or dessert at these highly rated indoor places."
@@ -130,7 +116,7 @@ class WeatherBasedPlaceRecommendation(
             }
 
             // Partly cloudy, Cloudy, Overcast
-            1003, 1006, 1009 -> when (timeOfDay) {
+            "Clouds" -> when (timeOfDay) {
                 "morning" -> "A Perfect Morning with Clouds" to "Take a morning stroll or explore these scenic attractions."
                 "afternoon" -> "Cloudy Afternoon Adventures" to "Enjoy the outdoors with these fun-filled activities and attractions."
                 "evening" -> "Evening Fun with Light Clouds" to "Unwind and enjoy the cool breeze at these recommended spots."
@@ -138,17 +124,16 @@ class WeatherBasedPlaceRecommendation(
             }
 
             // Mist, Fog, Freezing Fog
-            1030, 1135, 1147 -> "Indoor Escapes for Low Visibility" to "Stay warm and explore these indoor attractions while the fog clears."
+            "Atmosphere" -> "Indoor Escapes for Low Visibility" to "Stay warm and explore these indoor attractions while the fog clears."
 
             // Light drizzle, Patchy light rain, Light rain, Patchy rain possible
-            1063, 1150, 1153, 1180, 1183, 1240, 1186, 1189, 1192, 1195, 1243, 1246, 1087, 1273, 1276, 1069, 1204, 1207, 1249, 1252 -> "Stay Dry and Cozy" to "Find warmth indoors! Order your favorite meals delivered to your door and enjoy a cozy indoor retreat without the hassle of going out."
+            "Rain, Drizzle, Thunderstorm" -> "Stay Dry and Cozy" to "Find warmth indoors! Order your favorite meals delivered to your door and enjoy a cozy indoor retreat without the hassle of going out."
 
             else -> {
                 "Recommended Places for You" to "Explore these places, selected for their quality and positive reviews."
             }
         }
     }
-
 
     fun getTimeOfDay(): String {
         val calendar = Calendar.getInstance()
@@ -169,28 +154,28 @@ class WeatherBasedPlaceRecommendation(
     ) {
         getCurrentLocation(context) { latLng ->
             latLng?.let {
-                val weatherApiService = createWeatherApiServiceWithWeatherAPI() // update service creation for WeatherAPI
-                val location = "${it.latitude},${it.longitude}"
-                val apiKey = BuildConfig.WEATHER_API // Your WeatherAPI key
+                val weatherApiService = createWeatherApiService()
+                val lat = it.latitude
+                val lang = it.longitude
+                val apiKey = BuildConfig.OPEN_WEATHER_API
 
-                val call = weatherApiService.getCurrentWeather(apiKey, location)
+                val call = weatherApiService.getCurrentWeatherData(lat, lang, apiKey = apiKey)
 
-                call.enqueue(object : Callback<WeatherAPIResponse> {
+                call.enqueue(object : Callback<WeatherResponse> {
                     override fun onResponse(
-                        call: Call<WeatherAPIResponse>,
-                        response: Response<WeatherAPIResponse>
+                        call: Call<WeatherResponse>,
+                        response: Response<WeatherResponse>
                     ) {
                         if (response.isSuccessful) {
                             val weatherResponse = response.body()
                             if (weatherResponse != null) {
                                 Log.e("WeatherBasedPlaceRecommendation", "RESPONSE: $weatherResponse")
 
-                                val weatherCondition = weatherResponse.current.condition.text
+                                weatherCondition = weatherResponse.weather.firstOrNull()?.main.toString()
                                 Log.e("WeatherBasedPlaceRecommendation", "Weather condition: $weatherCondition")
                                 Log.e("WeatherBasedPlaceRecommendation", "TIME OF THE DAY: ${getTimeOfDay()}")
 
-                                weatherCode = weatherResponse.current.condition.code
-                                val recommendations = mapWeatherToPlaceTypes(weatherCode, getTimeOfDay())
+                                val recommendations = mapWeatherToPlaceTypes(weatherCondition, getTimeOfDay())
 
                                 onRecommendationsReady(recommendations)
                             } else {
@@ -203,7 +188,7 @@ class WeatherBasedPlaceRecommendation(
                         }
                     }
 
-                    override fun onFailure(call: Call<WeatherAPIResponse>, t: Throwable) {
+                    override fun onFailure(call: Call<WeatherResponse>, t: Throwable) {
                         Log.e("WeatherBasedPlaceRecommendation", "Network Error: ${t.localizedMessage}")
                         onRecommendationsReady(null)
                     }
@@ -224,7 +209,7 @@ class WeatherBasedPlaceRecommendation(
         supportText: TextView
     ) {
         // Set the title text
-        val (title, description) = generateRecommendationText(weatherCode, getTimeOfDay())
+        val (title, description) = generateRecommendationText(weatherCondition, getTimeOfDay())
         titleTextView.text = title
         supportText.text = description
 
@@ -361,10 +346,12 @@ class WeatherBasedPlaceRecommendation(
 
                                             // Check if all distances have been calculated
                                             if (distancesCalculated == places.size) {
+                                                val uniqueRecommendedPlacesList = recommendedPlacesList.distinctBy { it.placeId }
+
                                                 if (isForCarousel){
-                                                    setupRecommendationUI(context, placesClient, recommendedPlacesList, recyclerView, titleTextView, supportText)
+                                                    setupRecommendationUI(context, placesClient, uniqueRecommendedPlacesList, recyclerView, titleTextView, supportText)
                                                 } else {
-                                                    showMealRecommendationBottomSheet(context, recommendedPlacesList, placesClient) // Show the bottom sheet with all places
+                                                    showMealRecommendationBottomSheet(context, uniqueRecommendedPlacesList, placesClient) // Show the bottom sheet with all places
                                                 }
                                             }
 
@@ -403,7 +390,7 @@ class WeatherBasedPlaceRecommendation(
         // Set up view binding for the bottom sheet layout
         val binding = BottomSheetContextualRecommendationBinding.bind(bottomSheetView)
 
-        val (title, description) = generateRecommendationText(weatherCode, getTimeOfDay())
+        val (title, description) = generateRecommendationText(weatherCondition, getTimeOfDay())
         binding.textViewRecommendationTitle.text = title
         binding.textViewRecommendationDescription.text = description
 

@@ -1,12 +1,15 @@
 package com.elgenium.smartcity
 
 import android.app.ActivityOptions
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.elgenium.smartcity.databinding.ActivitySettingsBinding
+import com.elgenium.smartcity.shared_preferences_keys.SettingsKeys
 import com.elgenium.smartcity.singletons.ActivityNavigationUtils
 import com.elgenium.smartcity.singletons.BottomNavigationManager
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
@@ -17,6 +20,7 @@ import com.google.firebase.database.FirebaseDatabase
 class SettingsActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySettingsBinding
     private lateinit var userRef: DatabaseReference
+    private lateinit var sharedPreferences: SharedPreferences
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,6 +36,9 @@ class SettingsActivity : AppCompatActivity() {
         }
         userRef = FirebaseDatabase.getInstance().getReference("Users").child(user.uid)
 
+        // Initialize SharedPreferences
+        sharedPreferences = getSharedPreferences(SettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
+
         // sets the color of the navigation bar making it more personalized
         NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
 
@@ -43,13 +50,31 @@ class SettingsActivity : AppCompatActivity() {
         setupEditPreferences()
         loadUserSettings()
 
+
     }
 
-
+    private fun logSharedPreferences() {
+        val sharedPreferences = getSharedPreferences("user_settings", MODE_PRIVATE)
+        val allEntries = sharedPreferences.all
+        for ((key, value) in allEntries) {
+            Log.e("Preferences", "$key: $value")
+        }
+    }
 
     override fun onPause() {
         super.onPause()
         saveUserSettings()
+        // Save to SharedPreferences
+        with(sharedPreferences.edit()) {
+            putBoolean(SettingsKeys.KEY_PUSH_NOTIFICATIONS, binding.turnOnPushNotificationsSwitch.isChecked)
+            putBoolean(SettingsKeys.KEY_TRAFFIC_UPDATES, binding.enableTrafficUpdateNotificationsSwitch.isChecked)
+            putBoolean(SettingsKeys.KEY_EVENTS_NOTIFICATIONS, binding.enableEventsNotificationsSwitch.isChecked)
+            putBoolean(SettingsKeys.KEY_CONTEXT_RECOMMENDER, binding.contextRecommenderSwitch.isChecked)
+            putBoolean(SettingsKeys.KEY_EVENT_RECOMMENDER, binding.eventRecommenderSwitch.isChecked)
+            apply()
+        }
+        logSharedPreferences()
+
     }
 
     private fun setupFeedbacks() {
@@ -79,36 +104,32 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun saveUserSettings() {
         val settings = mapOf(
-            "pushNotifications" to binding.turnOnPushNotificationsSwitch.isChecked,
-            "trafficUpdates" to binding.enableTrafficUpdateNotificationsSwitch.isChecked,
-            "eventsNotifications" to binding.enableEventsNotificationsSwitch.isChecked,
-            "mealReminder" to binding.mealReminderSwitch.isChecked,
-            "exerciseReminder" to binding.exerciseReminderSwitch.isChecked,
-            "newEventReminders" to binding.newEventRemindersSwitch.isChecked
+            "push_notifications" to binding.turnOnPushNotificationsSwitch.isChecked,
+            "traffic_updates" to binding.enableTrafficUpdateNotificationsSwitch.isChecked,
+            "events_notifications" to binding.enableEventsNotificationsSwitch.isChecked,
+            "context_recommender" to binding.contextRecommenderSwitch.isChecked,
+            "event_recommender" to binding.eventRecommenderSwitch.isChecked,
+
         )
 
         userRef.child("settings").updateChildren(settings).addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                Log.d("SettingsActivity", "Settings saved")
+                Log.e("SettingsActivity", "Settings saved")
             } else {
                 Toast.makeText(this, "Failed to update settings. Please try again.", Toast.LENGTH_SHORT).show()
             }
+
         }
     }
 
     private fun loadUserSettings() {
-        userRef.child("settings").get().addOnSuccessListener { dataSnapshot ->
-            dataSnapshot?.let {
-                binding.turnOnPushNotificationsSwitch.isChecked = it.child("pushNotifications").getValue(Boolean::class.java) ?: false
-                binding.enableTrafficUpdateNotificationsSwitch.isChecked = it.child("trafficUpdates").getValue(Boolean::class.java) ?: false
-                binding.enableEventsNotificationsSwitch.isChecked = it.child("eventsNotifications").getValue(Boolean::class.java) ?: false
-                binding.mealReminderSwitch.isChecked = it.child("mealReminder").getValue(Boolean::class.java) ?: false
-                binding.exerciseReminderSwitch.isChecked = it.child("exerciseReminder").getValue(Boolean::class.java) ?: false
-                binding.newEventRemindersSwitch.isChecked = it.child("newEventReminders").getValue(Boolean::class.java) ?: false
-            }
-        }.addOnFailureListener {
-            Toast.makeText(this, "Failed to load settings", Toast.LENGTH_SHORT).show()
-        }
+        // Load from SharedPreferences
+        binding.turnOnPushNotificationsSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_PUSH_NOTIFICATIONS, false)
+        binding.enableTrafficUpdateNotificationsSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_TRAFFIC_UPDATES, false)
+        binding.enableEventsNotificationsSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_EVENTS_NOTIFICATIONS, false)
+        binding.contextRecommenderSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_CONTEXT_RECOMMENDER, false)
+        binding.eventRecommenderSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_EVENT_RECOMMENDER, false)
+
     }
 
 
