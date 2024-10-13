@@ -1,7 +1,6 @@
 package com.elgenium.smartcity
 
 import PlacesClientSingleton
-import com.elgenium.smartcity.recyclerview_adapter.RecommendedPlaceAdapter
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.ActivityOptions
@@ -36,6 +35,7 @@ import com.elgenium.smartcity.models.RecommendedPlace
 import com.elgenium.smartcity.models.SavedPlace
 import com.elgenium.smartcity.network.PlaceDistanceService
 import com.elgenium.smartcity.network_reponses.PlaceDistanceResponse
+import com.elgenium.smartcity.recyclerview_adapter.RecommendedPlaceAdapter
 import com.elgenium.smartcity.singletons.ActivityNavigationUtils.navigateToActivity
 import com.elgenium.smartcity.singletons.BottomNavigationManager
 import com.elgenium.smartcity.singletons.LayoutStateManager
@@ -1452,7 +1452,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
                                         val recommendationRecyclerview: RecyclerView = bottomSheetView.findViewById(R.id.recommendationRecyclerView)
                                         recommendationRecyclerview.layoutManager = LinearLayoutManager(this@PlacesActivity, LinearLayoutManager.HORIZONTAL, false)
 
-                                        val adapter = RecommendedPlaceAdapter(top10, placesClient) { places ->
+                                        val adapter = RecommendedPlaceAdapter(top10, false, placesClient) { places ->
                                             fetchPlaceDetailsFromAPI(places.placeId) { savedPlace ->
                                                 savedPlace?.let {
                                                     this.savedPlace = it

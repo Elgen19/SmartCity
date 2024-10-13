@@ -22,11 +22,14 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
+import com.elgenium.smartcity.contextuals.MealPlaceRecommendationManager
+import com.elgenium.smartcity.contextuals.PopularPlaceRecommendationManager
+import com.elgenium.smartcity.contextuals.WeatherBasedPlaceRecommendation
 import com.elgenium.smartcity.databinding.ActivityDashboardBinding
 import com.elgenium.smartcity.models.Event
 import com.elgenium.smartcity.models.Leaderboard
 import com.elgenium.smartcity.models.RecommendedPlace
-import com.elgenium.smartcity.network.OpenWeatherApiService
+import com.elgenium.smartcity.network.OpenWeatherAPIService
 import com.elgenium.smartcity.network.RoadsApiService
 import com.elgenium.smartcity.network.TomTomApiService
 import com.elgenium.smartcity.network_reponses.RoadLocation
@@ -44,6 +47,7 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.net.SearchByTextRequest
@@ -60,13 +64,16 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.Calendar
 import java.util.Locale
+import kotlin.math.ln
+import kotlin.math.sqrt
 
+@Suppress("PrivatePropertyName")
 class DashboardActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityDashboardBinding
     private lateinit var auth: FirebaseAuth
     private lateinit var database: DatabaseReference
-    private lateinit var apiService: OpenWeatherApiService
+    private lateinit var apiService: OpenWeatherAPIService
     private val placesClient by lazy { PlacesNewClientSingleton.getPlacesClient(this) }
     private lateinit var apiServiceForTraffic: TomTomApiService
     private lateinit var apiServiceForRoads: RoadsApiService
@@ -80,6 +87,12 @@ class DashboardActivity : AppCompatActivity() {
     private var lastActiveUpdateTime: Long = 0 // To track the last update time
     private val ACTIVE_TIMEFRAME_MS: Long = 2 * 60 * 1000 // 5 minutes in milliseconds
     private var recommendedPlaces: List<RecommendedPlace> = emptyList()
+    private lateinit var popularPlaceRecommendationManager: PopularPlaceRecommendationManager
+    private lateinit var mealRecommendationManager: MealPlaceRecommendationManager
+    private lateinit var weatherRecommendation: WeatherBasedPlaceRecommendation
+
+
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -87,15 +100,17 @@ class DashboardActivity : AppCompatActivity() {
         binding = ActivityDashboardBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+
+
         // sets the color of the navigation bar making it more personalized
         NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
 
         // Initialize Retrofit for open weather
         val retrofit = Retrofit.Builder()
-            .baseUrl("https://api.openweathermap.org/data/2.5/")
+            .baseUrl("https://api.openweathermap.org/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-        apiService = retrofit.create(OpenWeatherApiService::class.java)
+        apiService = retrofit.create(OpenWeatherAPIService::class.java)
 
         val retrofitForTraffic = Retrofit.Builder()
             .baseUrl("https://api.tomtom.com/")
@@ -126,6 +141,13 @@ class DashboardActivity : AppCompatActivity() {
         auth = FirebaseAuth.getInstance()
         database = FirebaseDatabase.getInstance().reference.child("Users")
 
+        val userId = auth.currentUser?.uid ?: "NO UID"
+        popularPlaceRecommendationManager = PopularPlaceRecommendationManager(this, userId )
+        mealRecommendationManager = MealPlaceRecommendationManager(this)
+        weatherRecommendation = WeatherBasedPlaceRecommendation(this)
+
+        showNextRecommendation()
+
         binding.notificationButton.setOnClickListener {
             val intent = Intent(this, NotificationHistoryActivity::class.java)
             val options = ActivityOptions.makeCustomAnimation(
@@ -155,6 +177,121 @@ class DashboardActivity : AppCompatActivity() {
         }
 
     }
+
+
+    private fun processRecommendationTag(nextTag: String? = null): String {
+        val MEAL_TAG = "MEAL"
+        val RECOMMENDATION_PREFS = "recommendation_prefs"
+        val CURRENT_RECOMMENDATION_KEY = "current_recommendation"
+
+        val sharedPreferences = this.getSharedPreferences(RECOMMENDATION_PREFS, Context.MODE_PRIVATE)
+
+        // If nextTag is provided, save it.
+        if (nextTag != null) {
+            Log.d("Recommendation", "Setting next tag: $nextTag")
+            sharedPreferences.edit().putString(CURRENT_RECOMMENDATION_KEY, nextTag).apply()
+        }
+
+        // Retrieve and return the current recommendation tag
+        val currentTag = sharedPreferences.getString(CURRENT_RECOMMENDATION_KEY, MEAL_TAG) ?: MEAL_TAG
+        Log.d("Recommendation", "Current tag: $currentTag")
+        return currentTag
+    }
+
+
+
+    private fun showNextRecommendation() {
+        val currentTag = processRecommendationTag() // Get the current recommendation tag
+
+        when (currentTag) {
+            "MEAL" -> {
+                Log.d("Recommendation", "Fetching meal recommendations...")
+                fetchRecommendedMealPlaces {
+                    Log.d("Recommendation", "Meal recommendations fetched.")
+                    processRecommendationTag("POPULAR") // Set the next tag
+                }
+            }
+            "POPULAR" -> {
+                Log.d("Recommendation", "Fetching popular recommendations...")
+                fetchPopularPlaceRecommendations {
+                    Log.d("Recommendation", "Popular recommendations fetched.")
+                    processRecommendationTag("WEATHER") // Set the next tag
+                }
+            }
+
+            "WEATHER" -> {
+                Log.d("Recommendation", "Fetching popular recommendations...")
+                fetchWeatherRecommendations {
+                    Log.d("Recommendation", "Popular recommendations fetched.")
+                    processRecommendationTag("MEAL") // Set the next tag
+                }
+            }
+
+
+
+        }
+    }
+
+    private fun fetchWeatherRecommendations(callback: () -> Unit) {
+        weatherRecommendation.fetchWeatherAndRecommend(this) { recommendations ->
+            recommendations?.let {
+                Log.d("WeatherTestActivity", "Recommendations: $it")
+
+                // Call performTextSearch without modifying its parameters
+                weatherRecommendation.performTextSearch(placesClient, this, recommendations, binding.recyclerViewContextRecommendations, binding.textViewRecommendationTitle, binding.textViewRecommendationDescription, true) { _ ->
+                    // Pass the results to the provided callback
+                    callback()
+                }
+
+            } ?: run {
+                Log.e("WeatherTestActivity", "No recommendations available.")
+                // Call the callback with null or handle the case accordingly
+                callback()
+            }
+        }
+    }
+
+
+    private fun fetchRecommendedMealPlaces(callback: () -> Unit) {
+        val mealTime = mealRecommendationManager.getMealTime()
+        val recommendedPlaceTypes = mealRecommendationManager.mealTimePlaceMappings[mealTime]
+
+        if (!recommendedPlaceTypes.isNullOrEmpty()) {
+            Log.d("Recommendation", "Performing text search for meal places...")
+            mealRecommendationManager.performTextSearch(placesClient, recommendedPlaceTypes, this, binding.recyclerViewContextRecommendations, binding.textViewRecommendationTitle, binding.textViewRecommendationDescription, true) {
+                Log.d("Recommendation", "Text search for meal places complete.")
+                callback() // Invoke the callback once the text search is complete
+            }
+        } else {
+            Log.e("MealRecommendationActivity", "No recommended place types found for meal time: $mealTime")
+            callback() // Invoke the callback to continue the loop
+        }
+    }
+
+    private fun fetchPopularPlaceRecommendations(callback: () -> Unit) {
+        Log.d("Recommendation", "Fetching preferred visit places for popular recommendations...")
+        popularPlaceRecommendationManager.fetchPreferredVisitPlaces { preferredPlaceTypes ->
+            if (preferredPlaceTypes.isNotEmpty()) {
+                Log.d("Recommendation", "Performing text search for popular places...")
+                popularPlaceRecommendationManager.performTextSearch(
+                    placesClient,
+                    preferredPlaceTypes,
+                    this,
+                    binding.recyclerViewContextRecommendations,
+                    binding.textViewRecommendationTitle,
+                    binding.textViewRecommendationDescription,
+                    true
+                ) {
+                    Log.d("Recommendation", "Text search for popular places complete.")
+                    callback() // Invoke the callback once the text search is complete
+                }
+            } else {
+                Log.e("DashboardActivity", "No preferred visit places found for user.")
+                callback() // Invoke the callback to continue the loop
+            }
+        }
+    }
+
 
 
 
@@ -212,11 +349,10 @@ class DashboardActivity : AppCompatActivity() {
         })
     }
 
-    private val locationRequest = LocationRequest.create().apply {
-        interval = 10000 // 10 seconds
-        fastestInterval = 5000 // 5 seconds
-        priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-    }
+    private val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10000)
+        .setMinUpdateIntervalMillis(5000) // Set the fastest interval
+        .build()
+
 
     private fun fetchNearestRoad(
         roadsApiService: RoadsApiService,
@@ -332,6 +468,7 @@ class DashboardActivity : AppCompatActivity() {
             )
         }
     }
+
 
     private fun getStreetNameFromCoordinates(latitude: Double, longitude: Double): String? {
         val geocoder = Geocoder(this, Locale.getDefault())
@@ -533,18 +670,22 @@ class DashboardActivity : AppCompatActivity() {
             "DashboardActivity",
             "Location retrieved: Lat ${location.latitude}, Long ${location.longitude}"
         )
+
         val latitude = location.latitude
         val longitude = location.longitude
-        val addressList = geocoder.getFromLocation(latitude, longitude, 1)
-        val cityName = addressList?.firstOrNull()?.locality ?: "Unknown"
 
         // Get the detailed address from the location
+        val addressList = geocoder.getFromLocation(latitude, longitude, 1)
         val address = addressList?.firstOrNull()
         val preciseAddress = address?.getAddressLine(0) ?: "Unknown Location"
+        val cityName = address?.locality ?: "Unknown City"
 
-        Log.d("DashboardActivity", "City name: $cityName")
+        Log.d("DashboardActivity", "Precise address: $preciseAddress")
+        Log.d("DashboardActivity", "City Name: $cityName")
 
-        apiService.getWeather(cityName, apiKey).enqueue(object : Callback<WeatherResponse> {
+
+        // Update the API call to use latitude and longitude
+        apiService.getCurrentWeatherData(latitude, longitude, apiKey= apiKey).enqueue(object : Callback<WeatherResponse> {
             override fun onResponse(
                 call: Call<WeatherResponse>,
                 response: Response<WeatherResponse>
@@ -573,8 +714,9 @@ class DashboardActivity : AppCompatActivity() {
                             getString(R.string.temperature_format, temperature)
                         binding.heatIndexValue.text =
                             getString(R.string.temperature_format, heatIndex)
+                        binding.locationText.text = preciseAddress // Keep the precise address
+
                         binding.cityNameText.text = cityName
-                        binding.locationText.text = preciseAddress
 
                         // Check if the activity is still alive before loading the image
                         if (!isFinishing && !isDestroyed) {
@@ -598,7 +740,6 @@ class DashboardActivity : AppCompatActivity() {
                     ).show()
                 }
             }
-
 
             override fun onFailure(call: Call<WeatherResponse>, t: Throwable) {
                 Log.e("DashboardActivity", "Error fetching weather data", t)
@@ -721,6 +862,7 @@ class DashboardActivity : AppCompatActivity() {
         super.onResume()
         checkLocationSettings()
 
+
         // Update last active timestamp
         val currentTime = System.currentTimeMillis()
         if (currentTime - lastActiveUpdateTime >= COOLDOWN_TIME_MS) {
@@ -743,6 +885,7 @@ class DashboardActivity : AppCompatActivity() {
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val activeUserCount = snapshot.childrenCount // Count of active users
+                    Log.e("DashboardActivity", "ACTIVE USERS: $activeUserCount")
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -840,7 +983,7 @@ class DashboardActivity : AppCompatActivity() {
                             LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
                         // Update RecyclerView with new data
                         binding.recyclerViewPlaces.adapter =
-                            RecommendedPlaceAdapter(recommendedPlaces, placesClient) { place ->
+                            RecommendedPlaceAdapter(recommendedPlaces, true, placesClient) { place ->
                                 // Handle the click event for the place here
                                 Toast.makeText(this, "Clicked: ${place.name}", Toast.LENGTH_SHORT)
                                     .show()
@@ -1199,7 +1342,7 @@ class DashboardActivity : AppCompatActivity() {
         val count = events.count { event -> extractWords(event).contains(word.lowercase()) }.toDouble()
 
         // Use a smoothing constant to prevent division by zero and extreme values
-        val idf = Math.log((totalEvents + 1) / (count + 1))
+        val idf = ln((totalEvents + 1) / (count + 1))
         Log.d("DashboardActivity", "Word: $word, IDF: $idf") // Log IDF value
         return idf
     }
@@ -1211,8 +1354,8 @@ class DashboardActivity : AppCompatActivity() {
         val dotProduct = eventScores.keys.intersect(userVector.keys).sumOf { key ->
             eventScores[key]!! * userVector[key]!!
         }
-        val eventMagnitude = Math.sqrt(eventScores.values.sumOf { it * it })
-        val userMagnitude = Math.sqrt(userVector.values.sumOf { it * it })
+        val eventMagnitude = sqrt(eventScores.values.sumOf { it * it })
+        val userMagnitude = sqrt(userVector.values.sumOf { it * it })
 
         val similarity = if (eventMagnitude > 0 && userMagnitude > 0) {
             dotProduct / (eventMagnitude * userMagnitude)
