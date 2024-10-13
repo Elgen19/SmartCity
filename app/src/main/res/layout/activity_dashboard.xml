@@ -129,7 +129,7 @@
                 </RelativeLayout>
             </androidx.cardview.widget.CardView>
 
-            <!-- Recomemndations Context -->
+            <!-- Recommendations Context -->
 
                 <LinearLayout
                     android:id="@+id/recommendationLayout"

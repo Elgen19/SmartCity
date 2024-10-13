@@ -12,9 +12,11 @@ import android.os.Bundle
 import android.os.Looper
 import android.provider.Settings
 import android.util.Log
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
+import android.widget.RelativeLayout
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -90,8 +92,8 @@ class DashboardActivity : AppCompatActivity() {
     private lateinit var popularPlaceRecommendationManager: PopularPlaceRecommendationManager
     private lateinit var mealRecommendationManager: MealPlaceRecommendationManager
     private lateinit var weatherRecommendation: WeatherBasedPlaceRecommendation
-
-
+    private var contextRecommender: Boolean = false
+    private var eventRecommender: Boolean = false
 
 
 
@@ -100,10 +102,11 @@ class DashboardActivity : AppCompatActivity() {
         binding = ActivityDashboardBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-
-
         // sets the color of the navigation bar making it more personalized
         NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
+
+        // get the shared preferences
+        retrievePreferences()
 
         // Initialize Retrofit for open weather
         val retrofit = Retrofit.Builder()
@@ -146,8 +149,6 @@ class DashboardActivity : AppCompatActivity() {
         mealRecommendationManager = MealPlaceRecommendationManager(this)
         weatherRecommendation = WeatherBasedPlaceRecommendation(this)
 
-        showNextRecommendation()
-
         binding.notificationButton.setOnClickListener {
             val intent = Intent(this, NotificationHistoryActivity::class.java)
             val options = ActivityOptions.makeCustomAnimation(
@@ -164,20 +165,49 @@ class DashboardActivity : AppCompatActivity() {
         updateGreeting()
         loadProfileImage()
         setupListeners()
-
-        // Call methods to get data
         fetchNearestRoad(apiServiceForRoads, apiServiceForTraffic)
-
         fetchLeaderboardData()
+        handleViewVisibilityBasedOnSettings()
         //getFilteredPlacesForRecommendationBasedOnType()
-        val currentUserId = auth.currentUser?.uid
 
-        if (currentUserId != null) {
-            fetchUserPreferencesAndEvents(currentUserId)
-        }
+
+
 
     }
 
+    private fun handleViewVisibilityBasedOnSettings() {
+
+        if (contextRecommender) {
+            showNextRecommendation()
+        } else {
+            binding.recommendationLayout.visibility = View.GONE
+            val layoutParams = binding.weatherUpdatesTitle.layoutParams as RelativeLayout.LayoutParams
+            layoutParams.topMargin = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                16f,
+                resources.displayMetrics
+            ).toInt()
+            binding.weatherUpdatesTitle.layoutParams = layoutParams
+
+
+        }
+
+        if (eventRecommender)  {
+            fetchUserPreferencesAndEvents()
+        } else {
+            binding.recommendedEventsTitle.visibility = View.GONE
+        }
+    }
+
+    private fun retrievePreferences() {
+        val sharedPreferences = getSharedPreferences("user_settings", MODE_PRIVATE)
+        contextRecommender = sharedPreferences.getBoolean("context_recommender", false)
+        eventRecommender = sharedPreferences.getBoolean("event_recommender", false)
+        // Optionally log the retrieved value
+        Log.e("Preferences", "contextRecommender at retrievePreferences: $contextRecommender")
+        Log.e("Preferences", "eventRecommender at retrievePreferences: $eventRecommender")
+
+    }
 
     private fun processRecommendationTag(nextTag: String? = null): String {
         val MEAL_TAG = "MEAL"
@@ -197,8 +227,6 @@ class DashboardActivity : AppCompatActivity() {
         Log.d("Recommendation", "Current tag: $currentTag")
         return currentTag
     }
-
-
 
     private fun showNextRecommendation() {
         val currentTag = processRecommendationTag() // Get the current recommendation tag
@@ -251,7 +279,6 @@ class DashboardActivity : AppCompatActivity() {
         }
     }
 
-
     private fun fetchRecommendedMealPlaces(callback: () -> Unit) {
         val mealTime = mealRecommendationManager.getMealTime()
         val recommendedPlaceTypes = mealRecommendationManager.mealTimePlaceMappings[mealTime]
@@ -291,10 +318,6 @@ class DashboardActivity : AppCompatActivity() {
             }
         }
     }
-
-
-
-
 
     private fun fetchLeaderboardData() {
         val currentUser = auth.currentUser
@@ -1036,7 +1059,6 @@ class DashboardActivity : AppCompatActivity() {
                 (distance / 1000.0) // Normalize distance (in kilometers
     }
 
-
     private fun getCurrentLocation(callback: (LatLng) -> Unit) {
         // Check if the location permission is granted
         if (ContextCompat.checkSelfPermission(
@@ -1065,7 +1087,6 @@ class DashboardActivity : AppCompatActivity() {
             )
         }
     }
-
 
     private fun calculateDistance(start: LatLng, end: LatLng): Double {
         val results = FloatArray(1)
@@ -1103,8 +1124,8 @@ class DashboardActivity : AppCompatActivity() {
         }
     }
 
-    private fun fetchUserPreferencesAndEvents(userId: String) {
-        getUserPreferences(userId,
+    private fun fetchUserPreferencesAndEvents() {
+        getUserPreferences(
             onSuccess = { userPreferences ->
                 Log.d("DashboardActivity", "User Preferences: $userPreferences")
                 getEventData(
@@ -1136,9 +1157,9 @@ class DashboardActivity : AppCompatActivity() {
     }
 
 
-    private fun getUserPreferences(userId: String, onSuccess: (List<String>) -> Unit, onFailure: (Exception) -> Unit) {
+    private fun getUserPreferences(onSuccess: (List<String>) -> Unit, onFailure: (Exception) -> Unit) {
+        val userId = auth.currentUser?.uid ?: "NO USER ID"
         val database = FirebaseDatabase.getInstance().getReference("Users").child(userId).child("preferredEvents")
-
         database.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 val preferences = mutableListOf<String>()

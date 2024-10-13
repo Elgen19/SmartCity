@@ -41,6 +41,7 @@ class PreferencesActivity : AppCompatActivity() {
             val layoutParams = binding.preferencesTitle.layoutParams as LinearLayout.LayoutParams
             layoutParams.marginStart = 0
             binding.preferencesTitle.layoutParams = layoutParams
+            setDefaultPreferences()
         }
 
         val user = FirebaseAuth.getInstance().currentUser
@@ -105,6 +106,19 @@ class PreferencesActivity : AppCompatActivity() {
             binding.checkboxSmallerEvents.isChecked = preferredEventSize.contains("Smaller, intimate gatherings")
         }
     }
+
+    private fun setDefaultPreferences() {
+        val sharedPreferences = getSharedPreferences("user_settings", MODE_PRIVATE)
+        with(sharedPreferences.edit()) {
+            putBoolean("push_notifications", true)
+            putBoolean("traffic_updates", true)
+            putBoolean("events_notifications", true)
+            putBoolean("context_recommender", true)
+            putBoolean("event_recommender", true)
+            apply()
+        }
+    }
+
 
     private fun collectPreferences(): Map<String, Any>? {
         // Collect selected options for preferences
