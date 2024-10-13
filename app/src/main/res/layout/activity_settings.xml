@@ -205,7 +205,7 @@
                             android:layout_gravity="center_vertical"
                             android:layout_marginEnd="16dp"
                             android:layout_weight="1"
-                            android:text="Enable or disable contextual recommendation carousels"
+                            android:text="Contextual recommendation carousels"
                             android:textColor="@color/gray"
                             android:textSize="16sp" />
 
@@ -254,7 +254,7 @@
                             android:layout_gravity="center_vertical"
                             android:layout_marginEnd="16dp"
                             android:layout_weight="1"
-                            android:text="Enable or disable event recommendations"
+                            android:text="Event recommendations carousel"
                             android:textColor="@color/gray"
                             android:textSize="16sp" />
 

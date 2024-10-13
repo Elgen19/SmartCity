@@ -46,6 +46,7 @@ class WeatherBasedPlaceRecommendation(
     private val fusedLocationClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(context)
     private var weatherCondition = ""
+    private var currentPlaceTypes: List<String> = emptyList()
 
     private fun createWeatherApiService(): OpenWeatherAPIService {
         val retrofit = Retrofit.Builder()
@@ -54,6 +55,16 @@ class WeatherBasedPlaceRecommendation(
             .build()
 
         return retrofit.create(OpenWeatherAPIService::class.java)
+    }
+
+     fun isRecommendationAvailable(): Boolean{
+        if (currentPlaceTypes.isNotEmpty()){
+            Log.e("WeatherBasedPlaceRecommendation", "PLACE TYPES SIZE AT IF: ${currentPlaceTypes.size}")
+            return true
+        }
+
+        Log.e("WeatherBasedPlaceRecommendation", "PLACE TYPES SIZE AT NOT IF: ${currentPlaceTypes.size}")
+        return false
     }
 
     // Function to get recommendations based on weather conditions
@@ -142,7 +153,7 @@ class WeatherBasedPlaceRecommendation(
         return when (hour) {
             in 5..11 -> "morning"    // 5 AM to 11 AM
             in 12..17 -> "afternoon"  // 12 PM to 5 PM
-            in 18..21 -> "evening"    // 6 PM to 9 PM
+            in 18..22 -> "evening"    // 6 PM to 10 PM
             else -> "night"                // 9 PM to 4 AM
         }
     }
@@ -243,8 +254,9 @@ class WeatherBasedPlaceRecommendation(
         callback: (List<Place>) -> Unit
     ) {
         // Map preferences to place types
-        val currentPlaceTypes = placeRecommendations
+        currentPlaceTypes = placeRecommendations
         Log.e("WeatherBasedPlaceRecommendation", "PLACE TYPES SIZE: ${currentPlaceTypes.size}")
+        isRecommendationAvailable()
 
         // Get the current location first
         getCurrentLocation(context) { currentLocation ->
@@ -312,19 +324,14 @@ class WeatherBasedPlaceRecommendation(
                                     val recommendedPlacesList = mutableListOf<RecommendedPlace>()
                                     var distancesCalculated = 0
                                     allFilteredPlaces.shuffle()
+                                    val distinctList = allFilteredPlaces.distinctBy { it.name }
 
-                                    allFilteredPlaces.forEach { filters ->
-                                        Log.e("WeatherBasedPlaceRecommendation", "executed 2")
-
+                                    distinctList.forEach { filters ->
                                         Log.e("WeatherBasedPlaceRecommendation", "NAME: ${filters.name}, RATING: ${filters.rating}, NUMBER OF REVIEWS: ${filters.userRatingsTotal}")
                                         checkPlaceDistance(currentLatLng, filters) { calculatedDistanceString ->
-                                            // Remove any non-numeric characters, such as "km", and convert the remaining string to a double
-                                            val distanceNumericString = calculatedDistanceString.replace("[^\\d.]".toRegex(), "") // Removes all non-digit characters except the decimal point
-
-                                            // Parse the numeric string into a double value
+                                            val distanceNumericString = calculatedDistanceString.replace("[^\\d.]".toRegex(), "")
                                             val distance = distanceNumericString.toDoubleOrNull() ?: 0.0
 
-                                            // Create RecommendedPlace instance
                                             val recommendedPlace = RecommendedPlace(
                                                 placeId = filters.id ?: "NO PLACE ID",
                                                 name = filters.name ?: "Unknown Name",
@@ -333,29 +340,32 @@ class WeatherBasedPlaceRecommendation(
                                                 rating = filters.rating ?: 0.0,
                                                 numReviews = filters.userRatingsTotal ?: 0,
                                                 distance = distance,
-                                                distanceString = calculatedDistanceString, // Keep the original distance string
-                                                photoMetadata = filters.photoMetadatas?.firstOrNull() // Take the first photo if available
+                                                distanceString = calculatedDistanceString,
+                                                photoMetadata = filters.photoMetadatas?.firstOrNull()
                                             )
 
-                                            // Add the recommended place to the list
+                                            // Add the place to the list and mark its ID as added
                                             recommendedPlacesList.add(recommendedPlace)
-
 
                                             distancesCalculated++
                                             Log.e("WeatherBasedPlaceRecommendation", "DISTANCE: $distancesCalculated / ${places.size}")
 
-                                            // Check if all distances have been calculated
-                                            if (distancesCalculated == places.size) {
-                                                val uniqueRecommendedPlacesList = recommendedPlacesList.distinctBy { it.placeId }
+                                            if (distancesCalculated == distinctList.size) {
 
-                                                if (isForCarousel){
-                                                    setupRecommendationUI(context, placesClient, uniqueRecommendedPlacesList, recyclerView, titleTextView, supportText)
+                                                Log.e("listers", "Recommended place list size: ${recommendedPlacesList.size}")
+                                                recommendedPlacesList.forEach{list->
+                                                    Log.e("listers", "NAME: ${list.name}, PLACE ID: ${list.placeId}")
+
+                                                }
+                                                if (isForCarousel) {
+                                                    setupRecommendationUI(context, placesClient, recommendedPlacesList, recyclerView, titleTextView, supportText)
                                                 } else {
-                                                    showMealRecommendationBottomSheet(context, uniqueRecommendedPlacesList, placesClient) // Show the bottom sheet with all places
+                                                    showMealRecommendationBottomSheet(context, recommendedPlacesList, placesClient)
                                                 }
                                             }
-
                                         }
+
+
                                     }
                                     callback(allFilteredPlaces)
                                 }

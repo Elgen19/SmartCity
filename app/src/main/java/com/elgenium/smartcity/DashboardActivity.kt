@@ -167,10 +167,10 @@ class DashboardActivity : AppCompatActivity() {
         setupListeners()
         fetchNearestRoad(apiServiceForRoads, apiServiceForTraffic)
         fetchLeaderboardData()
-        handleViewVisibilityBasedOnSettings()
+//        handleViewVisibilityBasedOnSettings()
         //getFilteredPlacesForRecommendationBasedOnType()
 
-
+        fetchWeatherRecommendations {  }
 
 
     }
@@ -192,7 +192,7 @@ class DashboardActivity : AppCompatActivity() {
 
         }
 
-        if (eventRecommender)  {
+        if (eventRecommender && weatherRecommendation.isRecommendationAvailable())  {
             fetchUserPreferencesAndEvents()
         } else {
             binding.recommendedEventsTitle.visibility = View.GONE
