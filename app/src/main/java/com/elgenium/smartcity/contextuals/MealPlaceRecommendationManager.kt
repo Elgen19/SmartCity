@@ -55,6 +55,7 @@ class MealPlaceRecommendationManager(context: Context) {
         "lunch" to listOf(
             "cafe",
             "coffee_shop",
+            "convenience store",
             "fast_food_restaurant",
             "restaurant",
             "meal_takeaway"
@@ -65,19 +66,23 @@ class MealPlaceRecommendationManager(context: Context) {
             "coffee_shop",
             "ice_cream_shop",
             "meal_takeaway",
+            "convenience store",
             "meal_delivery"
         ),
         "dinner" to listOf(
-           "restaurant",
-            "fast_food_restaurant",
+           "american restaurant",
+            "korean restaurant",
+            "outdoor dining",
+            "restaurant"
+            "barbecue",
+            "fast food",
             "meal_delivery",
-            "meal_takeaway"
         ),
         "late-night" to listOf(
             "bar",
             "fast_food_restaurant",
             "meal_delivery",
-            "meal_takeaway"
+            "restobar"
         )
     )
 
@@ -125,88 +130,105 @@ class MealPlaceRecommendationManager(context: Context) {
                 )
 
                 getCityName(currentLocation) { cityName ->
-                    Log.e("MealPlaceRecommendationManager", "City Name: $cityName")
-                    // Now you can use the cityName to modify your search query
-                    val query = "$cityName ${currentPlaceTypes.joinToString(" OR ")}"
+                    var completedQueries = 0
+                    var placesList = mutableListOf<Place>()
+                    Log.e(
+                        "MealPlaceRecommendationManager",
+                        "PLACE TYPE COUNT: ${currentPlaceTypes.size}"
+                    )
+                    currentPlaceTypes.forEach { placeType ->
+                        val query = "$cityName $placeType"
+                        Log.e(
+                            "MealPlaceRecommendationManager",
+                            "Search query for places: $query"
+                        )
 
-                    Log.e("MealPlaceRecommendationManager", "Search query for places: $query")
-
-                    val searchByTextRequest = SearchByTextRequest.builder(query, placeFields)
-                        .setMaxResultCount(10)
-                        .setLocationBias(locationBias)
-                        .setOpenNow(true)
-                        .setRankPreference(SearchByTextRequest.RankPreference.DISTANCE)
-                        .build()
-                    // Perform the search using the PlacesClient
-                    placesClient.searchByText(searchByTextRequest)
-                        .addOnSuccessListener { response ->
-                            val places = response.places
-                            val recommendedPlacesList = mutableListOf<RecommendedPlace>()
-                            var distancesCalculated = 0
-
-                            places.forEach { place ->
-                                checkPlaceDistance(currentLatLng, place) { calculatedDistanceString ->
-                                    // Remove any non-numeric characters, such as "km", and convert the remaining string to a double
-                                    val distanceNumericString = calculatedDistanceString.replace("[^\\d.]".toRegex(), "") // Removes all non-digit characters except the decimal point
-
-                                    // Parse the numeric string into a double value
-                                    val distance = distanceNumericString.toDoubleOrNull() ?: 0.0
-
-                                    // Create RecommendedPlace instance
-                                    val recommendedPlace = RecommendedPlace(
-                                        placeId = place.id ?: "NO PLACE ID",
-                                        name = place.name ?: "Unknown Name",
-                                        address = place.address ?: "Unknown Address",
-                                        placeTypes = place.placeTypes ?: emptyList(),
-                                        rating = place.rating ?: 0.0,
-                                        numReviews = place.userRatingsTotal ?: 0,
-                                        distance = distance,
-                                        distanceString = calculatedDistanceString, // Keep the original distance string
-                                        photoMetadata = place.photoMetadatas?.firstOrNull() // Take the first photo if available
-                                    )
-
-                                    // Add the recommended place to the list
-                                    recommendedPlacesList.add(recommendedPlace)
+                        val searchByTextRequest = SearchByTextRequest.builder(query, placeFields)
+                            .setMaxResultCount(5)
+                            .setLocationBias(locationBias)
+                            .setOpenNow(true)
+                            .setRankPreference(SearchByTextRequest.RankPreference.DISTANCE)
+                            .build()
 
 
-                                    distancesCalculated++
+                        // Perform the search using the PlacesClient
+                        placesClient.searchByText(searchByTextRequest)
+                            .addOnSuccessListener { response ->
+                                val places = response.places
+                                Log.e("MealPlaceRecommendationManager", "NUMBER OF PLACES: ${places.size}")
+                                places.forEach{ place ->
+                                    Log.e("MealPlaceRecommendationManager", "NAME OF PLACE: ${place.name}")
+                                    placesList.add(place)
+                                }
 
-                                    // Check if all distances have been calculated
-                                    if (distancesCalculated == places.size) {
-                                        Log.e("MealPlaceRecommendationManager", "places: $recommendedPlacesList")
+                                completedQueries++
 
-                                        if (isForCarousel){
-                                            setupRecommendationUI(context, placesClient, recommendedPlacesList, recyclerView, titleTextView, supportTextView)
-                                        } else {
-                                            showMealRecommendationBottomSheet(context, recommendedPlacesList, placesClient) // Show the bottom sheet with all places
+                                if (completedQueries == currentPlaceTypes.size) {
+                                    val recommendedPlacesList = mutableListOf<RecommendedPlace>()
+                                    var distancesCalculated = 0
+
+                                    placesList.forEach { place ->
+                                        checkPlaceDistance(currentLatLng, place) { calculatedDistanceString ->
+                                            // Remove any non-numeric characters, such as "km", and convert the remaining string to a double
+                                            val distanceNumericString = calculatedDistanceString.replace("[^\\d.]".toRegex(), "") // Removes all non-digit characters except the decimal point
+
+                                            // Parse the numeric string into a double value
+                                            val distance = distanceNumericString.toDoubleOrNull() ?: 0.0
+
+                                            // Create RecommendedPlace instance
+                                            val recommendedPlace = RecommendedPlace(
+                                                placeId = place.id ?: "NO PLACE ID",
+                                                name = place.name ?: "Unknown Name",
+                                                address = place.address ?: "Unknown Address",
+                                                placeTypes = place.placeTypes ?: emptyList(),
+                                                rating = place.rating ?: 0.0,
+                                                numReviews = place.userRatingsTotal ?: 0,
+                                                distance = distance,
+                                                distanceString = calculatedDistanceString, // Keep the original distance string
+                                                photoMetadata = place.photoMetadatas?.firstOrNull() // Take the first photo if available
+                                            )
+                                            // Add the recommended place to the list
+                                            recommendedPlacesList.add(recommendedPlace)
+                                            distancesCalculated++
+
+                                            // Check if all distances have been calculated
+                                            if (distancesCalculated == placesList.size) {
+                                                Log.e("MealPlaceRecommendationManager", "before: ${recommendedPlacesList.size}")
+
+                                                val allFilteredPlaces = recommendedPlacesList.distinctBy { it.placeId }
+
+                                                allFilteredPlaces.forEach{f->
+                                                    Log.e("MealPlaceRecommendationManager", "NAME: ${f.name}, ID: ${f.placeId}")
+
+                                                }
+                                                Log.e("MealPlaceRecommendationManager", "allFilteredPlaces: ${allFilteredPlaces.size}")
+
+                                                Log.e("MealPlaceRecommendationManager", "places: $recommendedPlacesList")
+
+                                                if (isForCarousel){
+                                                    setupRecommendationUI(context, placesClient, recommendedPlacesList, recyclerView, titleTextView, supportTextView)
+                                                } else {
+                                                    showMealRecommendationBottomSheet(context, recommendedPlacesList, placesClient) // Show the bottom sheet with all places
+                                                }
+                                            }
+
+                                        }
+                                        Log.e("MealPlaceRecommendationManager", "Place: ${place.name}, Address: ${place.address}, ID: ${place.id}, LatLng: ${place.latLng}, Place types: ${place.placeTypes}")
+                                        checkPlaceDistance(currentLatLng, place) { distance ->
+                                            // Handle the distance returned
+                                            Log.e("MealPlaceRecommendationManager", "Distance to ${place.name}: $distance")
                                         }
                                     }
-
+                                    callback(places) // Return the found places through the callback
                                 }
+
                             }
-
-
-
-
-
-                            // Log the number of places retrieved
-                            Log.e("MealPlaceRecommendationManager", "Number of places found: ${places.size}")
-                            places.forEach { place ->
-                                Log.e("MealPlaceRecommendationManager", "Place: ${place.name}, Address: ${place.address}, ID: ${place.id}, LatLng: ${place.latLng}, Place types: ${place.placeTypes}")
-                                checkPlaceDistance(currentLatLng, place) { distance ->
-                                    // Handle the distance returned
-                                    Log.e("MealPlaceRecommendationManager", "Distance to ${place.name}: $distance")
-                                }
+                            .addOnFailureListener { exception ->
+                                Log.e("MealPlaceRecommendationManager", "Error during text search: ${exception.message}")
+                                callback(emptyList()) // Return an empty list on error
                             }
-                            callback(places) // Return the found places through the callback
-                        }
-                        .addOnFailureListener { exception ->
-                            Log.e("MealPlaceRecommendationManager", "Error during text search: ${exception.message}")
-                            callback(emptyList()) // Return an empty list on error
-                        }
+                    }
                 }
-
-
             } ?: run {
                 Log.e("MealPlaceRecommendationManager", "Current location is not available.")
                 callback(emptyList()) // Return an empty list if the location is not available
@@ -214,7 +236,7 @@ class MealPlaceRecommendationManager(context: Context) {
         }
     }
 
-    fun setupRecommendationUI(
+    private fun setupRecommendationUI(
         context: Context,
         placesClient: PlacesClient,
         placesList: List<RecommendedPlace>,
@@ -452,8 +474,5 @@ class MealPlaceRecommendationManager(context: Context) {
 
         return Pair(title, recommendationText)
     }
-
-
-
 
 }

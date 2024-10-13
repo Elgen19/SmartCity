@@ -167,12 +167,9 @@ class DashboardActivity : AppCompatActivity() {
         setupListeners()
         fetchNearestRoad(apiServiceForRoads, apiServiceForTraffic)
         fetchLeaderboardData()
-//        handleViewVisibilityBasedOnSettings()
+        //handleViewVisibilityBasedOnSettings()
         //getFilteredPlacesForRecommendationBasedOnType()
-
-        fetchWeatherRecommendations {  }
-
-
+fetchRecommendedMealPlaces {  }
     }
 
     private fun handleViewVisibilityBasedOnSettings() {
