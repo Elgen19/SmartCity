@@ -1,13 +1,11 @@
 package com.elgenium.smartcity
 
-import PlacesClientSingleton
 import android.app.ActivityOptions
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.elgenium.smartcity.contextuals.MealPlaceRecommendationManager
 import com.elgenium.smartcity.databinding.ActivitySettingsBinding
 import com.elgenium.smartcity.singletons.ActivityNavigationUtils
 import com.elgenium.smartcity.singletons.BottomNavigationManager
@@ -19,11 +17,6 @@ import com.google.firebase.database.FirebaseDatabase
 class SettingsActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySettingsBinding
     private lateinit var userRef: DatabaseReference
-    private val placesClient by lazy { PlacesClientSingleton.getClient(this) }
-    private lateinit var mealRecommendationManager: MealPlaceRecommendationManager
-
-
-
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,7 +31,6 @@ class SettingsActivity : AppCompatActivity() {
             return
         }
         userRef = FirebaseDatabase.getInstance().getReference("Users").child(user.uid)
-        mealRecommendationManager = MealPlaceRecommendationManager(this)
 
         // sets the color of the navigation bar making it more personalized
         NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
@@ -51,50 +43,14 @@ class SettingsActivity : AppCompatActivity() {
         setupEditPreferences()
         loadUserSettings()
 
-
-
-
-        //fetchRecommendedMealPlaces()
     }
 
-    private fun fetchRecommendedMealPlaces() {
-        // Fetch meal time (e.g., breakfast, lunch, dinner)
-        val mealTime = mealRecommendationManager.getMealTime()
-
-
-        // Fetch the recommended meal places based on the current meal time
-        val recommendedPlaceTypes = mealRecommendationManager.mealTimePlaceMappings[mealTime]
-
-        if (!recommendedPlaceTypes.isNullOrEmpty()) {
-            Log.e("MealRecommendationActivity", "Recommended meal place types: $recommendedPlaceTypes")
-
-            // Perform text search for the recommended meal places using the PlacesClient
-            mealRecommendationManager.performTextSearch(placesClient, recommendedPlaceTypes, this) { places ->
-                if (places.isNotEmpty()) {
-                    // Here you can update the UI with the list of places (e.g., in a RecyclerView)
-                    Log.e("MealRecommendationActivity", "Found meal places: ${places.size}")
-
-                    // Example of logging places
-                    places.forEach { place ->
-                        Log.e("MealRecommendationActivity", "Place: ${place.name}, Address: ${place.address}")
-                    }
-
-                    // Optionally, you can pass this list of places to a RecyclerView adapter to display them in the UI
-                } else {
-                    Log.e("MealRecommendationActivity", "No places found for meal time: $mealTime")
-                }
-            }
-        } else {
-            Log.e("MealRecommendationActivity", "No recommended place types found for meal time: $mealTime")
-        }
-    }
 
 
     override fun onPause() {
         super.onPause()
         saveUserSettings()
     }
-
 
     private fun setupFeedbacks() {
         binding.feedbackCard.setOnClickListener {

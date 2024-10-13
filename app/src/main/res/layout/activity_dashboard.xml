@@ -129,15 +129,60 @@
                 </RelativeLayout>
             </androidx.cardview.widget.CardView>
 
+            <!-- Recomemndations Context -->
+
+                <LinearLayout
+                    android:id="@+id/recommendationLayout"
+                    android:layout_width="match_parent"
+                    android:layout_below="@+id/location_card_view"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:background="@color/primary_color">
+
+                    <!-- Row for Title -->
+                    <TextView
+                        android:id="@+id/textViewRecommendationTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Place Recommendations"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/secondary_color" />
+
+                    <TextView
+                        android:id="@+id/textViewRecommendationDescription"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="start"
+                        android:textColor="@color/gray2"
+                        android:layout_marginBottom="8dp"
+                        android:textSize="14sp" />
+
+
+                    <!-- RecyclerView for Meal Recommendations -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recyclerViewContextRecommendations"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingBottom="16dp"
+                        android:clipToPadding="false" />
+
+                </LinearLayout>
+
+
+
 
             <!-- Weather Updates Title TextView -->
             <TextView
                 android:id="@+id/weather_updates_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/location_card_view"
+                android:layout_below="@id/recommendationLayout"
                 android:layout_marginStart="16dp"
-                android:layout_marginTop="16dp"
                 android:text="Weather Updates"
                 android:textColor="@color/secondary_color"
                 android:textSize="18sp"

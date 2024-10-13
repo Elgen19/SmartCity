@@ -179,7 +179,7 @@ class SignInActivity : AppCompatActivity() {
 
     private fun getHighResPhotoUrl(photoUrl: String): String {
         // Append a 'sz' parameter to request a higher resolution image
-        return "$photoUrl?sz=400" // Change 400 to the desired size in pixels
+        return "$photoUrl?sz=800" // Change 400 to the desired size in pixels
     }
 
 

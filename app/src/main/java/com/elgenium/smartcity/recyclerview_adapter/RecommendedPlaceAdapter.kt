@@ -18,6 +18,7 @@ import com.google.android.libraries.places.api.net.PlacesClient
 
 class RecommendedPlaceAdapter(
     private val places: List<RecommendedPlace>,
+    private val showRating: Boolean,
     private val placesClient: PlacesClient,  // Add the PlacesClient parameter here
     private val onPlaceClick: (RecommendedPlace) -> Unit  // Lambda for click handling
 ) : RecyclerView.Adapter<RecommendedPlaceAdapter.PlaceViewHolder>() {
@@ -27,6 +28,7 @@ class RecommendedPlaceAdapter(
         val placeAddress: TextView = view.findViewById(R.id.placeAddress)
         val placeImage: ImageView = view.findViewById(R.id.placeImage) // Add ImageView here
         val placeDistance: TextView = view.findViewById(R.id.placeDistance)
+        val placeRating: TextView = view.findViewById(R.id.placeRating)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PlaceViewHolder {
@@ -53,7 +55,7 @@ class RecommendedPlaceAdapter(
             val distanceInMeters = distanceInKm * 1000
 
             // Format distance for display
-            val formattedDistance = String.format("%.2f km", distanceInKm) // Keep two decimal places
+            val formattedDistance = String.format("%.2f km away", distanceInKm) // Keep two decimal places
             holder.placeDistance.text = formattedDistance
 
             // Set text color based on the numeric distance in meters
@@ -76,6 +78,26 @@ class RecommendedPlaceAdapter(
             Glide.with(holder.placeImage.context)
                 .load(R.drawable.placeholder_viewpager_photos)
                 .into(holder.placeImage)
+        }
+
+
+        if (showRating) {
+            holder.placeRating.visibility = View.VISIBLE
+            holder.placeRating.text = String.format("%.1f star ratings", place.rating)
+
+            // Check if rating is greater than 3.1
+            val backgroundResource = if (place.rating > 3.1) {
+                R.drawable.best_pill_bg  // Use the best pill background
+            } else {
+                R.drawable.not_best_pill_bg  // Use the not-best pill background
+            }
+
+            // Set the background resource for the rating TextView
+            holder.placeRating.setBackgroundResource(backgroundResource)
+        } else {
+            // Handle case where rating is null or unavailable
+            holder.placeRating.visibility = View.GONE
+            holder.placeRating.setBackgroundResource(R.drawable.not_best_pill_bg) // Default to not-best background
         }
 
         // Set click listener for the item view

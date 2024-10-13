@@ -8,13 +8,15 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.util.Log
 import android.view.LayoutInflater
+import android.widget.TextView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.elgenium.smartcity.BuildConfig
 import com.elgenium.smartcity.PlacesActivity
 import com.elgenium.smartcity.R
-import com.elgenium.smartcity.databinding.BottomSheetTimeBasedMealRecommendationBinding
+import com.elgenium.smartcity.databinding.BottomSheetContextualRecommendationBinding
 import com.elgenium.smartcity.models.RecommendedPlace
 import com.elgenium.smartcity.network.GeocodingService
 import com.elgenium.smartcity.network.PlaceDistanceService
@@ -79,25 +81,30 @@ class MealPlaceRecommendationManager(context: Context) {
         )
     )
 
-
     // Determine meal time based on the current time of day
     fun getMealTime(): String {
         val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
         return when (currentHour) {
-            in 6..11 -> "breakfast"
-            in 12..14 -> "lunch"
+            in 5..11 -> "breakfast"
+            in 12..13 -> "lunch"
             in 14..17 -> "snack"
-            in 17..22 -> "dinner"
+            in 18..22 -> "dinner"
             else -> "late-night"
         }.also {
             Log.e("MealPlaceRecommendationManager", "Current meal time is $it")
         }
     }
 
-
-
     // Perform a text search using PlacesClient for recommended meal places
-    fun performTextSearch(placesClient: PlacesClient, currentPlaceTypes: List<String>, context: Context, callback: (List<Place>) -> Unit) {
+    fun performTextSearch(
+        placesClient: PlacesClient,
+        currentPlaceTypes: List<String>,
+        context: Context,
+        recyclerView: RecyclerView,
+        titleTextView: TextView,
+        supportTextView: TextView,
+        isForCarousel: Boolean,
+        callback: (List<Place>) -> Unit) {
         // Get the current location first
         getCurrentLocation(context) { currentLocation ->
             // Ensure current location is available
@@ -167,7 +174,12 @@ class MealPlaceRecommendationManager(context: Context) {
                                     // Check if all distances have been calculated
                                     if (distancesCalculated == places.size) {
                                         Log.e("MealPlaceRecommendationManager", "places: $recommendedPlacesList")
-                                        showMealRecommendationBottomSheet(context, recommendedPlacesList, placesClient) // Show the bottom sheet with all places
+
+                                        if (isForCarousel){
+                                            setupRecommendationUI(context, placesClient, recommendedPlacesList, recyclerView, titleTextView, supportTextView)
+                                        } else {
+                                            showMealRecommendationBottomSheet(context, recommendedPlacesList, placesClient) // Show the bottom sheet with all places
+                                        }
                                     }
 
                                 }
@@ -202,18 +214,51 @@ class MealPlaceRecommendationManager(context: Context) {
         }
     }
 
+    fun setupRecommendationUI(
+        context: Context,
+        placesClient: PlacesClient,
+        placesList: List<RecommendedPlace>,
+        recyclerView: RecyclerView,
+        titleTextView: TextView,
+        supportTextView: TextView,
+    ) {
+        // Set the title text
+        val (title, text) = getMealRecommendations()
+        titleTextView.text = title
+        supportTextView.text = text
+
+
+        val adapter = RecommendedPlaceAdapter(
+            placesList,  // Pass the list of places
+            true,
+            placesClient,  // Pass the PlacesClient
+            onPlaceClick = { place ->
+                Log.e("MealRecommendation", "Place clicked: ${place.name}")
+                val intent = Intent(context, PlacesActivity::class.java)
+
+                intent.putExtra("DASHBOARD_RECOMMENDED_PLACE_ID", place.placeId)
+                context.startActivity(intent)
+            }
+        )
+        recyclerView.adapter = adapter
+        recyclerView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+
+
+    }
+
+
     private fun showMealRecommendationBottomSheet(context: Context, placesList: List<RecommendedPlace>, placesClient: PlacesClient) {
         // Create a new instance of BottomSheetDialog
         val bottomSheetDialog = BottomSheetDialog(context)
 
         // Inflate the layout for the bottom sheet
         val bottomSheetView = LayoutInflater.from(context).inflate(
-            R.layout.bottom_sheet_time_based_meal_recommendation,
+            R.layout.bottom_sheet_contextual_recommendation,
             null
         )
 
         // Set up view binding for the bottom sheet layout
-        val binding = BottomSheetTimeBasedMealRecommendationBinding.bind(bottomSheetView)
+        val binding = BottomSheetContextualRecommendationBinding.bind(bottomSheetView)
 
         val (title, recommendation) = getMealRecommendations()
         binding.textViewRecommendationTitle.text = title
@@ -222,6 +267,7 @@ class MealPlaceRecommendationManager(context: Context) {
         // Set up the RecyclerView with the adapter
         val adapter = RecommendedPlaceAdapter(
             placesList,  // Pass the list of places
+            false,
             placesClient,  // Pass the PlacesClient
             onPlaceClick = { place ->
                 Log.e("MealRecommendation", "Place clicked: ${place.name}")
@@ -244,8 +290,6 @@ class MealPlaceRecommendationManager(context: Context) {
         // Show the bottom sheet dialog
         bottomSheetDialog.show()
     }
-
-
 
     // Get current location
     private fun getCurrentLocation(context: Context, callback: (LatLng?) -> Unit) {
@@ -280,7 +324,6 @@ class MealPlaceRecommendationManager(context: Context) {
             )
         }
     }
-
 
     private fun checkPlaceDistance(
         currentLocation: LatLng?, // User's current location
