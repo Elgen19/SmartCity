@@ -24,16 +24,6 @@
             android:background="@drawable/search_bar_bg"
             app:iconifiedByDefault="false" />
 
-        <!-- Mic Button -->
-        <ImageButton
-            android:id="@+id/micButton"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:padding="8dp"
-            android:scaleType="centerCrop"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/mic"
-            android:layout_marginStart="8dp" />
 
     </LinearLayout>
 

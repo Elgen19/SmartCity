@@ -115,6 +115,10 @@ class PreferencesActivity : AppCompatActivity() {
             putBoolean("events_notifications", true)
             putBoolean("context_recommender", true)
             putBoolean("event_recommender", true)
+            putString("map_theme", "Light")
+            putBoolean("map_landmarks", false)
+            putBoolean("map_labels", false)
+            putBoolean("map_overlay", false)
             apply()
         }
     }

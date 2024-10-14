@@ -35,6 +35,7 @@ class MainActivity : AppCompatActivity() {
     private var alertDialog: AlertDialog? = null
     private var permissionsHandled = false
     private val deniedPermissions = mutableListOf<String>()
+    private var starterScreen = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,6 +43,8 @@ class MainActivity : AppCompatActivity() {
 
         // sets the color of the navigation bar making it more personalized
         NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
+
+        retrievePreferences()
 
         // Initialize Firebase Auth
         auth = FirebaseAuth.getInstance()
@@ -205,9 +208,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun navigateToDashboard() {
-        val intent = Intent(this, SettingsActivity::class.java)
-        startActivity(intent)
-        finish()
+        if (starterScreen) {
+            val intent = Intent(this, DashboardActivity::class.java)
+            startActivity(intent)
+            finish()
+        } else {
+            val intent = Intent(this, PlacesActivity::class.java)
+            startActivity(intent)
+            finish()
+        }
     }
 
     override fun onRequestPermissionsResult(
@@ -233,6 +242,13 @@ class MainActivity : AppCompatActivity() {
                 showPermissionDeniedDialog()
             }
         }
+    }
+
+    private fun retrievePreferences() {
+        val sharedPreferences = getSharedPreferences("user_settings", MODE_PRIVATE)
+        starterScreen = sharedPreferences.getBoolean("start_screen", false)
+        // Optionally log the retrieved value
+        Log.e("Preferences", "contextRecommender at retrievePreferences: $starterScreen")
     }
 
     // Show a dialog if permissions are permanently denied (Don't ask again)

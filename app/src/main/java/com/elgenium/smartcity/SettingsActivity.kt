@@ -26,6 +26,7 @@ class SettingsActivity : AppCompatActivity() {
     private var selectedMapTheme = "Light"
     private var isFewerLandmarks = false
     private var isFewerLabels = false
+    private var isTrafficOverlayEnabled = true
 
 
 
@@ -80,6 +81,11 @@ class SettingsActivity : AppCompatActivity() {
             putString(SettingsKeys.KEY_MAP_THEME, selectedMapTheme)
             putBoolean(SettingsKeys.KEY_MAP_LANDMARKS, isFewerLandmarks)
             putBoolean(SettingsKeys.KEY_MAP_LABELS, isFewerLabels)
+            putBoolean(SettingsKeys.KEY_MAP_OVERLAY, isTrafficOverlayEnabled)
+            putBoolean(SettingsKeys.KEY_STARTER_SCREEN, binding.setDashboardAsStarterSwitch.isChecked)
+
+
+
             apply()
         }
         logSharedPreferences()
@@ -121,6 +127,10 @@ class SettingsActivity : AppCompatActivity() {
             "map_theme" to selectedMapTheme,
             "map_landmarks" to isFewerLandmarks,
             "map_labels" to isFewerLabels,
+            "map_overlay" to isTrafficOverlayEnabled,
+            "start_screen" to binding.setDashboardAsStarterSwitch.isChecked,
+
+
 
             )
 
@@ -141,11 +151,13 @@ class SettingsActivity : AppCompatActivity() {
         binding.enableEventsNotificationsSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_EVENTS_NOTIFICATIONS, false)
         binding.contextRecommenderSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_CONTEXT_RECOMMENDER, false)
         binding.eventRecommenderSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_EVENT_RECOMMENDER, false)
+        binding.setDashboardAsStarterSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_STARTER_SCREEN, false)
         selectedMapTheme = sharedPreferences.getString(SettingsKeys.KEY_MAP_THEME, "Aubergine").toString()
         isFewerLandmarks = sharedPreferences.getBoolean(SettingsKeys.KEY_MAP_LANDMARKS, false)
         isFewerLabels = sharedPreferences.getBoolean(SettingsKeys.KEY_MAP_LABELS, false)
-    }
+        isTrafficOverlayEnabled = sharedPreferences.getBoolean(SettingsKeys.KEY_MAP_OVERLAY, true)
 
+    }
 
     private fun showMapOptionsBottomSheet() {
         binding.mapDisplayOptionsLayout.setOnClickListener {
@@ -179,6 +191,8 @@ class SettingsActivity : AppCompatActivity() {
 
             bottomSheetBinding.adjustLabelsSwitch.isChecked = isFewerLabels
             bottomSheetBinding.adjustLandmarkSwitch.isChecked = isFewerLandmarks
+            bottomSheetBinding.adjustTrafficOverlaySwitch.isChecked = isTrafficOverlayEnabled
+
 
 
             // Handle interactions, such as radio button selection
@@ -208,9 +222,12 @@ class SettingsActivity : AppCompatActivity() {
                 isFewerLandmarks = isChecked
             }
 
+            bottomSheetBinding.adjustTrafficOverlaySwitch.setOnCheckedChangeListener { _, isChecked ->
+                isTrafficOverlayEnabled = isChecked
+            }
+
+
 
         }
     }
-
-
 }

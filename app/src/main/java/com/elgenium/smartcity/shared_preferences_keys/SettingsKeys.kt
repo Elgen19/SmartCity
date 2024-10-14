@@ -10,6 +10,10 @@ object SettingsKeys {
     const val KEY_MAP_THEME = "map_theme"
     const val KEY_MAP_LANDMARKS = "map_landmarks"
     const val KEY_MAP_LABELS = "map_labels"
+    const val KEY_MAP_OVERLAY = "map_overlay"
+    const val KEY_STARTER_SCREEN = "start_screen"
+
+
 
 
 
