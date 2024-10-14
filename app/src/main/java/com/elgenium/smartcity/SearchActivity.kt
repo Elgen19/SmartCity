@@ -25,6 +25,7 @@ import com.elgenium.smartcity.recyclerview_adapter.RecentSearchAdapter
 import com.elgenium.smartcity.recyclerview_adapter.TextSearchAdapter
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.singletons.PlacesNewClientSingleton
+import com.elgenium.smartcity.speech.SpeechRecognitionHelper
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.LatLng
@@ -54,6 +55,8 @@ class SearchActivity : AppCompatActivity() {
     private lateinit var recentSearchAdapter: RecentSearchAdapter
     private val recentSearches = mutableListOf<Search>()
     private var lastQuery: String? = null
+    private val RECORD_AUDIO_REQUEST_CODE = 1
+    private lateinit var speechRecognizerHelper: SpeechRecognitionHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -211,6 +214,52 @@ class SearchActivity : AppCompatActivity() {
             }
         })
 
+
+        // Check and request microphone permissions
+        initializeSpeechRecognizer()
+
+        binding.micButton.setOnClickListener {
+            speechRecognizerHelper.startListening()
+        }
+
+    }
+
+    private fun initializeSpeechRecognizer() {
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.RECORD_AUDIO),
+                RECORD_AUDIO_REQUEST_CODE
+            )
+        } else {
+            speechRecognizerHelper = SpeechRecognitionHelper(this,
+                onResult = { transcription ->
+                    // Display the transcription result in the SearchView
+                    binding.searchView.setQuery(transcription, false) // Update the SearchView with the recognized text
+                },
+                onError = { errorMessage ->
+                    // Handle the error
+                    Log.e("SearchActivity", errorMessage)
+                }
+            )
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (::speechRecognizerHelper.isInitialized) {
+            speechRecognizerHelper.stopListening()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (::speechRecognizerHelper.isInitialized) {
+            speechRecognizerHelper.stopListening()
+        }
     }
 
     private fun trackSearchAction(query: String, type: String) {
@@ -377,6 +426,7 @@ class SearchActivity : AppCompatActivity() {
                 if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
                     // Permission granted, proceed to get the location
                     getCurrentLocation()
+                    initializeSpeechRecognizer()
                 } else {
                     // Permission denied, handle accordingly
                     Log.e("SearchActivity", "Location permission denied")

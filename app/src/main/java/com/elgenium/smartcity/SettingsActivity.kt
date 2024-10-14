@@ -28,8 +28,6 @@ class SettingsActivity : AppCompatActivity() {
     private var isFewerLabels = false
     private var isTrafficOverlayEnabled = true
 
-
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
