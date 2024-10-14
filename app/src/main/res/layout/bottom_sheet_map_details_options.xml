@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="@color/primary_color"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Back Button and Title Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Back"
+                android:padding="8dp"
+                android:src="@drawable/baseline_arrow_back_24"
+                app:tint="@color/black" />
+
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:text="Map Details Options"
+                android:textColor="@color/brand_color"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvSubtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Map Themes"
+            android:textColor="@color/secondary_color"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="0dp"
+            android:layout_marginBottom="16dp">
+
+        <ImageView
+            android:id="@+id/imgMapPreview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:src="@drawable/aubergine"
+            android:contentDescription="Map Preview" />
+    </androidx.cardview.widget.CardView>
+
+        <!-- CardView for Map Theme Options -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cardViewMapThemes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/white"
+            android:layout_marginBottom="16dp"
+            app:cardElevation="4dp"
+            app:cardCornerRadius="8dp">
+
+            <RadioGroup
+                android:id="@+id/radioGroupMapThemes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp"
+                android:orientation="vertical">
+
+                <!-- Standard Theme RadioButton -->
+                <RadioButton
+                    android:id="@+id/radioStandard"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Standard"
+                    app:buttonTint="@color/radio_button_tint"
+                    android:textSize="16sp"
+                    android:textColor="@color/gray" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Light map with minimal colors"
+                    android:textSize="14sp"
+                    android:textColor="@color/sub_support_text"
+                    android:layout_marginStart="16dp" />
+
+                <!-- Retro Theme RadioButton -->
+                <RadioButton
+                    android:id="@+id/radioRetro"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Retro"
+                    app:buttonTint="@color/radio_button_tint"
+                    android:layout_marginTop="16dp"
+                    android:textSize="16sp"
+                    android:textColor="@color/gray" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Yellowish hue with a vintage feel"
+                    android:textSize="14sp"
+                    android:textColor="@color/sub_support_text"
+                    android:layout_marginStart="16dp" />
+
+                <!-- Aubergine Theme RadioButton -->
+                <RadioButton
+                    android:id="@+id/radioAubergine"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Aubergine"
+                    app:buttonTint="@color/radio_button_tint"
+                    android:layout_marginTop="16dp"
+                    android:textSize="16sp"
+                    android:textColor="@color/gray"
+                    android:checked="true" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Dark mode with blueish tones"
+                    android:textSize="14sp"
+                    android:textColor="@color/sub_support_text"
+                    android:layout_marginStart="16dp" />
+            </RadioGroup>
+        </androidx.cardview.widget.CardView>
+
+
+        <!-- Map Density Title -->
+        <TextView
+            android:id="@+id/mapDensityFeaturesTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Map Density Features"
+            android:textColor="@color/secondary_color"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            tools:ignore="TextContrastCheck" />
+
+        <!-- Card for Contextual Suggestions -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/mapDensityCard"
+            android:layout_width="match_parent"
+            android:layout_marginTop="8dp"
+            android:layout_height="wrap_content"
+            android:backgroundTint="@color/white"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp">
+
+                <LinearLayout
+                    android:id="@+id/adjustLandmarkLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentTop="true"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/adjustLandmarkLabel"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginEnd="16dp"
+                        android:layout_weight="1"
+                        android:text="Fewer landmarks"
+                        android:textColor="@color/gray"
+                        android:textSize="16sp" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/adjustLandmarkSwitch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        app:thumbTint="@color/switch_thumb_color_state_list"
+                        app:trackTint="@color/switch_track_color_state_list"
+                        tools:ignore="TouchTargetSizeCheck" />
+                </LinearLayout>
+
+                <!-- Additional text below the contextual recommendation layout -->
+                <TextView
+                    android:id="@+id/adjustLandmarkDescription"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/adjustLandmarkLayout"
+                    android:layout_marginTop="4dp"
+                    android:text="When enabled, fewer landmark markers will appear on the map."
+                    android:textColor="@color/sub_support_text"
+                    android:textSize="12sp" />
+
+
+                <LinearLayout
+                    android:layout_below="@+id/adjustLandmarkDescription"
+                    android:id="@+id/adjustLabelsLayout"
+                    android:layout_marginTop="16dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/adjustLabelsLabel"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginEnd="16dp"
+                        android:layout_weight="1"
+                        android:text="Fewer map labels"
+                        android:textColor="@color/gray"
+                        android:textSize="16sp" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/adjustLabelsSwitch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        app:thumbTint="@color/switch_thumb_color_state_list"
+                        app:trackTint="@color/switch_track_color_state_list"
+                        tools:ignore="TouchTargetSizeCheck" />
+                </LinearLayout>
+
+                <!-- Additional text below the contextual recommendation layout -->
+                <TextView
+                    android:id="@+id/adjustLabelsDescription"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/adjustLabelsLayout"
+                    android:layout_marginTop="4dp"
+                    android:text="When enabled, fewer labels on roadnames or POIs will appear on map."
+                    android:textColor="@color/sub_support_text"
+                    android:textSize="12sp" />
+
+
+
+            </RelativeLayout>
+        </androidx.cardview.widget.CardView>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

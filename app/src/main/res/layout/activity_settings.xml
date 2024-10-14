@@ -155,6 +155,40 @@
                             tools:ignore="TouchTargetSizeCheck" />
                     </RelativeLayout>
 
+                    <RelativeLayout
+                        android:id="@+id/mapDisplayOptionsLayout"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp"
+                        android:layout_marginBottom="8dp">
+
+                        <!-- TextView for Edit Profile Settings -->
+                        <TextView
+                            android:id="@+id/mapOptionsLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:text="Map display options"
+                            android:textColor="@color/gray"
+                            android:textSize="16sp"
+                            tools:ignore="RelativeOverlap" />
+
+                        <!-- Arrow Icon (>) -->
+                        <ImageView
+                            android:id="@+id/mapDisplayIcon"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:contentDescription="@string/todo"
+                            android:src="@drawable/go"
+                            app:tint="@android:color/darker_gray"
+                            tools:ignore="ImageContrastCheck" />
+                    </RelativeLayout>
+
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
@@ -227,22 +261,14 @@
                         android:layout_below="@id/contextualRecommendationLayout"
                         android:layout_marginTop="4dp"
                         android:text="Enable or disable recommendation carousel on dashboard as part of your contextual recommendations."
-                        android:textColor="@color/gray2"
+                        android:textColor="@color/sub_support_text"
                         android:textSize="12sp" />
-
-                    <View
-                        android:id="@+id/spacer1"
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_below="@id/contextualRecommendationDescription"
-                        android:layout_marginTop="16dp"
-                        android:layout_marginBottom="8dp"
-                        android:background="@color/dark_gray" />
 
 
                     <LinearLayout
-                        android:layout_below="@+id/spacer1"
+                        android:layout_below="@+id/contextualRecommendationDescription"
                         android:id="@+id/eventRecommendationsLayout"
+                        android:layout_marginTop="16dp"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal">
@@ -276,18 +302,10 @@
                         android:layout_below="@id/eventRecommendationsLayout"
                         android:layout_marginTop="4dp"
                         android:text="Enable or disable event recommendation carousel on dashboard."
-                        android:textColor="@color/gray2"
+                        android:textColor="@color/sub_support_text"
                         android:textSize="12sp" />
 
 
-                    <View
-                        android:id="@+id/spacer2"
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_below="@id/eventRecommendationDescription"
-                        android:layout_marginTop="16dp"
-                        android:layout_marginBottom="8dp"
-                        android:background="@color/dark_gray" />
 
                 </RelativeLayout>
             </androidx.cardview.widget.CardView>
