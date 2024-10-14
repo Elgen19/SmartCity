@@ -118,7 +118,9 @@ class PreferencesActivity : AppCompatActivity() {
             putString("map_theme", "Light")
             putBoolean("map_landmarks", false)
             putBoolean("map_labels", false)
-            putBoolean("map_overlay", false)
+            putBoolean("map_overlay", true)
+            putBoolean("start_screen", false)
+
             apply()
         }
     }

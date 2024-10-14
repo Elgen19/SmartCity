@@ -1,0 +1,53 @@
+<!-- res/layout/dialog_speech_result.xml -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:padding="16dp"
+    android:background="@color/primary_color"
+    android:orientation="vertical">
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/dialogTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Speak Now"
+        android:textColor="@color/secondary_color"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_gravity="start" />
+
+    <!-- Lottie Animation -->
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/lottieAnimationView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        app:lottie_cacheComposition="true"
+        app:lottie_autoPlay="true"
+        app:lottie_rawRes="@raw/mic"
+        app:lottie_loop="true" />
+
+    <!-- Display Transcription -->
+    <TextView
+        android:id="@+id/transcriptionTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/sub_support_text"
+        android:text="Say something..."
+        android:layout_marginTop="16dp"
+        android:textSize="16sp" />
+
+    <!-- Close Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/closeButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cornerRadius="8dp"
+        android:textColor="@color/primary_color"
+        app:rippleColor="@color/brand_color"
+        android:backgroundTint="@color/red"
+        android:layout_marginTop="16dp"
+        android:text="Close" />
+</LinearLayout>
