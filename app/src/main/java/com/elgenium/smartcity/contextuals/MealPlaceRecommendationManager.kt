@@ -73,7 +73,7 @@ class MealPlaceRecommendationManager(context: Context) {
            "american restaurant",
             "korean restaurant",
             "outdoor dining",
-            "restaurant"
+            "restaurant",
             "barbecue",
             "fast food",
             "meal_delivery",

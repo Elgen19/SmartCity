@@ -105,6 +105,9 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
     private var placeIDFromSearchActivity: String?= "No Place ID"
     private var savedPlace: SavedPlace = SavedPlace()
     private var placesList: MutableList<RecommendedPlace> = mutableListOf()
+    private var isFewerLabels = false
+    private var isFewerLandmarks = false
+    private var mapTheme = "Aubergine"
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -116,6 +119,8 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
 
         // Singleton object to set the color of the navigation bar making it more personalized
         NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
+
+        retrievePreferences()
 
         // Singleton object that will handle bottom navigation functionality
         BottomNavigationManager.setupBottomNavigation(this, binding.bottomNavigation, PlacesActivity::class.java)
@@ -194,6 +199,18 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         Log.e("PlacesActivity", "type 2: ${savedPlace.types}")
 
     }
+
+     private fun retrievePreferences() {
+        val sharedPreferences = getSharedPreferences("user_settings", MODE_PRIVATE)
+        mapTheme = sharedPreferences.getString("map_theme", "Aubergine").toString()
+        isFewerLabels = sharedPreferences.getBoolean("map_labels", false)
+         isFewerLandmarks = sharedPreferences.getBoolean("map_landmarks", false)
+
+         // Optionally log the retrieved value
+        Log.e("Preferences", "contextRecommender at retrievePreferences theme: $mapTheme")
+        Log.e("Preferences", "eventRecommender at retrievePreferences labels: $isFewerLabels")
+         Log.e("Preferences", "eventRecommender at retrievePreferences landmarks: $isFewerLandmarks")
+     }
 
     private fun getUserLocation(onLocationReceived: (LatLng) -> Unit) {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -382,15 +399,77 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
 
     private fun setMapStyle() {
         try {
-            // Load the JSON file from the res/raw directory
-            val inputStream = resources.openRawResource(R.raw.map_style_night)
-            val jsonString = inputStream.bufferedReader().use { it.readText() }
+            // Determine the appropriate style based on conditions
+            val styleResource = when {
+                mapTheme == "Aubergine" && !isFewerLabels && !isFewerLandmarks -> {
+                    showToast("Applying Aubergine style")
+                    R.raw.aubergine
+                }
 
-            // Apply the style to the map
-            val success = mMap.setMapStyle(MapStyleOptions(jsonString))
-            if (!success) {
-                Log.e("MapStyle", "Style parsing failed.")
+                mapTheme == "Aubergine" && isFewerLabels && isFewerLandmarks -> {
+                    showToast("Applying Aubergine style with few landmarks & labels")
+                    R.raw.aubergine_few_landmarks_label
+                }
+
+                mapTheme == "Aubergine" && isFewerLandmarks -> {
+                    showToast("Applying Aubergine style with fewer landmarks")
+                    R.raw.aubergine_few_landmarks
+                }
+                mapTheme == "Aubergine" && isFewerLabels -> {
+                    showToast("Applying Aubergine style with fewer labels")
+                    R.raw.aubergine_few_labels
+                }
+                mapTheme == "Standard" && !isFewerLabels && !isFewerLandmarks -> {
+                    showToast("Applying Standard style")
+                    R.raw.light
+                }
+
+                mapTheme == "Standard" && isFewerLabels && isFewerLandmarks -> {
+                    showToast("Applying Standard style with few landmarks & label")
+                    R.raw.light_few_landmarks_label
+                }
+                mapTheme == "Standard" && isFewerLandmarks -> {
+                    showToast("Applying Standard style with fewer landmarks")
+                    R.raw.light_few_landmarks
+                }
+                mapTheme == "Standard" && isFewerLabels -> {
+                    showToast("Applying Standard style with fewer labels")
+                    R.raw.light_few_labels
+                }
+                mapTheme == "Retro" && !isFewerLabels && !isFewerLandmarks -> {
+                    showToast("Applying Retro style")
+                    R.raw.retro
+                }
+
+                mapTheme == "Retro" && isFewerLabels && isFewerLandmarks -> {
+                    showToast("Applying Retro style with few landmarks & label")
+                    R.raw.retro_few_landmarks_label
+                }
+                mapTheme == "Retro" && isFewerLandmarks -> {
+                    showToast("Applying Retro style with fewer landmarks")
+                    R.raw.retro_few_landmarks
+                }
+                mapTheme == "Retro" && isFewerLabels -> {
+                    showToast("Applying Retro style with fewer labels")
+                    R.raw.retro_few_labels
+                }
+                else -> {
+                    showToast("No valid style found; using default.")
+                    null // Fallback in case no conditions match
+                }
             }
+
+            // Load the JSON file from the res/raw directory if a style resource is determined
+            styleResource?.let { resource ->
+                val inputStream = resources.openRawResource(resource)
+                val jsonString = inputStream.bufferedReader().use { it.readText() }
+
+                // Apply the style to the map
+                val success = mMap.setMapStyle(MapStyleOptions(jsonString))
+                if (!success) {
+                    Log.e("MapStyle", "Style parsing failed.")
+                }
+            } ?: Log.e("MapStyle", "No valid map style resource found.")
 
         } catch (e: IOException) {
             e.printStackTrace()
@@ -399,6 +478,12 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
             e.printStackTrace()
         }
     }
+
+    // Helper function to show Toast messages
+    private fun showToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
 
     private fun setupMoreButton(bottomSheetView: View, bottomSheetDialog: BottomSheetDialog) {
         val btnMore: MaterialButton = bottomSheetView.findViewById(R.id.btnMore)

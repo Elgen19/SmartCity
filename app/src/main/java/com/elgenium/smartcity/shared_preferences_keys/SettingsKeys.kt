@@ -7,5 +7,12 @@ object SettingsKeys {
     const val KEY_EVENTS_NOTIFICATIONS = "events_notifications"
     const val KEY_CONTEXT_RECOMMENDER = "context_recommender"
     const val KEY_EVENT_RECOMMENDER = "event_recommender"
+    const val KEY_MAP_THEME = "map_theme"
+    const val KEY_MAP_LANDMARKS = "map_landmarks"
+    const val KEY_MAP_LABELS = "map_labels"
+
+
+
+
 
 }

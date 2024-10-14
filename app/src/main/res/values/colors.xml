@@ -18,6 +18,7 @@
     <color name="gold">#FFD700</color>
     <color name="silver">#C0C0C0</color>
     <color name="bronze">#CD7F32</color>
+    <color name="sub_support_text">#a7a7a7</color>
     <color name="defaultRankColor">#000000</color> <!-- Default color for other ranks -->
 
 

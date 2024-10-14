@@ -68,7 +68,7 @@
                     android:id="@+id/btnStandard"
                     android:layout_width="100dp"
                     android:layout_height="100dp"
-                    android:src="@drawable/standard"
+                    android:src="@drawable/light"
                     android:scaleType="centerCrop"
                     android:contentDescription="Standard"
                     android:background="?attr/selectableItemBackgroundBorderless"

@@ -9,10 +9,12 @@ import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.elgenium.smartcity.databinding.ActivitySettingsBinding
+import com.elgenium.smartcity.databinding.BottomSheetMapDetailsOptionsBinding
 import com.elgenium.smartcity.shared_preferences_keys.SettingsKeys
 import com.elgenium.smartcity.singletons.ActivityNavigationUtils
 import com.elgenium.smartcity.singletons.BottomNavigationManager
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
@@ -21,6 +23,10 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySettingsBinding
     private lateinit var userRef: DatabaseReference
     private lateinit var sharedPreferences: SharedPreferences
+    private var selectedMapTheme = "Light"
+    private var isFewerLandmarks = false
+    private var isFewerLabels = false
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,7 +55,7 @@ class SettingsActivity : AppCompatActivity() {
         setupFAQ()
         setupEditPreferences()
         loadUserSettings()
-
+        showMapOptionsBottomSheet()
 
     }
 
@@ -71,6 +77,9 @@ class SettingsActivity : AppCompatActivity() {
             putBoolean(SettingsKeys.KEY_EVENTS_NOTIFICATIONS, binding.enableEventsNotificationsSwitch.isChecked)
             putBoolean(SettingsKeys.KEY_CONTEXT_RECOMMENDER, binding.contextRecommenderSwitch.isChecked)
             putBoolean(SettingsKeys.KEY_EVENT_RECOMMENDER, binding.eventRecommenderSwitch.isChecked)
+            putString(SettingsKeys.KEY_MAP_THEME, selectedMapTheme)
+            putBoolean(SettingsKeys.KEY_MAP_LANDMARKS, isFewerLandmarks)
+            putBoolean(SettingsKeys.KEY_MAP_LABELS, isFewerLabels)
             apply()
         }
         logSharedPreferences()
@@ -109,8 +118,11 @@ class SettingsActivity : AppCompatActivity() {
             "events_notifications" to binding.enableEventsNotificationsSwitch.isChecked,
             "context_recommender" to binding.contextRecommenderSwitch.isChecked,
             "event_recommender" to binding.eventRecommenderSwitch.isChecked,
+            "map_theme" to selectedMapTheme,
+            "map_landmarks" to isFewerLandmarks,
+            "map_labels" to isFewerLabels,
 
-        )
+            )
 
         userRef.child("settings").updateChildren(settings).addOnCompleteListener { task ->
             if (task.isSuccessful) {
@@ -129,7 +141,75 @@ class SettingsActivity : AppCompatActivity() {
         binding.enableEventsNotificationsSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_EVENTS_NOTIFICATIONS, false)
         binding.contextRecommenderSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_CONTEXT_RECOMMENDER, false)
         binding.eventRecommenderSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_EVENT_RECOMMENDER, false)
+        selectedMapTheme = sharedPreferences.getString(SettingsKeys.KEY_MAP_THEME, "Aubergine").toString()
+        isFewerLandmarks = sharedPreferences.getBoolean(SettingsKeys.KEY_MAP_LANDMARKS, false)
+        isFewerLabels = sharedPreferences.getBoolean(SettingsKeys.KEY_MAP_LABELS, false)
+    }
 
+
+    private fun showMapOptionsBottomSheet() {
+        binding.mapDisplayOptionsLayout.setOnClickListener {
+            val bottomSheetDialog = BottomSheetDialog(this)
+            val bottomSheetBinding = BottomSheetMapDetailsOptionsBinding.inflate(layoutInflater)
+
+            bottomSheetDialog.setContentView(bottomSheetBinding.root)
+            bottomSheetDialog.show()
+
+            bottomSheetBinding.btnBack.setOnClickListener {
+                bottomSheetDialog.dismiss()
+            }
+
+            when (selectedMapTheme) {
+                "Standard" -> {
+                    bottomSheetBinding.radioStandard.isChecked = true
+                    bottomSheetBinding.imgMapPreview.setImageResource(R.drawable.light)
+
+                }
+                "Retro" -> {
+                    bottomSheetBinding.radioRetro.isChecked = true
+                    bottomSheetBinding.imgMapPreview.setImageResource(R.drawable.retro)
+
+                }
+                "Aubergine" -> {
+                    bottomSheetBinding.radioAubergine.isChecked = true
+                    bottomSheetBinding.imgMapPreview.setImageResource(R.drawable.aubergine)
+
+                }
+            }
+
+            bottomSheetBinding.adjustLabelsSwitch.isChecked = isFewerLabels
+            bottomSheetBinding.adjustLandmarkSwitch.isChecked = isFewerLandmarks
+
+
+            // Handle interactions, such as radio button selection
+            val radioGroup = bottomSheetBinding.radioGroupMapThemes
+            radioGroup.setOnCheckedChangeListener { _, checkedId ->
+                when (checkedId) {
+                    R.id.radioStandard -> {
+                        bottomSheetBinding.imgMapPreview.setImageResource(R.drawable.light)
+                        selectedMapTheme = "Standard"
+                    }
+                    R.id.radioRetro -> {
+                        bottomSheetBinding.imgMapPreview.setImageResource(R.drawable.retro)
+                        selectedMapTheme = "Retro"
+                    }
+                    R.id.radioAubergine -> {
+                        bottomSheetBinding.imgMapPreview.setImageResource(R.drawable.aubergine)
+                        selectedMapTheme = "Aubergine"
+                    }
+                }
+            }
+
+            bottomSheetBinding.adjustLabelsSwitch.setOnCheckedChangeListener { _, isChecked ->
+                isFewerLabels = isChecked
+            }
+
+            bottomSheetBinding.adjustLandmarkSwitch.setOnCheckedChangeListener { _, isChecked ->
+                isFewerLandmarks = isChecked
+            }
+
+
+        }
     }
 
 
