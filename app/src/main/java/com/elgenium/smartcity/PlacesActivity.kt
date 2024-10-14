@@ -108,6 +108,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
     private var isFewerLabels = false
     private var isFewerLandmarks = false
     private var mapTheme = "Aubergine"
+    private var isTrafficOverlayEnabled = false
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -205,11 +206,14 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         mapTheme = sharedPreferences.getString("map_theme", "Aubergine").toString()
         isFewerLabels = sharedPreferences.getBoolean("map_labels", false)
          isFewerLandmarks = sharedPreferences.getBoolean("map_landmarks", false)
+         isTrafficOverlayEnabled = sharedPreferences.getBoolean("map_overlay", false)
 
          // Optionally log the retrieved value
         Log.e("Preferences", "contextRecommender at retrievePreferences theme: $mapTheme")
         Log.e("Preferences", "eventRecommender at retrievePreferences labels: $isFewerLabels")
          Log.e("Preferences", "eventRecommender at retrievePreferences landmarks: $isFewerLandmarks")
+         Log.e("Preferences", "eventRecommender at retrievePreferences traffic overlay: $isTrafficOverlayEnabled")
+
      }
 
     private fun getUserLocation(onLocationReceived: (LatLng) -> Unit) {
@@ -239,7 +243,6 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         val btnSatellite: ImageButton = bottomSheetView.findViewById(R.id.btnSatellite)
         val btnStandard: ImageButton = bottomSheetView.findViewById(R.id.btnStandard)
         val btnTerrain: ImageButton = bottomSheetView.findViewById(R.id.btnTerrain)
-        val btnTraffic: ImageButton = bottomSheetView.findViewById(R.id.btnTraffic)
 
         // Set click listeners for the buttons
         btnClose.setOnClickListener {
@@ -248,6 +251,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
 
         btnSatellite.setOnClickListener {
             mMap.mapType = GoogleMap.MAP_TYPE_SATELLITE
+            bottomSheetDialog.dismiss()
         }
 
         btnStandard.setOnClickListener {
@@ -259,15 +263,12 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
                 .tilt(0f) // Set tilt to zero for a flat view
                 .build()
             mMap.animateCamera(CameraUpdateFactory.newCameraPosition(flatCameraPosition))
+            bottomSheetDialog.dismiss()
         }
 
         btnTerrain.setOnClickListener {
             mMap.mapType = GoogleMap.MAP_TYPE_TERRAIN
-        }
-
-        btnTraffic.setOnClickListener {
-            // Toggle traffic layer visibility
-            mMap.isTrafficEnabled = !mMap.isTrafficEnabled
+            bottomSheetDialog.dismiss()
         }
 
         bottomSheetDialog.show()
@@ -470,6 +471,9 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
                     Log.e("MapStyle", "Style parsing failed.")
                 }
             } ?: Log.e("MapStyle", "No valid map style resource found.")
+
+            mMap.isTrafficEnabled = isTrafficOverlayEnabled
+
 
         } catch (e: IOException) {
             e.printStackTrace()

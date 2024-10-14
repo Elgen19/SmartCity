@@ -156,6 +156,50 @@
                     </RelativeLayout>
 
                     <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp">
+
+                        <LinearLayout
+                            android:id="@+id/dashboardStarterLayout"
+                            android:layout_marginTop="16dp"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_vertical"
+                                android:layout_marginEnd="16dp"
+                                android:layout_weight="1"
+                                android:text="Set Dashboard as starter screen"
+                                android:textColor="@color/gray"
+                                android:textSize="16sp" />
+
+                            <com.google.android.material.switchmaterial.SwitchMaterial
+                                android:id="@+id/setDashboardAsStarterSwitch"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_vertical"
+                                app:thumbTint="@color/switch_thumb_color_state_list"
+                                app:trackTint="@color/switch_track_color_state_list"
+                                tools:ignore="TouchTargetSizeCheck" />
+                        </LinearLayout>
+
+                        <!-- Additional text below the contextual recommendation layout -->
+                        <TextView
+                            android:id="@+id/dashboardStarterDescription"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_below="@id/dashboardStarterLayout"
+                            android:layout_marginTop="4dp"
+                            android:text="When disabled, sets the Places screen as the default start screen after the splash screen loads."
+                            android:textColor="@color/sub_support_text"
+                            android:textSize="12sp" />
+                    </RelativeLayout>
+
+                    <RelativeLayout
                         android:id="@+id/mapDisplayOptionsLayout"
                         android:clickable="true"
                         android:focusable="true"
