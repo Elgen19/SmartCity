@@ -2,6 +2,7 @@ package com.elgenium.smartcity
 
 import android.Manifest
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.drawable.ColorDrawable
@@ -9,6 +10,7 @@ import android.location.Location
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.ImageView
 import androidx.activity.OnBackPressedCallback
@@ -55,7 +57,6 @@ class SearchActivity : AppCompatActivity() {
     private lateinit var recentSearchAdapter: RecentSearchAdapter
     private val recentSearches = mutableListOf<Search>()
     private var lastQuery: String? = null
-    private val RECORD_AUDIO_REQUEST_CODE = 1
     private lateinit var speechRecognizerHelper: SpeechRecognitionHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -232,7 +233,7 @@ class SearchActivity : AppCompatActivity() {
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(Manifest.permission.RECORD_AUDIO),
-                RECORD_AUDIO_REQUEST_CODE
+                1
             )
         } else {
             speechRecognizerHelper = SpeechRecognitionHelper(this,
@@ -518,10 +519,12 @@ class SearchActivity : AppCompatActivity() {
                             .setMaxResultCount(15)
                             .build()
 
+                        var hasMatch = false
                         // Call PlacesClient.searchByText() to perform the search
                         placesClient.searchByText(searchByTextRequest)
                             .addOnSuccessListener { response ->
                                 val places: List<Place> = response.places
+                                hasMatch = places.isNotEmpty()
                                 textSearchAdapter.updatePlaces(places)
                                 Log.e("SearchActivity", "Found ${places.size} places.")
                                 places.forEach { place ->
@@ -533,7 +536,18 @@ class SearchActivity : AppCompatActivity() {
                             }
                             .addOnCompleteListener {
                                 // Hide loading animation
+                                Log.e("SearchActivity", "HAS MATCH VALUE: $hasMatch")
+
                                 binding.lottieAnimation.visibility = View.GONE
+                                if (!hasMatch) {
+                                    binding.lotifyAnimation.visibility = View.VISIBLE
+                                    binding.emptyDataLabel.text = "We couldn’t find any results that match your search. You might want to try using different keywords or check your spelling."
+                                    binding.emptyDataLabel.visibility = View.VISIBLE
+                                    hideKeyboard()
+                                } else {
+                                    binding.lotifyAnimation.visibility = View.GONE
+                                    binding.emptyDataLabel.visibility = View.GONE
+                                }
                             }
                     } else {
                         // No query text, show recent searches and hide text search RecyclerView
@@ -570,6 +584,13 @@ class SearchActivity : AppCompatActivity() {
         }
     }
 
+    private fun hideKeyboard() {
+        val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        // Check if any view currently has focus and hide the keyboard
+        currentFocus?.let { view ->
+            inputMethodManager.hideSoftInputFromWindow(view.windowToken, 0)
+        }
+    }
 
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1

@@ -6,8 +6,6 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Resources
-import android.graphics.Bitmap
-import android.graphics.Canvas
 import android.graphics.drawable.ColorDrawable
 import android.location.Geocoder
 import android.os.Bundle
@@ -18,7 +16,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.content.res.ResourcesCompat
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.elgenium.smartcity.databinding.ActivityDirectionsBinding
@@ -40,7 +37,6 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.MapStyleOptions
@@ -65,6 +61,7 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var mMap: GoogleMap
     private lateinit var binding: ActivityDirectionsBinding
     private val latLngList = mutableListOf<String>()
+    private val optimizedIndices = mutableListOf<Int>()
     private var polylines: MutableList<Polyline> = mutableListOf()
     private var destinationMarker: Marker? = null
     private var selectedTransportMode: String? = "Car"
@@ -74,6 +71,7 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var stepsAdapter: StepAdapter
     private var stepsList: MutableList<Step> = mutableListOf()
     private var stopList: MutableList<OriginDestinationStops> = mutableListOf()
+    private var isWaypointOptimized = false
     private val stopResultLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
@@ -98,9 +96,13 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
                 Log.e("DirectionsActivity", "STOP LIST: $stopList")
                 Log.e("DirectionsActivity", "IS UPDATED: $isUpdated")
 
+
+                retrievePreferences()
                 updateLatLngList(stopList)
                 updateCourseCard(stopList)
+
                 fetchRoute()
+
 
                 Log.e("DirectionsActivity", "LAT LNG LIST: $latLngList")
 
@@ -115,6 +117,8 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // sets the color of the navigation bar making it more personalized
         NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
+
+        retrievePreferences()
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = supportFragmentManager
@@ -135,7 +139,7 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         val destinationData = destination.split("==").takeIf { it.size == 4 }
             ?: listOf("Unknown Destination", "Unknown Address", "Unknown Latlng", "Unknown placeid")
 
-        setupBottomSheet(originAddressFormatted, originLatLngString, destinationData)
+        setupBottomSheet()
 
         binding.originName.text = getString(R.string.your_location)
         binding.originAddress.text = originAddressFormatted
@@ -207,7 +211,6 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
             )
         )
         val isStopOver = if (travelMode == "DRIVE" || travelMode == "TWO_WHEELER") true else false
-        val isSideOfRoad = if (travelMode == "DRIVE" || travelMode == "TWO_WHEELER") true else false
 
         if (latLngList.size > 2 && travelMode == "TRANSIT") {
             val snackbar = Snackbar.make(
@@ -273,10 +276,13 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
             travelMode = travelMode,
             routingPreference = routingPreference,
             computeAlternativeRoutes = false,
-            extraComputations = extraComputations
+            extraComputations = extraComputations,
+            optimizeWaypointOrder = isWaypointOptimized
         )
 
         Log.d("DirectionsActivity", "Request body: ${Gson().toJson(request)}")
+
+
 
         RetrofitClientRoutes.routesApi.getRoutes(request)
             .enqueue(object : Callback<RoutesResponse> {
@@ -297,6 +303,21 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
                         bestRoute?.let { route ->
                             val polyline = route.polyline.encodedPolyline
                             val travelAdvisories = route.travelAdvisory
+                            val optimizedIndex = route.optimizedIntermediateWaypointIndex
+
+                            // Check if optimizedIndex is not null and not empty
+                            if (optimizedIndex != null && optimizedIndex.isNotEmpty()) {
+                                optimizedIndices.clear()
+                                optimizedIndices.addAll(optimizedIndex)
+                                rearrangeLatLngList()
+                                rearrangeStopList()
+                            } else {
+                                Log.e("DirectionsActivity", "No optimized indices returned or optimizedIndex is null.")
+                            }
+
+
+
+
 
                             plotPolylineWithWaypoints(
                                 polyline,
@@ -307,36 +328,78 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
 
                             Log.e("DirectionsActivity", "ROUTE TOKEN: ${bestRoute.routeToken}")
                             Log.e("DirectionsActivity", "TRAVEL MODE: $travelMode")
+                            Log.e("DirectionsActivity", "OPTIMIZED WAYPOINT ORDER: $optimizedIndex")
 
 
-                            // Create a list to hold all steps
+                            // Assume allSteps is a mutable list of Step objects
                             val allSteps = mutableListOf<Step>()
 
-// Iterate through each leg in the route
-                            for (leg in bestRoute.legs) {
+                            // Get the total number of legs and calculate stopovers
+                            val totalLegs = bestRoute.legs.size
+
+                            // Iterate through each leg in the route
+                            for (legIndex in bestRoute.legs.indices) {
+                                val leg = bestRoute.legs[legIndex]
+                                Log.e("DirectionsActivity", "Processing leg: $leg")
+
                                 // Get the steps for the current leg
                                 val stepData = leg.steps
 
                                 // Iterate through each step and add to allSteps list
-                                for (step in stepData) {
-                                    val instruction =
-                                        step.navigationInstruction.instructions // This may contain HTML
-                                    val distance =
-                                        "${step.distanceMeters} m" // Adjust the unit as needed
+                                for (stepIndex in stepData.indices) {
+                                    val step = stepData[stepIndex]
+                                    Log.e("DirectionsActivity", "Processing step: $step")
+
+                                    val distance = "${step.distanceMeters} m"
+                                    Log.e("DirectionsActivity", "Step distance: $distance")
+
+                                    // Determine the instruction based on the leg index
+                                    val instruction = when {
+                                        legIndex == totalLegs - 1 && stepIndex == stepData.size - 1 -> {
+                                            // Last step instruction indicating arrival at the destination
+                                            "You have arrived at your destination."
+                                        }
+
+                                        legIndex < totalLegs - 1 && stepIndex == stepData.size - 1 -> {
+                                            // Last step of a stopover
+                                            val stopoverNumber =
+                                                legIndex + 1 // +1 to convert 0-indexed to 1-indexed
+                                            "You have arrived at stopover $stopoverNumber."
+                                        }
+
+                                        else -> {
+                                            // Regular instruction for other steps
+                                            step.navigationInstruction.instructions
+                                                ?: "No instruction available"
+                                        }
+                                    }
+
+                                    // Add the step with instruction and distance to the list
                                     allSteps.add(Step(instruction, distance))
+                                    Log.e("DirectionsActivity", "Step instruction: $instruction")
                                 }
                             }
+
+
+// Log total number of steps processed
+                            Log.e("DirectionsActivity", "Total steps processed: ${allSteps.size}")
 
 // Now, allSteps contains steps from all legs of the route
                             stepsList.clear()
                             stepsList.addAll(allSteps)
 
-// Initialize the adapter with the stepsList and set it to the RecyclerView
+// Log if the stepsList is updated successfully
+                            Log.e(
+                                "DirectionsActivity",
+                                "Steps list updated with ${stepsList.size} steps"
+                            )
+
+                            // Initialize the adapter with the stepsList and set it to the RecyclerView
                             stepsAdapter = StepAdapter(stepsList)
                             binding.stepsRecyclerview.layoutManager =
                                 LinearLayoutManager(this@DirectionsActivity)
 
-// Create a custom drawable with your desired color
+                            // Create a custom drawable with your desired color
                             val dividerDrawable = ColorDrawable(
                                 ContextCompat.getColor(
                                     this@DirectionsActivity,
@@ -344,14 +407,14 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
                                 )
                             )
 
-// Create the DividerItemDecoration and set the drawable
+                            // Create the DividerItemDecoration and set the drawable
                             val dividerItemDecoration = DividerItemDecoration(
                                 binding.stepsRecyclerview.context,
                                 LinearLayoutManager.VERTICAL
                             )
                             dividerItemDecoration.setDrawable(dividerDrawable)
 
-// Add the custom divider to the RecyclerView
+                            // Add the custom divider to the RecyclerView
                             binding.stepsRecyclerview.addItemDecoration(dividerItemDecoration)
                             binding.stepsRecyclerview.adapter = stepsAdapter
 
@@ -614,22 +677,112 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
             })
     }
 
-    private fun getFormattedDuration(durationString: String): String {
-        val durationInSeconds =
-            durationString.replace("s", "").toInt() // Remove 's' and convert to integer
+    private fun retrievePreferences() {
+        val sharedPreferences = getSharedPreferences("user_settings", MODE_PRIVATE)
+        isWaypointOptimized = sharedPreferences.getBoolean("optimized_waypoints", false)
 
-        val hours = durationInSeconds / 3600
-        val minutes = (durationInSeconds % 3600) / 60
-        val seconds = durationInSeconds % 60
+        Log.e("Preferences", "eventRecommender at retrievePreferences traffic overlay: $isWaypointOptimized")
 
-        // Format the output dynamically, excluding zero values
-        return buildString {
-            if (hours > 0) append("$hours h ")
-            if (minutes > 0) append("$minutes min ")
-            if (seconds > 0 || (hours == 0 && minutes == 0)) append("$seconds s")
-        }.trim()
     }
 
+    private fun rearrangeStopList() {
+        // Log the original stopList for debugging
+        Log.e("DirectionsActivity", "Original stopList: $stopList")
+        Log.e("DirectionsActivity", "Optimized indices: $optimizedIndices")
+
+        // Ensure there are at least 2 optimized indices to work with
+        if (optimizedIndices.size >= 2) {
+            // Create a new list to hold the rearranged stops
+            val rearrangedStops = mutableListOf<OriginDestinationStops>()
+
+            // Check if stopList has more than 2 elements to have a first and last
+            if (stopList.size > 3) {
+                // Extract the first stop, the middle stops, and the last stop
+                val firstStop = stopList.first()
+                val lastStop = stopList.last()
+                val middleStops = stopList.subList(1, stopList.size - 1).toMutableList() // Get stops between first and last
+
+                // Log extracted middle stops
+                Log.e("DirectionsActivity", "Middle stops before rearrangement: $middleStops")
+
+                // Rearrange based on optimized indices
+                val rearrangedMiddleStops = mutableListOf<OriginDestinationStops>()
+
+                for (index in optimizedIndices) {
+                    if (index in middleStops.indices) {
+                        rearrangedMiddleStops.add(middleStops[index])
+                    }
+                }
+
+                // Log the rearranged middle stops
+                Log.e("DirectionsActivity", "Middle stops after rearrangement: $rearrangedMiddleStops")
+
+                // Rebuild the stopList
+                rearrangedStops.add(firstStop) // Add the first stop
+                rearrangedStops.addAll(rearrangedMiddleStops) // Add the rearranged middle stops
+                rearrangedStops.add(lastStop) // Add the last stop
+            } else {
+                // If there are not enough stops to rearrange
+                rearrangedStops.addAll(stopList)
+                Log.e("DirectionsActivity", "Not enough stops to rearrange, keeping original: $stopList")
+            }
+
+            // Clear the original list and add rearranged items
+            stopList.clear()
+            stopList.addAll(rearrangedStops)
+
+            // Log the rearranged stopList for debugging
+            Log.e("DirectionsActivity", "Rearranged stopList: $stopList")
+        } else {
+            Log.e("DirectionsActivity", "No rearrangement needed for stopList.")
+        }
+    }
+
+    private fun rearrangeLatLngList() {
+        // Log the original latLngList for debugging
+        Log.e("DirectionsActivity", "Original latLngList: $latLngList")
+        Log.e("DirectionsActivity", "Optimized indices: $optimizedIndices")
+
+        // Check if there are enough latLng items to rearrange
+        if (latLngList.size >= 4 ) {
+            // Create a new list to hold the rearranged latLngs
+            val rearrangedLatLngs = mutableListOf<String>()
+
+            // Extract the first and last latLngs
+            val firstLatLng = latLngList.first()
+            val lastLatLng = latLngList.last()
+            val middleLatLngs = latLngList.subList(1, latLngList.size - 1).toMutableList() // Get latLngs between first and last
+
+            // Log extracted middle latLngs
+            Log.e("DirectionsActivity", "Middle latLngs before rearrangement: $middleLatLngs")
+
+            // Rearrange based on optimized indices
+            val rearrangedMiddleLatLngs = mutableListOf<String>()
+
+            for (index in optimizedIndices) {
+                if (index in middleLatLngs.indices) {
+                    rearrangedMiddleLatLngs.add(middleLatLngs[index])
+                }
+            }
+
+            // Log the rearranged middle latLngs
+            Log.e("DirectionsActivity", "Middle latLngs after rearrangement: $rearrangedMiddleLatLngs")
+
+            // Rebuild the latLngList
+            rearrangedLatLngs.add(firstLatLng) // Add the first latLng
+            rearrangedLatLngs.addAll(rearrangedMiddleLatLngs) // Add the rearranged middle latLngs
+            rearrangedLatLngs.add(lastLatLng) // Add the last latLng
+
+            // Clear the original list and add rearranged items
+            latLngList.clear()
+            latLngList.addAll(rearrangedLatLngs)
+
+            // Log the rearranged latLngList for debugging
+            Log.e("DirectionsActivity", "Rearranged latLngList: $latLngList")
+        } else {
+            Log.e("DirectionsActivity", "No rearrangement needed for latLngList.")
+        }
+    }
 
     private fun plotPolylineWithWaypoints(
         encodedPolyline: String,
@@ -651,6 +804,12 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         // Now call the original plotPolyline method with the LatLngs
         plotPolyline(encodedPolyline, travelAdvisory, travelMode, stopoverLatLngs)
 
+        Log.e("DirectionsActivity", "STOPLIST AT PLOT: $stopList")
+
+
+        val intermediateStops = stopList.subList(1, stopList.size - 1)
+        Log.e("DirectionsActivity", "SUBSTRINGED WAYPOINTS: $intermediateStops")
+        var placeName = ""
         // Add new stopover markers with custom icon (flag) and address as title
         intermediates.forEach { waypoint ->
             val latLng = com.google.android.gms.maps.model.LatLng(
@@ -658,15 +817,26 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
                 waypoint.location.latLng.longitude
             )
 
-            // Fetch the address for this waypoint
-            val address = getAddressFromLatLng("${latLng.latitude},${latLng.longitude}")
+            for (stops in intermediateStops) {
+                val stopsLatLng = stops.latlng.split(",")
+                // Ensure correct parsing with error handling
+                val latitude = stopsLatLng[0].toDoubleOrNull() ?: 0.0
+                val longitude = stopsLatLng[1].toDoubleOrNull() ?: 0.0
+
+                val stopsLatLngDeterminator = com.google.android.gms.maps.model.LatLng(latitude, longitude)
+
+                if (latLng == stopsLatLngDeterminator) {
+                    placeName = stops.name
+                    break // Break the loop when the condition is met
+                }
+            }
 
 
             // Add marker with the fetched address as the title
             val marker = mMap.addMarker(
                 MarkerOptions()
                     .position(latLng)
-                    .title(address) // Use the address for the title
+                    .title(placeName) // Use the address for the title
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW))
             )
             if (marker != null) {
@@ -728,7 +898,7 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         destinationMarker?.remove()
         val destinationLatLng = polylinePoints.last()
         destinationMarker =
-            mMap.addMarker(MarkerOptions().position(destinationLatLng).title("Destination"))
+            mMap.addMarker(MarkerOptions().position(destinationLatLng).title("Destination:\n${stopList.last().name}"))
 
         // Create bounds to focus the camera on the polyline and markers
         val builder = LatLngBounds.Builder().apply {
@@ -746,25 +916,6 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Move the camera to fit the polyline bounds
         mMap.animateCamera(cameraUpdate)
-    }
-
-    private fun getScaledIcon(drawableResId: Int, width: Int, height: Int): BitmapDescriptor {
-        // Convert the drawable resource into a Bitmap
-        val drawable = ResourcesCompat.getDrawable(resources, drawableResId, null)
-        val bitmap = Bitmap.createBitmap(
-            drawable!!.intrinsicWidth,
-            drawable.intrinsicHeight,
-            Bitmap.Config.ARGB_8888
-        )
-        val canvas = Canvas(bitmap)
-        drawable.setBounds(0, 0, canvas.width, canvas.height)
-        drawable.draw(canvas)
-
-        // Scale the bitmap to the desired size
-        val scaledBitmap = Bitmap.createScaledBitmap(bitmap, width, height, false)
-
-        // Return the scaled bitmap as a BitmapDescriptor
-        return BitmapDescriptorFactory.fromBitmap(scaledBitmap)
     }
 
     // Helper function to clear previous stopover markers
@@ -912,11 +1063,7 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-    private fun setupBottomSheet(
-        originAddress: String,
-        originLatLng: String,
-        destinationData: List<String>
-    ) {
+    private fun setupBottomSheet() {
         // Find the bottom sheet view from the activity layout using binding
         val bottomSheet = binding.bottomsheet
 
