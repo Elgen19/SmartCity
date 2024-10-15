@@ -2,58 +2,116 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:padding="16dp"
     android:background="@color/white">
 
-    <!-- Row: Back Button and Title -->
-    <LinearLayout
-        android:id="@+id/topComponents"
+    <!-- NestedScrollView for scrollable content -->
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_alignParentTop="true"
-        android:layout_marginBottom="8dp">
+        android:layout_height="match_parent"
+        android:layout_above="@+id/buttonContainer"
+        android:fillViewport="true">
 
-        <ImageButton
-            android:id="@+id/backButton"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:src="@drawable/baseline_arrow_back_24"
-            android:background="?attr/selectableItemBackgroundBorderless" />
+            android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/titleTextView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Edit Course"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:textColor="@color/brand_color"
-            android:layout_marginStart="16dp"
-            android:layout_gravity="center_vertical" />
-    </LinearLayout>
+            <!-- Row: Back Button and Title -->
+            <LinearLayout
+                android:id="@+id/topComponents"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
 
-    <!-- Supporting Text -->
-    <TextView
-        android:id="@+id/supportingTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Manage and edit your stops for the course here."
-        android:textColor="@color/gray"
-        android:layout_below="@id/topComponents"
-        android:layout_marginBottom="16dp" />
+                <ImageButton
+                    android:id="@+id/backButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/baseline_arrow_back_24"
+                    android:background="?attr/selectableItemBackgroundBorderless" />
 
-    <!-- RecyclerView: Stops List -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/stopsRecyclerView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:layout_below="@id/supportingTextView"
-        android:layout_marginBottom="16dp" />
+                <TextView
+                    android:id="@+id/titleTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Edit Course"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/brand_color"
+                    android:layout_marginStart="16dp"
+                    android:layout_gravity="center_vertical" />
+            </LinearLayout>
 
-    <!-- Button Container -->
+            <!-- Supporting Text -->
+            <TextView
+                android:id="@+id/supportingTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Manage and edit your stops for the course here."
+                android:textColor="@color/gray"
+                android:layout_marginBottom="16dp" />
+
+            <!-- RecyclerView: Stops List -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/stopsRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Optimize Waypoints Section -->
+            <RelativeLayout
+                android:id="@+id/optimizeWaypointsLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp">
+
+                <LinearLayout
+                    android:id="@+id/optimizeLayout"
+                    android:layout_marginTop="16dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginEnd="16dp"
+                        android:layout_weight="1"
+                        android:text="Optimized waypoints"
+                        android:textColor="@color/gray"
+                        android:textSize="16sp" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/setOptimizedWaypointSwitch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        app:thumbTint="@color/switch_thumb_color_state_list"
+                        app:trackTint="@color/switch_track_color_state_list"
+                        tools:ignore="TouchTargetSizeCheck" />
+                </LinearLayout>
+
+                <!-- Additional text below the contextual recommendation layout -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/optimizeLayout"
+                    android:layout_marginTop="4dp"
+                    android:text="Enabling this feature optimizes the stopover waypoints in a more efficient order taking time traveled and distance as a factor. "
+                    android:textColor="@color/sub_support_text"
+                    android:textSize="12sp" />
+            </RelativeLayout>
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Button Container - fixed at the bottom -->
     <LinearLayout
+        android:id="@+id/buttonContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"

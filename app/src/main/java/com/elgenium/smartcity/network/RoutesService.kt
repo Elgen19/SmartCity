@@ -34,8 +34,8 @@ interface RoutesService {
                 "routes.routeToken," +
                 "routes.legs.steps.transitDetails," +
                 "routes.legs.steps.travelMode," +
-                "routes.routeLabels"
-
+                "routes.routeLabels," +
+                "routes.optimizedIntermediateWaypointIndex"
 
 
 

@@ -17,7 +17,8 @@ data class Routes(
     val polyline: Polyline,
     val description: String?,
     val travelAdvisory: TravelAdvisory? = null,
-    val routeToken: String
+    val routeToken: String,
+    val optimizedIntermediateWaypointIndex: List<Int> = emptyList()
 ) : Parcelable
 
 @Parcelize

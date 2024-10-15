@@ -11,7 +11,9 @@ data class RoutesRequest(
     val routeModifiers: RouteModifiers = RouteModifiers(),
     val languageCode: String = "en-US",
     val units: String = "IMPERIAL",
-    val extraComputations: List<ExtraComputation>? = null)
+    val extraComputations: List<ExtraComputation>? = null,
+    val optimizeWaypointOrder: Boolean = false
+)
 
 data class Waypoint(
     val location: LatLng, // Directly using LatLng here
