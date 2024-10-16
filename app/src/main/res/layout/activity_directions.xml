@@ -211,6 +211,9 @@
                                android:layout_width="wrap_content"
                                android:layout_height="wrap_content"
                                android:text="Edit Course"
+                               android:layout_marginTop="8dp"
+                               android:paddingStart="0dp"
+                               android:paddingEnd="0dp"
                                app:strokeWidth="0dp"
                                android:textColor="@color/gray"
                                app:backgroundTint="@color/mod_google_transparent"
@@ -678,6 +681,20 @@
                                        android:text="1.4 km" />
                                </RelativeLayout>
                            </LinearLayout>
+
+                           <com.google.android.material.button.MaterialButton
+                               android:id="@+id/btnPickAlternateRoute"
+                               android:layout_width="wrap_content"
+                               android:layout_height="wrap_content"
+                               android:layout_marginTop="8dp"
+                               android:paddingStart="0dp"
+                               android:paddingEnd="0dp"
+                               android:text="Pick an alternate route"
+                               app:strokeWidth="0dp"
+                               android:textColor="@color/gray"
+                               app:backgroundTint="@color/mod_google_transparent"
+                               android:layout_gravity="end"
+                               android:theme="@style/Widget.MaterialComponents.Button.OutlinedButton" />
                        </LinearLayout>
                    </androidx.cardview.widget.CardView>
 

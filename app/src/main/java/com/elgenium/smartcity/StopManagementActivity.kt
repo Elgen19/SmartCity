@@ -16,7 +16,6 @@ import com.elgenium.smartcity.network_reponses.PlusCodeResponse
 import com.elgenium.smartcity.recyclerview_adapter.StopManagementAdapter
 import com.elgenium.smartcity.recyclerview_helpers.StopTouchHelperCallback
 import com.elgenium.smartcity.shared_preferences_keys.SettingsKeys
-import com.elgenium.smartcity.singletons.ActivityNavigationUtils
 import com.elgenium.smartcity.singletons.PlusCodesSingleton
 import retrofit2.Call
 import retrofit2.Callback
@@ -113,9 +112,7 @@ class StopManagementActivity : AppCompatActivity() {
             getPlaceResultLauncher.launch(intent)
         }
 
-        binding.backButton.setOnClickListener {
-            ActivityNavigationUtils.navigateToActivity(this, DirectionsActivity::class.java,true)
-        }
+
 
         binding.saveButton.setOnClickListener {
             // Convert the stopList into an ArrayList of OriginDestinationStops

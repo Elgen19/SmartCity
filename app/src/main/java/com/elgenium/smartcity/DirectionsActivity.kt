@@ -19,11 +19,14 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.elgenium.smartcity.databinding.ActivityDirectionsBinding
+import com.elgenium.smartcity.databinding.BottomSheetAlternateRoutePickerBinding
 import com.elgenium.smartcity.models.OriginDestinationStops
 import com.elgenium.smartcity.models.Step
 import com.elgenium.smartcity.network_reponses.RouteTravelMode
+import com.elgenium.smartcity.network_reponses.Routes
 import com.elgenium.smartcity.network_reponses.RoutesResponse
 import com.elgenium.smartcity.network_reponses.TravelAdvisory
+import com.elgenium.smartcity.recyclerview_adapter.RoutePickerAdapter
 import com.elgenium.smartcity.recyclerview_adapter.StepAdapter
 import com.elgenium.smartcity.routes_network_request.Coordinates
 import com.elgenium.smartcity.routes_network_request.ExtraComputation
@@ -45,6 +48,7 @@ import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.Polyline
 import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
 import com.google.gson.Gson
@@ -72,6 +76,7 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
     private var stepsList: MutableList<Step> = mutableListOf()
     private var stopList: MutableList<OriginDestinationStops> = mutableListOf()
     private var isWaypointOptimized = false
+    private var routeIndex = 0
     private val stopResultLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
@@ -100,6 +105,7 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
                 retrievePreferences()
                 updateLatLngList(stopList)
                 updateCourseCard(stopList)
+                routeIndex = 0
 
                 fetchRoute()
 
@@ -187,6 +193,47 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         Log.e("DirectionsActivity", "STOPLIST AT ON CREATE: $stopList")
     }
 
+    private fun showRoutePickerBottomSheet(routes: List<Routes>?) {
+        val bottomSheetDialog = BottomSheetDialog(this)
+
+        // Use View Binding to inflate the layout
+        val binding = BottomSheetAlternateRoutePickerBinding.inflate(layoutInflater)
+
+        binding.btnCancel.setOnClickListener { bottomSheetDialog.dismiss() }
+
+        // Setup RecyclerView using the binding reference
+        binding.rvBottomSheetRoutes.layoutManager = LinearLayoutManager(this)
+
+        // Add Divider Item Decoration to the RecyclerView
+        val dividerDrawableForRecentSearches = ColorDrawable(ContextCompat.getColor(this, R.color.dark_gray))
+
+        val dividerItemDecorationForRecentSearches = DividerItemDecoration(
+            binding.rvBottomSheetRoutes.context,
+            (binding.rvBottomSheetRoutes.layoutManager as LinearLayoutManager).orientation
+        )
+        dividerItemDecorationForRecentSearches.setDrawable(dividerDrawableForRecentSearches)
+        binding.rvBottomSheetRoutes.addItemDecoration(dividerItemDecorationForRecentSearches)
+
+        val adapter = routes?.let {
+            RoutePickerAdapter(it) { selectedRoute, position ->
+                // Handle the selected route when clicked
+                bottomSheetDialog.dismiss()
+                Log.e("DirectionsActivity", "Selected Route: $selectedRoute at index: $position")
+                routeIndex = position
+                fetchRoute()
+            }
+        }
+
+        binding.rvBottomSheetRoutes.adapter = adapter
+
+        // Set the content view for the bottom sheet using the binding's root view
+        bottomSheetDialog.setContentView(binding.root)
+
+        // Show the bottom sheet
+        bottomSheetDialog.show()
+    }
+
+
     private fun fetchRoute() {
         if (latLngList.size < 2) {
             Log.e("DirectionsActivity", "Insufficient data to fetch route.")
@@ -262,7 +309,6 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         Log.e("DirectionsActivity", "TRAVEL MODE: $travelMode")
 
-        val computeAlternatives = travelMode == "TRANSIT"
         val routingPreference =
             if (travelMode == "DRIVE" || travelMode == "TWO_WHEELER") "TRAFFIC_AWARE" else null
         val extraComputations = if (travelMode == "DRIVE" || travelMode == "TWO_WHEELER") listOf(
@@ -275,7 +321,7 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
             intermediates = intermediates, // Use intermediates here
             travelMode = travelMode,
             routingPreference = routingPreference,
-            computeAlternativeRoutes = false,
+            computeAlternativeRoutes = true,
             extraComputations = extraComputations,
             optimizeWaypointOrder = isWaypointOptimized
         )
@@ -293,11 +339,12 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
                     if (response.isSuccessful) {
                         Log.e("DirectionsActivity", "RESPONSE BODY IF: ${response.body()}}")
                         Log.e("DirectionsActivity", "RESPONSE BODY IF: ${response.raw()}}")
+                        Log.e("DirectionsActivity", "ROUTE INDEX: $routeIndex")
+                        Log.e("DirectionsActivity", "ROUTE SIZE: ${response.body()?.routes?.size}")
 
 
-                        // Select the best route based on distance or duration
-                        val bestRoute = response.body()?.routes?.firstOrNull()
 
+                        val bestRoute = response.body()?.routes?.get(routeIndex)
 
 
                         bestRoute?.let { route ->
@@ -647,6 +694,10 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
                                 startActivity(intent)
                             }
 
+                            binding.btnPickAlternateRoute.setOnClickListener {
+                                showRoutePickerBottomSheet(response.body()!!.routes)
+                            }
+
                             binding.simulateButton.setOnClickListener {
                                 val intent = Intent(
                                     this@DirectionsActivity,
@@ -810,6 +861,7 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         val intermediateStops = stopList.subList(1, stopList.size - 1)
         Log.e("DirectionsActivity", "SUBSTRINGED WAYPOINTS: $intermediateStops")
         var placeName = ""
+        var stopCounter = 1
         // Add new stopover markers with custom icon (flag) and address as title
         intermediates.forEach { waypoint ->
             val latLng = com.google.android.gms.maps.model.LatLng(
@@ -836,11 +888,13 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
             val marker = mMap.addMarker(
                 MarkerOptions()
                     .position(latLng)
-                    .title(placeName) // Use the address for the title
+                    .title("Stop over $stopCounter")
+                    .snippet(placeName)
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW))
             )
             if (marker != null) {
                 stopoverMarkers.add(marker)
+                stopCounter++
             } // Add the marker to the list
         }
     }
@@ -898,7 +952,7 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         destinationMarker?.remove()
         val destinationLatLng = polylinePoints.last()
         destinationMarker =
-            mMap.addMarker(MarkerOptions().position(destinationLatLng).title(stopList.last().name))
+            mMap.addMarker(MarkerOptions().position(destinationLatLng).title("Destination").snippet(stopList.last().name))
 
         // Create bounds to focus the camera on the polyline and markers
         val builder = LatLngBounds.Builder().apply {
@@ -1112,6 +1166,8 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
             }
             stopResultLauncher.launch(intent)
         }
+
+
 
         binding.closeButton.setOnClickListener {
             // Dismiss the bottom sheet

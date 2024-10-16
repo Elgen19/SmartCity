@@ -1,0 +1,54 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@color/white">
+
+    <!-- Title TextView -->
+    <TextView
+        android:id="@+id/tvBottomSheetTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Pick an alternate route"
+        android:textAppearance="@style/TextAppearance.AppCompat.Large"
+        android:layout_gravity="start"
+        android:textStyle="bold"
+        android:textColor="@color/brand_color" />
+
+    <!-- Supporting Text TextView -->
+    <TextView
+        android:id="@+id/tvBottomSheetSupportingText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Choose an alternative route from the available options below."
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        android:layout_gravity="start"
+        android:textColor="@color/dark_gray"
+        android:paddingBottom="16dp" />
+
+    <!-- RecyclerView -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvBottomSheetRoutes"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="vertical" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnCancel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        app:rippleColor="@color/gray"
+        android:text="Cancel"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        app:cornerRadius="8dp"
+        app:strokeWidth="0dp"
+        android:textColor="@color/primary_color"
+        app:backgroundTint="@color/red"
+        android:layout_gravity="end"
+        android:theme="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+</LinearLayout>
