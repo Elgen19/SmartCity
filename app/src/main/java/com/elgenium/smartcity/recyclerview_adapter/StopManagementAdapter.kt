@@ -39,7 +39,7 @@ class StopManagementAdapter(
             val iconRes = when (position) {
                 0 -> R.drawable.origin
                 stopsList.size - 1 -> R.drawable.end
-                else -> R.drawable.stops
+                else -> R.drawable.stop
             }
             imageView.setImageResource(iconRes)
         }
