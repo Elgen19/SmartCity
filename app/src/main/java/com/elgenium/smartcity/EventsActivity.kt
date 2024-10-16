@@ -25,7 +25,6 @@ import com.elgenium.smartcity.models.Event
 import com.elgenium.smartcity.network.PlaceDistanceService
 import com.elgenium.smartcity.recyclerview_adapter.EventAdapter
 import com.elgenium.smartcity.recyclerview_adapter.MyEventsAdapter
-import com.elgenium.smartcity.singletons.ActivityNavigationUtils
 import com.elgenium.smartcity.singletons.BottomNavigationManager
 import com.elgenium.smartcity.singletons.LayoutStateManager
 import com.elgenium.smartcity.viewpager_adapter.EventImageAdapter
@@ -280,7 +279,7 @@ class EventsActivity : AppCompatActivity(), OnMapReadyCallback {
                 bottomSheetDialog.dismiss()
             }
 
-            setupGetDirectionsButton(bottomSheetBinding, bottomSheetDialog)
+            setupGetDirectionsButton(event, bottomSheetBinding, bottomSheetDialog)
             setupSaveButton(bottomSheetBinding, bottomSheetDialog, event)
             setupShareButton(bottomSheetBinding, bottomSheetDialog)
         }
@@ -288,12 +287,22 @@ class EventsActivity : AppCompatActivity(), OnMapReadyCallback {
         bottomSheetDialog.show()
     }
 
-    private fun setupGetDirectionsButton(bottomSheetBinding: BottomSheetEventDetailsBinding, bottomSheetDialog: BottomSheetDialog) {
+    private fun setupGetDirectionsButton(event: Event, bottomSheetBinding: BottomSheetEventDetailsBinding, bottomSheetDialog: BottomSheetDialog) {
 
         bottomSheetBinding.btnGetDirections.setOnClickListener{
             bottomSheetDialog.dismiss()
 
-            ActivityNavigationUtils.navigateToActivity(this, DirectionsActivity::class.java, false)
+            Log.e("EventsActivity", "Start Navigate button clicked")
+            val intent =
+                Intent(this@EventsActivity, StartNavigationsActivity::class.java)
+            intent.putExtra("TRAVEL_MODE", "DRIVE")
+            intent.putExtra("IS_SIMULATED", false)
+            intent.putExtra("ROUTE_TOKEN", "NO_ROUTE_TOKEN")
+            intent.putStringArrayListExtra(
+                "PLACE_IDS",
+                arrayListOf(event.placeId)
+            )
+            startActivity(intent)
         }
     }
 
@@ -361,6 +370,10 @@ class EventsActivity : AppCompatActivity(), OnMapReadyCallback {
                                     "endedDateTime" to event.endedDateTime,
                                     "eventDescription" to event.eventDescription,
                                     "placeLatLng" to event.placeLatLng,
+                                    "placeId" to event.placeId,
+                                    "submittedBy" to event.submittedBy,
+                                    "submittedAt" to event.submittedAt,
+                                    "userId" to event.userId,
                                     "images" to event.images, // Save image URLs directly
                                     "checker" to event.checker
                                 )

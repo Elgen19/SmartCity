@@ -25,22 +25,16 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import com.bumptech.glide.Glide
 import com.elgenium.smartcity.databinding.ActivityReportEventBinding
-import com.elgenium.smartcity.databinding.BottomSheetEventDetailsBinding
 import com.elgenium.smartcity.models.Event
 import com.elgenium.smartcity.models.ReportImages
-import com.elgenium.smartcity.network.PlaceDistanceService
 import com.elgenium.smartcity.recyclerview_adapter.ImageAdapter
-import com.elgenium.smartcity.singletons.ActivityNavigationUtils
 import com.elgenium.smartcity.singletons.LayoutStateManager
-import com.elgenium.smartcity.viewpager_adapter.EventImageAdapter
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
-import com.google.android.gms.maps.model.LatLng
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
@@ -51,17 +45,11 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
-import retrofit2.Retrofit
-import retrofit2.await
-import retrofit2.converter.gson.GsonConverterFactory
 import java.io.File
 import java.io.IOException
-import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -679,13 +667,8 @@ class ReportEventActivity : AppCompatActivity() {
 
         binding.btnSubmit.setOnClickListener {
             // Collect values
-            val location = binding.tvLocation.text.toString().trim()
-            val additionalInfo = if (binding.tvAdditionalInfo.visibility == View.VISIBLE) {
-                binding.tvAdditionalInfo.text.toString().trim()
-            } else {
-                ""
-            }
-
+            val location = placeName
+            val additionalInfo = placeAddress
             val othersDetail = binding.tvOthers.text.toString()
             val eventName = binding.etEventName.text.toString().trim()
             val startedDateTime = binding.btnDateTimeStarted.text.toString().trim()
