@@ -96,21 +96,48 @@
         android:layout_below="@id/openStatusDistanceRow"
         android:layout_marginTop="16dp" />
 
-    <!-- Get Directions Button -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnGetDirections"
+    <LinearLayout
+        android:id="@+id/directionsLayout"
+        android:layout_below="@+id/viewPager"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:layout_marginTop="16dp"
-        android:text="Get Directions"
-        android:layout_below="@id/viewPager"
-        app:icon="@drawable/directions"
-        app:iconTint="@color/primary_color"
-        app:iconGravity="textStart"
-        android:textColor="@color/primary_color"
-        app:iconPadding="8dp"
-        app:cornerRadius="8dp"
-        app:backgroundTint="@color/secondary_color" />
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnStartNavigate"
+            android:layout_width="wrap_content"
+            android:layout_height="56dp"
+            android:layout_marginTop="16dp"
+            android:text="Drive"
+            app:icon="@drawable/car"
+            android:layout_marginEnd="8dp"
+            app:iconTint="@color/primary_color"
+            app:iconGravity="textStart"
+            android:textColor="@color/primary_color"
+            app:iconPadding="8dp"
+            app:cornerRadius="8dp"
+            app:backgroundTint="@color/secondary_color" />
+
+        <!-- Get Directions Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnGetDirections"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="56dp"
+            android:layout_marginTop="16dp"
+            android:text="Get Directions"
+            app:icon="@drawable/directions"
+            app:strokeWidth="1dp"
+            app:strokeColor="@color/secondary_color"
+            app:iconTint="@color/secondary_color"
+            app:iconGravity="textStart"
+            android:textColor="@color/secondary_color"
+            app:iconPadding="8dp"
+            app:cornerRadius="8dp"
+            app:backgroundTint="@color/primary_color" />
+    </LinearLayout>
+
+
 
 
 
@@ -121,7 +148,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_below="@id/btnGetDirections"
+        android:layout_below="@id/directionsLayout"
         android:layout_marginTop="16dp">
 
         <ImageView

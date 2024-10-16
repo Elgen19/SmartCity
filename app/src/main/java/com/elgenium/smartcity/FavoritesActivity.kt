@@ -94,14 +94,15 @@ class FavoritesActivity : AppCompatActivity() {
         viewPagerSetupForTabs()
     }
 
-    private fun getTravelDistance(event: Event, userLocation: LatLng): Deferred<Double?> = CoroutineScope(
+    private fun getTravelDistance(place: SavedPlace?, event: Event?, userLocation: LatLng): Deferred<Double?> = CoroutineScope(
         Dispatchers.IO).async {
-        val placeLatLngString = event.placeLatLng ?: return@async null
+        val placeLatLngString = place?.latLngString ?: event?.placeLatLng ?: return@async null
         val placeLatLng = parseLatLng(placeLatLngString) ?: return@async null
-        val (eventLat, eventLng) = placeLatLng
+        val (lat, lng) = placeLatLng
+
 
         val origin = "${userLocation.latitude},${userLocation.longitude}"
-        val destination = "$eventLat,$eventLng"
+        val destination = "$lat,$lng"
         val apiKey = BuildConfig.MAPS_API_KEY
 
         val retrofit = Retrofit.Builder()
@@ -117,7 +118,9 @@ class FavoritesActivity : AppCompatActivity() {
             val distanceInKm = distanceValue / 1000.0 // Convert meters to kilometers
             distanceInKm
         } catch (e: Exception) {
-            Log.e("EventsActivity", "API Call Failure for event ${event.eventName}: ${e.message}")
+            if (event != null) {
+                Log.e("EventsActivity", "API Call Failure for event ${event.eventName}: ${e.message}")
+            }
             null
         }
     }
@@ -279,7 +282,7 @@ class FavoritesActivity : AppCompatActivity() {
             getUserLocation { userLocation ->
                 if (userLocation != null) {
                     CoroutineScope(Dispatchers.Main).launch {
-                        val distance = getTravelDistance(event, userLocation).await()
+                        val distance = getTravelDistance(null, event, userLocation).await()
                         bottomSheetBinding.eventDistance.text = formatDistance(distance)
                     }
                 } else {
@@ -291,6 +294,24 @@ class FavoritesActivity : AppCompatActivity() {
             eventTimeStartedValue.text = formatDate(event.startedDateTime, inputFormat, outputFormat)
             eventTimeEndedValue.text = formatDate(event.endedDateTime, inputFormat, outputFormat)
             eventDescriptionDetails.text = event.eventDescription
+
+            Log.e("FavoritesActivity", "PLACE ID FOR EVENT: ${event}")
+            Log.e("FavoritesActivity", "PLACE ID FOR EVENT: ${event.placeId}")
+
+            bottomSheetBinding.btnStartNavigate.setOnClickListener {
+                Log.e("FavoritesActivity", "Start Navigate button clicked")
+                val intent =
+                    Intent(this@FavoritesActivity, StartNavigationsActivity::class.java)
+                intent.putExtra("TRAVEL_MODE", "DRIVE")
+                intent.putExtra("IS_SIMULATED", false)
+                intent.putExtra("ROUTE_TOKEN", "NO_ROUTE_TOKEN")
+                intent.putStringArrayListExtra(
+                    "PLACE_IDS",
+                    arrayListOf(event.placeId)
+                )
+                startActivity(intent)
+                bottomSheetDialog.dismiss()
+            }
 
             bottomSheetBinding.btnGetDirections.setOnClickListener {
                 Log.d("FavoritesActivity", "Get Directions button clicked")
@@ -513,10 +534,20 @@ class FavoritesActivity : AppCompatActivity() {
         bottomSheetBinding.placeName.text = place.name
         bottomSheetBinding.placeAddress.text = place.address
         bottomSheetBinding.openStatus.text = place.openingStatus
-        bottomSheetBinding.placeDistance.text = place.distance
         bottomSheetBinding.placePhone.text = place.phoneNumber ?: "No phone number available"
         bottomSheetBinding.placeWebsite.text = place.websiteUri ?: "No website available"
         bottomSheetBinding.placeRating.text = place.rating ?: "N/A"
+
+        getUserLocation { userLocation ->
+            if (userLocation != null) {
+                CoroutineScope(Dispatchers.Main).launch {
+                    val distance = getTravelDistance(place, null, userLocation).await()
+                    bottomSheetBinding.placeDistance.text = formatDistance(distance)
+                }
+            } else {
+                bottomSheetBinding.placeDistance.text = getString(R.string.location_not_available)
+            }
+        }
 
         // Set up ViewPager2 with images
         val imageUrls = place.imageUrls
@@ -534,8 +565,23 @@ class FavoritesActivity : AppCompatActivity() {
             bottomSheetDialog.dismiss()
         }
 
+        bottomSheetBinding.btnStartNavigate.setOnClickListener {
+            Log.e("FavoritesActivity", "Start Navigate button clicked")
+            val intent =
+                Intent(this@FavoritesActivity, StartNavigationsActivity::class.java)
+            intent.putExtra("TRAVEL_MODE", "DRIVE")
+            intent.putExtra("IS_SIMULATED", false)
+            intent.putExtra("ROUTE_TOKEN", "NO_ROUTE_TOKEN")
+            intent.putStringArrayListExtra(
+                "PLACE_IDS",
+                arrayListOf(place.id)
+            )
+            startActivity(intent)
+            bottomSheetDialog.dismiss()
+        }
+
         bottomSheetBinding.btnGetDirections.setOnClickListener {
-            Log.d("FavoritesActivity", "Get Directions button clicked")
+            Log.e("FavoritesActivity", "Get Directions button clicked")
 
             // Fetch user location asynchronously
             getUserLocation { userLocation ->

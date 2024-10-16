@@ -898,7 +898,7 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         destinationMarker?.remove()
         val destinationLatLng = polylinePoints.last()
         destinationMarker =
-            mMap.addMarker(MarkerOptions().position(destinationLatLng).title("Destination:\n${stopList.last().name}"))
+            mMap.addMarker(MarkerOptions().position(destinationLatLng).title(stopList.last().name))
 
         // Create bounds to focus the camera on the polyline and markers
         val builder = LatLngBounds.Builder().apply {
