@@ -13,6 +13,7 @@ object SettingsKeys {
     const val KEY_MAP_OVERLAY = "map_overlay"
     const val KEY_STARTER_SCREEN = "start_screen"
     const val KEY_OPTIMIZED_WAYPOINTS = "optimized_waypoints"
+    const val KEY_SET_AUDIO = "set_audio"
 
 
 
