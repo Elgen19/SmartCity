@@ -1,26 +1,42 @@
 package com.elgenium.smartcity
 
+import PlacesClientSingleton
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.speech.tts.TextToSpeech
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import com.elgenium.smartcity.databinding.ActivityStartNavigationsBinding
+import com.elgenium.smartcity.databinding.BottomSheetAddStopBinding
 import com.elgenium.smartcity.databinding.DialogTripRecapBinding
+import com.elgenium.smartcity.intelligence.AIProcessor
+import com.elgenium.smartcity.shared_preferences_keys.SettingsKeys
+import com.elgenium.smartcity.speech.SpeechRecognitionHelper
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.GoogleMap.CameraPerspective
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.LatLngBounds
+import com.google.android.gms.maps.model.Marker
+import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.libraries.navigation.AlternateRoutesStrategy
 import com.google.android.libraries.navigation.CustomRoutesOptions
 import com.google.android.libraries.navigation.DisplayOptions
-import com.google.android.libraries.navigation.ForceNightMode.FORCE_NIGHT
 import com.google.android.libraries.navigation.ListenableResultFuture
 import com.google.android.libraries.navigation.NavigationApi
 import com.google.android.libraries.navigation.Navigator
@@ -34,6 +50,11 @@ import com.google.android.libraries.navigation.SimulationOptions
 import com.google.android.libraries.navigation.StylingOptions
 import com.google.android.libraries.navigation.SupportNavigationFragment
 import com.google.android.libraries.navigation.Waypoint
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.net.FetchPlaceRequest
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -46,6 +67,7 @@ class StartNavigationsActivity : AppCompatActivity() {
     private lateinit var navFragment: SupportNavigationFragment
     private var mArrivalListener: ArrivalListener? = null
     private var mRouteChangedListener: RouteChangedListener? = null
+    private val placesClient by lazy { PlacesClientSingleton.getClient(this) }
     private var mRemainingTimeOrDistanceChangedListener: RemainingTimeOrDistanceChangedListener? = null
     private var mLocationListener: RoadSnappedLocationProvider.LocationListener? = null
     private var mRoadSnappedLocationProvider: RoadSnappedLocationProvider? = null
@@ -56,15 +78,37 @@ class StartNavigationsActivity : AppCompatActivity() {
     private lateinit var travelMode: String
     private lateinit var placeIds: ArrayList<String>
     private var isSimulated = false
+    private lateinit var speechRecognitionHelper: SpeechRecognitionHelper
+    private lateinit var binding: ActivityStartNavigationsBinding
+    private lateinit var aiProcessor: AIProcessor
+    private lateinit var textToSpeech: TextToSpeech
+    private var mMap: GoogleMap? = null
+    private val markersList = mutableListOf<Marker>()
+    private val markerPlaceIdMap = HashMap<Marker, String>()
+    private var IS_ADDING_STOP = false
+    private var NUM_STOPS = 1
+    private lateinit var sharedPreferences: SharedPreferences
+    private var isAudioGuidanceEnabled = true
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_start_navigations)
+        binding = ActivityStartNavigationsBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        sharedPreferences = getSharedPreferences(SettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
+        isAudioGuidanceEnabled = sharedPreferences.getBoolean("set_audio", true)
+
+
+        Log.e("StartNavigationsActivity", "audio guidance at oncreate: $isAudioGuidanceEnabled" )
+
 
         travelMode = intent.getStringExtra("TRAVEL_MODE") ?: ""
         routeToken = intent.getStringExtra("ROUTE_TOKEN") ?: "NO ROUTE TOKEN"
         placeIds = intent.getStringArrayListExtra("PLACE_IDS") ?: ArrayList()
         isSimulated = intent.getBooleanExtra("IS_SIMULATED", false)
+
+        initializer()
 
         Log.e("StartNavigationsActivity", "TRAVEL MODE AT NAVIGATION: $travelMode" )
         Log.e("StartNavigationsActivity", "ROUTE TOKEN AT NAVIGATION: $routeToken" )
@@ -75,6 +119,288 @@ class StartNavigationsActivity : AppCompatActivity() {
         // Use the placeIds and routeToken for further navigation logic
         requestLocationPermissions(routeToken!!, placeIds, travelMode)
     }
+
+    private fun initializeSpeechRecognizer() {
+        speechRecognitionHelper = SpeechRecognitionHelper(
+            activity = this,
+            onResult = { transcription ->
+                // Handle the recognized speech text
+                processUserQuery(transcription)
+                displayMessage("Recognized Speech: $transcription")
+                Toast.makeText(this, "You said: $transcription", Toast.LENGTH_SHORT).show()
+            },
+            onError = { error ->
+                // Handle any errors
+               displayMessage("Speech Recognition Error: $error")
+                Toast.makeText(this, "Error: $error", Toast.LENGTH_SHORT).show()
+            }
+        )
+
+    }
+
+    private fun initializer() {
+        aiProcessor = AIProcessor(this)
+        initializeTTS()
+        initializeSpeechRecognizer()
+    }
+
+    private fun initializeTTS() {
+        textToSpeech = TextToSpeech(this) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                val result = textToSpeech.setLanguage(Locale.US)
+                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    Log.e("TTS", "Language not supported")
+                }
+            } else {
+                Log.e("TTS", "Initialization failed")
+            }
+        }
+    }
+
+    private fun processUserQuery(query: String) {
+        // Launch a coroutine in the lifecycleScope
+        lifecycleScope.launch {
+            try {
+                // Call the processUserQuery method of AIProcessor
+                speakResponse("Searching, please wait.")
+                val result = aiProcessor.processUserQuery(query)
+                aiProcessor.intentClassification(aiProcessor.parseUserQuery(result))
+                displayMessage("Searching... Please wait.")
+
+                val placesInfo = aiProcessor.extractPlaceInfo()
+
+                if (placesInfo.isNotEmpty()) {
+                    speakResponse("Here's what I've got.")
+                    plotMarkers(placesInfo)
+                } else
+                    speakResponse("Unfortunately, I cannot find what you are looking for.")
+
+                // Log the result
+                Log.e("AIProcessor", result)
+
+
+            } catch (e: Exception) {
+                // Handle any exceptions that might occur during processing
+                Log.e("AI Error", "Error processing query", e)
+            }
+        } }
+
+    private fun speakResponse(response: String) {
+        // Speak the response
+        textToSpeech.speak(response, TextToSpeech.QUEUE_FLUSH, null, null)
+    }
+
+
+    @SuppressLint("PotentialBehaviorOverride")
+    private fun plotMarkers(placesInfo: List<Map<String, Any>>) {
+        // Clear existing markers from the map
+        clearMarkers()
+
+        // Initialize LatLngBounds.Builder to calculate bounds for all markers
+        val boundsBuilder = LatLngBounds.Builder()
+
+        Log.e(TAG, "it worked here")
+
+        // Log the size of placesInfo
+        Log.e(TAG, "Number of places info: ${placesInfo.size}")
+
+        // Iterate through the places info and add markers to the map
+        placesInfo.forEach { placeInfo ->
+            // Extracting values from the map
+            val latLng = placeInfo["latLng"] as LatLng
+            val name = placeInfo["name"] as String
+            val address = placeInfo["address"] as String
+            val placeId = placeInfo["placeId"] as String
+
+            // Add a marker with a visible icon
+            val markerOptions = MarkerOptions()
+                .position(latLng)
+                .title(name) // Set the title to show in the info window
+                .snippet(address) // Optional: show address in the info window
+                .alpha(1f)
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)) // Use a visible color
+
+            // Add the visible marker to the map and store it in the markers list
+            val marker = mMap?.addMarker(markerOptions)
+            if (marker != null) {
+                markersList.add(marker) // Keep track of the marker
+                // Include this marker's position in the bounds
+                boundsBuilder.include(marker.position)
+
+                // Store the marker and placeId mapping
+                markerPlaceIdMap[marker] = placeId
+            }
+
+            mMap?.setOnMarkerClickListener { marker2 ->
+                // Retrieve the placeId using the marker
+                val clickedPlaceId = markerPlaceIdMap[marker2] ?: "NO PLACE ID"
+                Log.e(TAG, "Marker clicked: ${marker2.title}, PlaceId: $clickedPlaceId")
+
+                // When a marker is clicked, show the bottom sheet
+                showAddStopBottomSheet(marker2,clickedPlaceId)
+
+                true // Return true to indicate the click was handled
+            }
+
+            // Log the place information for debugging
+            Log.e(TAG, "Added marker for: Name: $name, Address: $address, LatLng: $latLng, PlaceId: $placeId")
+        }
+
+        // After adding all markers, move and zoom the camera to show all markers
+        if (markersList.isNotEmpty()) {
+            val bounds = boundsBuilder.build()
+            val padding = 100 // Padding around the bounds (in pixels)
+
+            // Animate the camera to fit the bounds with padding
+            mMap?.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, padding))
+        }
+    }
+
+
+    private fun showAddStopBottomSheet(marker: Marker, placeId: String) {
+        val bottomSheetView = BottomSheetAddStopBinding.inflate(layoutInflater)
+
+        val bottomSheetDialog = BottomSheetDialog(this)
+        bottomSheetDialog.setContentView(bottomSheetView.root)
+
+        // Set the marker's title and snippet (name and address) in the text views
+        bottomSheetView.textViewPlaceName.text = marker.title
+        bottomSheetView.textViewPlaceAddress.text = marker.snippet
+
+        // Handle Add Stop button click
+        bottomSheetView.buttonAddStop.setOnClickListener {
+            // Add the placeId at the first index of placeIds
+            placeIds.add(0, placeId)
+            displayMessage("PLACEIDS: $placeIds")
+            IS_ADDING_STOP = true
+            NUM_STOPS += 1
+            clearMarkers()
+            binding.continueToNextDestinationLayout.visibility = if (NUM_STOPS == 1) View.GONE else View.VISIBLE
+            binding.spacer1.visibility = if (NUM_STOPS == 1 ) View.GONE else View.VISIBLE
+            Log.e(TAG, "Place ID $placeId added to placeIds at index 0")
+            Log.e(TAG, "IS ADDING STOP VALUE: $IS_ADDING_STOP")
+
+            navigateWithMultipleStops("NO ROUTE TOKEN", placeIds, travelMode)
+            fetchPlaceDetailsForCard()
+
+
+            // Dismiss the bottom sheet
+            bottomSheetDialog.dismiss()
+        }
+
+        // Handle Cancel button click
+        bottomSheetView.buttonCancel.setOnClickListener {
+            bottomSheetDialog.dismiss()
+        }
+
+        // Show the BottomSheetDialog
+        bottomSheetDialog.show()
+    }
+
+    private fun showNavigationOptionsBottomSheet() {
+        // Inflate the bottom sheet layout using view binding
+        val bottomSheet = binding.bottomSheet
+
+        // Retrieve the BottomSheetBehavior and configure it
+        val behavior = BottomSheetBehavior.from(bottomSheet)
+        behavior.peekHeight = 160  // Set the desired peek height
+        behavior.isHideable = false  // Prevent it from being fully dismissed
+        behavior.state = BottomSheetBehavior.STATE_COLLAPSED
+
+        fetchPlaceDetailsForCard()
+        binding.continueToNextDestinationLayout.visibility = if (NUM_STOPS == 1) View.GONE else View.VISIBLE
+        binding.spacer1.visibility = if (NUM_STOPS == 1 ) View.GONE else View.VISIBLE
+        binding.voiceGuidanceSwitch.isChecked = isAudioGuidanceEnabled
+
+        // Set up click listeners for the actions
+        binding.assistantButton.setOnClickListener {
+            speechRecognitionHelper.startListening()
+        }
+
+        binding.voiceGuidanceSwitch.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                // Enable voice guidance when switch is on
+                with(sharedPreferences.edit()) {
+                    putBoolean(SettingsKeys.KEY_SET_AUDIO, true)
+                    apply()
+                }
+                navigator.setAudioGuidance(Navigator.AudioGuidance.VOICE_ALERTS_AND_GUIDANCE)
+                isAudioGuidanceEnabled = true
+                displayMessage("Audio guidance will be enabled in a moment")
+                Log.e("StartNavigationsActivity", "audio guidance at method: $isAudioGuidanceEnabled" )
+            } else {
+                // Disable voice guidance when switch is off
+                with(sharedPreferences.edit()) {
+                    putBoolean(SettingsKeys.KEY_SET_AUDIO, false)
+                    apply()
+                }
+                navigator.setAudioGuidance(Navigator.AudioGuidance.SILENT)
+                isAudioGuidanceEnabled = false
+                displayMessage("Audio guidance will be disabled in a moment")
+                Log.e("StartNavigationsActivity", "audio guidance at method: $isAudioGuidanceEnabled" )
+            }
+        }
+
+
+
+
+        binding.continueToNextDestinationLayout.setOnClickListener {
+           if (NUM_STOPS != 1) {
+               navigator.continueToNextDestination()
+               NUM_STOPS -= 1
+               placeIds.removeAt(0)
+               displayMessage("NUM STOPS VALUE: $NUM_STOPS")
+               fetchPlaceDetailsForCard()
+           }
+            binding.continueToNextDestinationLayout.visibility = if (NUM_STOPS == 1) View.GONE else View.VISIBLE
+            binding.spacer1.visibility = if (NUM_STOPS == 1 ) View.GONE else View.VISIBLE
+        }
+
+        binding.viewZoomedOutLayout.setOnClickListener {
+            navFragment.showRouteOverview()
+        }
+
+
+
+    }
+
+
+    private fun fetchPlaceDetailsForCard(){
+        fetchPlaceDetailsFromAPI(placeIds[0]) { place ->
+            if (place != null) {
+                binding.tvPlaceName.text = place.name
+                binding.tvPlaceAddress.text = place.address
+                binding.tvRemainingStop.text = "Remaining destination(s): ${NUM_STOPS}"
+            }
+
+        }
+    }
+
+
+
+
+
+    // Method to clear existing markers from the map
+    private fun clearMarkers() {
+        // Remove markers from the map
+        markersList.forEach { it.remove() }
+        // Clear the list
+        markersList.clear()
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     private fun initializeNavigationSdk(routeToken: String, placeIds: ArrayList<String>, travelMode: String) {
         // Request location permission.
@@ -103,16 +429,19 @@ class StartNavigationsActivity : AppCompatActivity() {
                     displayMessage("Navigator ready.")
                     this@StartNavigationsActivity.navigator = navigator
                     navFragment = supportFragmentManager.findFragmentById(R.id.navigation_fragment) as SupportNavigationFragment
-                    navFragment.setForceNightMode(FORCE_NIGHT)
                     navFragment.setTripProgressBarEnabled(true)
                     navFragment.setSpeedometerEnabled(true)
                     navFragment.setSpeedLimitIconEnabled(true)
+                    navFragment.setTrafficIncidentCardsEnabled(true)
+                    navFragment.setTrafficPromptsEnabled(true)
+                    navFragment.setEtaCardEnabled(true)
                     navFragment.setStylingOptions(StylingOptions()
                         .headerGuidanceRecommendedLaneColor(resources.getColor(R.color.brand_color))
                         .primaryDayModeThemeColor(resources.getColor(R.color.secondary_color)))
 
                     // Set the camera to follow the device location with 'TILTED' driving view.
                     navFragment.getMapAsync { googleMap ->
+                        mMap = googleMap
                         try {
                             if (ContextCompat.checkSelfPermission(
                                     applicationContext,
@@ -127,10 +456,10 @@ class StartNavigationsActivity : AppCompatActivity() {
                             displayMessage("Error accessing location: ${e.message}")
                         }
                     }
+                    showNavigationOptionsBottomSheet()
 
                     navigateWithMultipleStops(routeToken, placeIds, travelMode)
                 }
-
                 override fun onError(@NavigationApi.ErrorCode errorCode: Int) {
                     when (errorCode) {
                         NavigationApi.ErrorCode.NOT_AUTHORIZED -> displayMessage("Your API key is invalid or not authorized to use the Navigation SDK.")
@@ -188,7 +517,6 @@ class StartNavigationsActivity : AppCompatActivity() {
         }
     }
 
-
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         locationPermissionGranted = false
@@ -203,7 +531,6 @@ class StartNavigationsActivity : AppCompatActivity() {
             }
         }
     }
-
 
     private fun navigateWithMultipleStops(routeToken: String, placesIds: List<String>, travelMode: String) {
         // Create a list of waypoints based on the provided place IDs
@@ -229,14 +556,17 @@ class StartNavigationsActivity : AppCompatActivity() {
             showTrafficLights(true)
         }
 
-        val pendingRoute = if (travelMode == "WALK" || travelMode == "TRANSIT") {
+        val pendingRoute = if (IS_ADDING_STOP == true && routeToken == "NO ROUTE TOKEN") {
             val routingOptions = RoutingOptions().apply {
-                travelMode(if (travelMode == "WALK") TravelMode.WALKING else TravelMode.DRIVING)
+                travelMode(if (travelMode == "WALK") TravelMode.WALKING else if (travelMode == "TWO_WHEELER")  TravelMode.TWO_WHEELER else TravelMode.DRIVING)
                 avoidFerries(true)
                 avoidTolls(true)
                 alternateRoutesStrategy(AlternateRoutesStrategy.SHOW_ALL)
             }
             Log.e("StartNavigationsActivity", "ROUTE TOKEN: $routeToken")
+            Log.e("StartNavigationsActivity", "TRAVEL MODE: $travelMode")
+            Log.e("StartNavigationsActivity", "IS ADDING STOP VALUE: $IS_ADDING_STOP")
+
             navigator.setDestinations(waypoints, routingOptions, displayOptions)
         } else {
             val travelModeTraffic = if (travelMode == "DRIVE") CustomRoutesOptions.TravelMode.DRIVING else CustomRoutesOptions.TravelMode.TWO_WHEELER
@@ -260,7 +590,9 @@ class StartNavigationsActivity : AppCompatActivity() {
             when (code) {
                 Navigator.RouteStatus.OK -> {
                     displayMessage("Route successfully calculated with multiple stops!")
-                    navigator.setAudioGuidance(Navigator.AudioGuidance.VOICE_ALERTS_AND_GUIDANCE)
+                    if (isAudioGuidanceEnabled)
+                        navigator.setAudioGuidance(Navigator.AudioGuidance.VOICE_ALERTS_AND_GUIDANCE)
+
                     registerNavigationListeners()
 
                     if (isSimulated) {
@@ -297,6 +629,45 @@ class StartNavigationsActivity : AppCompatActivity() {
 
         // Listens for arrival at a waypoint.
         navigator.addArrivalListener(mArrivalListener)
+
+
+        // Listener for remaining time or distance changes
+        mRemainingTimeOrDistanceChangedListener = RemainingTimeOrDistanceChangedListener {
+            // Get the current time and distance to the next destination
+            val timeAndDistance = navigator.currentTimeAndDistance
+
+            // Get the remaining time in seconds and distance in meters
+            val remainingTimeInSeconds = timeAndDistance.seconds
+            val remainingDistanceInMeters = timeAndDistance.meters
+
+            // Update UI with the new remaining time and distance
+            runOnUiThread {
+                binding.tvJourneyTime.text = formatTime(remainingTimeInSeconds) // Convert seconds to a readable format
+                binding.tvTotalKilometers.text = String.format("Distance: %.1f km", remainingDistanceInMeters / 1000.0) // Convert meters to kilometers
+                binding.tvEta.text = "ETA: ${calculateETA(remainingTimeInSeconds)}" // Calculate and display ETA
+            }
+        }
+
+// Register the remaining time or distance changed listener
+        navigator.addRemainingTimeOrDistanceChangedListener(5, 10, mRemainingTimeOrDistanceChangedListener) // Change thresholds as needed
+
+    }
+
+    private fun formatTime(seconds: Int): String {
+        val minutes = seconds / 60
+        return if (minutes > 0) {
+            "$minutes mins"
+        } else {
+            "$seconds secs"
+        }
+    }
+
+    private fun calculateETA(seconds: Int): String {
+        // You can implement this based on your requirements, here's a simple version
+        val currentTime = System.currentTimeMillis()
+        val etaTime = currentTime + (seconds * 1000)
+        val sdf = SimpleDateFormat("hh:mm a", Locale.getDefault())
+        return sdf.format(Date(etaTime))
     }
 
     private fun displayMessage(message: String) {
@@ -314,6 +685,7 @@ class StartNavigationsActivity : AppCompatActivity() {
 
         return totalDistance
     }
+
 
     private fun calculateDistance(start: LatLng, end: LatLng): Float {
         val results = FloatArray(1)
@@ -350,7 +722,6 @@ class StartNavigationsActivity : AppCompatActivity() {
             else -> "0 min" // If both hours and minutes are 0, display "0 min" (optional)
         }
     }
-
 
     private fun computeArrivalTime(): String {
         val currentTime = System.currentTimeMillis()
@@ -428,8 +799,34 @@ class StartNavigationsActivity : AppCompatActivity() {
         alertDialog.show()
     }
 
+    private fun fetchPlaceDetailsFromAPI(placeId: String, callback: (Place?) -> Unit) {
+        val fields = listOf(
+            Place.Field.ID,
+            Place.Field.NAME,
+            Place.Field.ADDRESS
+        )
+        val request = FetchPlaceRequest.builder(placeId, fields).build()
+
+        placesClient.fetchPlace(request)
+            .addOnSuccessListener { response ->
+                val place = response.place
+                callback(place)
+            }
+            .addOnFailureListener { exception ->
+               displayMessage("Error fetching place details")
+                callback(null) // Return null if the API call fails
+            }
+    }
+
+
     override fun onDestroy() {
         super.onDestroy()
+
+        if (::speechRecognitionHelper.isInitialized || ::textToSpeech.isInitialized) {
+            speechRecognitionHelper.stopListening()
+            textToSpeech.stop()
+            textToSpeech.shutdown()
+        }
 
         // Stop any ongoing navigation
         if (::navigator.isInitialized) {
@@ -460,3 +857,4 @@ class StartNavigationsActivity : AppCompatActivity() {
 
 
 }
+

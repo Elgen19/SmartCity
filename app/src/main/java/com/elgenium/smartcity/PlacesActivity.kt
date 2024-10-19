@@ -199,7 +199,19 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         }
         Log.e("PlacesActivity", "type 2: ${savedPlace.types}")
 
+
     }
+
+
+
+
+
+
+
+
+
+
+
 
      private fun retrievePreferences() {
         val sharedPreferences = getSharedPreferences("user_settings", MODE_PRIVATE)

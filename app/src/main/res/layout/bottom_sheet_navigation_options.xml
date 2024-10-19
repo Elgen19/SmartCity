@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@android:color/white">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <RelativeLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="16dp"
+            android:layout_height="wrap_content">
+
+            <!-- TextView for time in minutes of the journey -->
+            <TextView
+                android:id="@+id/tvJourneyTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="30 mins"
+                android:textSize="18sp"
+                android:textColor="@color/gray"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Container for the total kilometers and ETA -->
+            <LinearLayout
+                android:layout_below="@+id/tvJourneyTime"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp">
+
+                <!-- TextView for total kilometers -->
+                <TextView
+                    android:id="@+id/tvTotalKilometers"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="10 km"
+                    android:textColor="@color/gray"
+                    android:layout_marginEnd="16dp"
+                    android:textSize="16sp" />
+
+                <!-- TextView for ETA -->
+                <TextView
+                    android:id="@+id/tvEta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="ETA: 5:00 PM"
+                    android:textColor="@color/gray"
+                    android:textSize="16sp" />
+
+            </LinearLayout>
+        </RelativeLayout>
+
+        <!-- Assistant Button -->
+        <ImageView
+            android:id="@+id/assistantButton"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:background="@drawable/assistant"
+            android:clickable="true"
+            android:elevation="6dp"
+            android:focusable="true"
+            android:padding="16dp" />
+    </LinearLayout>
+
+    <View
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp"
+        android:layout_width="match_parent"
+        android:background="@color/dark_gray"
+        android:layout_height="2dp"/>
+
+    <LinearLayout
+        android:id="@+id/continueToNextDestinationLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:clickable="true"
+        android:focusable="true"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        android:layout_marginBottom="8dp"
+        tools:ignore="UseCompoundDrawables">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/next" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Continue to next destination"
+            android:textColor="@color/gray"
+            android:textSize="18sp"
+            android:layout_marginStart="16dp"
+            android:gravity="center_vertical" />
+    </LinearLayout>
+
+
+    <View
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp"
+        android:layout_width="match_parent"
+        android:background="@color/dark_gray"
+        android:layout_height="2dp"/>
+
+    <LinearLayout
+        android:id="@+id/viewZoomedOutLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:clickable="true"
+        android:focusable="true"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        android:layout_marginBottom="8dp"
+        tools:ignore="UseCompoundDrawables">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/zoom_out" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="View zoomed out route"
+            android:textColor="@color/gray"
+            android:textSize="18sp"
+            android:layout_marginStart="16dp"
+            android:gravity="center_vertical" />
+    </LinearLayout>
+
+</LinearLayout>
