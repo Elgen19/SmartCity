@@ -57,11 +57,22 @@ class AIProcessor(context: Context) {
         // Send the user query as a message
         val response = chat.sendMessage(userQuery)
 
-        // Return the first text part of the first candidate
-        return response.candidates.firstOrNull()?.content?.parts?.firstOrNull()?.asTextOrNull() ?: ""
+        // Extract the first text part of the first candidate
+        val result = response.candidates.firstOrNull()?.content?.parts?.firstOrNull()?.asTextOrNull()
+
+        // Check if the result is null or empty
+        if (result.isNullOrEmpty()) {
+            Log.e("AIProcessor", "Processed user query: '$userQuery', but received no valid response.")
+        } else {
+            Log.e("AIProcessor", "Processed user query: '$userQuery', Response: '$result'")
+        }
+
+        return result ?: "" // Return an empty string if no result
     }
 
-     fun parseUserQuery(processedUserQuery: String): UserQueryParams {
+
+
+    fun parseUserQuery(processedUserQuery: String): UserQueryParams {
         val intentRegex = Regex("""Intent:\s*(.+)""")
         val keywordsRegex = Regex("""Keywords:\s*(.+)""")
         val placeTypeRegex = Regex("""placeType:\s*(.+)""")
@@ -95,32 +106,8 @@ class AIProcessor(context: Context) {
         }
     }
 
-    private fun checkPlaceTypesValidity(placeTypesFromResponse: String): String {
-
-        var placeTypes = placeTypesFromResponse
-        // Log the initial placeType for debugging
-        Log.d("AIProcessor", "Initial placeType: $placeTypes")
-
-        // Check if placeType is "Unspecified"
-        if (placeTypes == "Unspecified") {
-            placeTypes = ""
-            Log.e("AIProcessor", "placeType is Unspecified, setting it to empty string.")
-        } else {
-            // Use the isPlaceTypeFromResponseHasMatch function to check validity
-            if (!isPlaceTypeFromResponseHasMatch(placeTypes)) {
-                Log.e("AIProcessor", "placeType '$placeTypes' is not valid, setting it to empty string.")
-                placeTypes = "" // Set to empty string if not a valid place type
-            } else {
-                Log.e("AIProcessor", "placeType '$placeTypes' is valid.")
-            }
-        }
-
-        // Return the validated placeTypes value
-        return placeTypes
-    }
 
     private suspend fun handleSearchPlace(userQueryParams: UserQueryParams): List<Place> {
-        val placeTypes = checkPlaceTypesValidity(userQueryParams.placeType)
         val openNow = userQueryParams.openNow
         val priceLevels = userQueryParams.priceLevels
         val ratings = userQueryParams.rating
@@ -152,9 +139,6 @@ class AIProcessor(context: Context) {
                     }
                     if (ratings != 0.0) {
                         minRating = ratings
-                    }
-                    if (placeTypes.isNotEmpty()) {
-                        includedType = placeTypes
                     }
                 }
                 .setPlaceFields(placeFields)
@@ -199,100 +183,18 @@ class AIProcessor(context: Context) {
         } ?: emptyList()
     }
 
-    private fun isPlaceTypeFromResponseHasMatch(placeTypeFromResponse: String): Boolean {
-        val supportedPlaceTypes = listOf(
-            // Car-related
-            "car_dealer", "car_rental", "car_repair", "car_wash",
-            "electric_vehicle_charging_station", "gas_station", "parking", "rest_stop",
+    fun hasPlaceIdAndIsValidPlace(): Boolean {
+        // Check if the placesList is not null and contains at least one place with a valid placeId
+        val hasValidPlaceId = placesList?.any { place ->
+            !place.id.isNullOrEmpty()  // Ensure placeId is not null or empty
+        } ?: false  // Return false if placesList is null
 
-            // Farm-related
-            "farm",
+        // Log the result
+        Log.e("AIProcessor", "Has valid place ID: $hasValidPlaceId")
 
-            // Art and culture
-            "art_gallery", "museum", "performing_arts_theater",
-
-            // Education
-            "library", "preschool", "primary_school", "secondary_school", "university",
-
-            // Amusement and recreation
-            "amusement_center", "amusement_park", "aquarium", "banquet_hall",
-            "bowling_alley", "casino", "community_center", "convention_center",
-            "cultural_center", "dog_park", "event_venue", "hiking_area",
-            "historical_landmark", "marina", "movie_rental", "movie_theater",
-            "national_park", "night_club", "park", "tourist_attraction",
-            "visitor_center", "wedding_venue", "zoo",
-
-            // Financial
-            "accounting", "atm", "bank",
-
-            // Restaurants
-            "american_restaurant", "bakery", "bar", "barbecue_restaurant",
-            "brazilian_restaurant", "breakfast_restaurant", "brunch_restaurant",
-            "cafe", "chinese_restaurant", "coffee_shop", "fast_food_restaurant",
-            "french_restaurant", "greek_restaurant", "hamburger_restaurant",
-            "ice_cream_shop", "indian_restaurant", "indonesian_restaurant",
-            "italian_restaurant", "japanese_restaurant", "korean_restaurant",
-            "lebanese_restaurant", "meal_delivery", "meal_takeaway",
-            "mediterranean_restaurant", "mexican_restaurant",
-            "middle_eastern_restaurant", "pizza_restaurant", "ramen_restaurant",
-            "restaurant", "sandwich_shop", "seafood_restaurant",
-            "spanish_restaurant", "steak_house", "sushi_restaurant",
-            "thai_restaurant", "turkish_restaurant", "vegan_restaurant",
-            "vegetarian_restaurant", "vietnamese_restaurant",
-
-            // Administrative
-            "administrative_area_level_1", "administrative_area_level_2",
-            "country", "locality", "postal_code", "school_district",
-
-            // Government
-            "city_hall", "courthouse", "embassy", "fire_station",
-            "local_government_office", "police", "post_office",
-
-            // Healthcare
-            "dental_clinic", "dentist", "doctor", "drugstore",
-            "hospital", "medical_lab", "pharmacy", "physiotherapist", "spa",
-
-            // Lodging
-            "bed_and_breakfast", "campground", "camping_cabin", "cottage",
-            "extended_stay_hotel", "farmstay", "guest_house", "hostel",
-            "hotel", "lodging", "motel", "private_guest_room",
-            "resort_hotel", "rv_park",
-
-            // Places of worship
-            "church", "hindu_temple", "mosque", "synagogue",
-
-            // Services
-            "barber_shop", "beauty_salon", "cemetery", "child_care_agency",
-            "consultant", "courier_service", "electrician", "florist",
-            "funeral_home", "hair_care", "hair_salon", "insurance_agency",
-            "laundry", "lawyer", "locksmith", "moving_company", "painter",
-            "plumber", "real_estate_agency", "roofing_contractor", "storage",
-            "tailor", "telecommunications_service_provider", "travel_agency",
-            "veterinary_care",
-
-            // Retail
-            "auto_parts_store", "bicycle_store", "book_store", "cell_phone_store",
-            "clothing_store", "convenience_store", "department_store",
-            "discount_store", "electronics_store", "furniture_store",
-            "gift_shop", "grocery_store", "hardware_store", "home_goods_store",
-            "home_improvement_store", "jewelry_store", "liquor_store",
-            "market", "pet_store", "shoe_store", "shopping_mall",
-            "sporting_goods_store", "store", "supermarket", "wholesaler",
-
-            // Sports and fitness
-            "athletic_field", "fitness_center", "golf_course", "gym",
-            "playground", "ski_resort", "sports_club", "sports_complex",
-            "stadium", "swimming_pool",
-
-            // Transportation
-            "airport", "bus_station", "bus_stop", "ferry_terminal",
-            "heliport", "light_rail_station", "park_and_ride",
-            "subway_station", "taxi_stand", "train_station",
-            "transit_depot", "transit_station", "truck_stop"
-        )
-
-        return supportedPlaceTypes.contains(placeTypeFromResponse)
+        return hasValidPlaceId
     }
+
 
     private suspend fun getCurrentLocationCoroutine(context: Context): LatLng? {
         return suspendCoroutine { continuation ->

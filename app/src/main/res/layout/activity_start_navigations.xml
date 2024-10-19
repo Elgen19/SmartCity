@@ -288,6 +288,21 @@
 
         </androidx.cardview.widget.CardView>
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonShutdown"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="16dp"
+            android:paddingBottom="16dp"
+            android:text="Shutdown navigation"
+            android:textColor="@color/primary_color"
+            android:backgroundTint="@color/red"
+            app:cornerRadius="8dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="16dp"
+            app:rippleColor="@color/brand_color"
+            tools:ignore="VisualLintButtonSize" />
+
 
     </LinearLayout>
 

@@ -7,25 +7,13 @@
     android:padding="24dp"
     android:background="@color/primary_color">
 
-    <!-- Close Button -->
-    <ImageButton
-        android:id="@+id/closeButton"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
-        android:layout_alignParentEnd="true"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="8dp"
-        android:background="@null"
-        android:contentDescription="Close"
-        android:src="@drawable/ic_qu_appbar_close"
-        app:tint="@color/red"/>
 
     <com.airbnb.lottie.LottieAnimationView
         android:id="@+id/lotifyAnimation"
-        android:layout_below="@+id/closeButton"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
         android:layout_width="150dp"
         android:layout_height="150dp"
-        android:layout_centerInParent="true"
         app:lottie_rawRes="@raw/arrival_anim"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"

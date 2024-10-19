@@ -8,7 +8,7 @@ import java.util.Locale
 class TextToSpeechHelper {
     private var textToSpeech: TextToSpeech ?= null
 
-    private fun initializeTTS(context: Context) {
+    fun initializeTTS(context: Context) {
         textToSpeech = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
                 val result = textToSpeech?.setLanguage(Locale.US)
@@ -21,12 +21,12 @@ class TextToSpeechHelper {
         }
     }
 
-    private fun speakResponse(response: String) {
+    fun speakResponse(response: String) {
         // Speak the response
         textToSpeech?.speak(response, TextToSpeech.QUEUE_FLUSH, null, null)
     }
 
-    private fun stopResponse() {
+    fun stopResponse() {
         textToSpeech?.stop()
         textToSpeech?.shutdown()
     }

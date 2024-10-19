@@ -9,9 +9,10 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
-import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.view.View
 import android.widget.Toast
@@ -25,7 +26,10 @@ import com.elgenium.smartcity.databinding.BottomSheetAddStopBinding
 import com.elgenium.smartcity.databinding.DialogTripRecapBinding
 import com.elgenium.smartcity.intelligence.AIProcessor
 import com.elgenium.smartcity.shared_preferences_keys.SettingsKeys
+import com.elgenium.smartcity.singletons.ActivityNavigationUtils
 import com.elgenium.smartcity.speech.SpeechRecognitionHelper
+import com.elgenium.smartcity.speech.TextToSpeechHelper
+import com.google.ai.client.generativeai.type.ResponseStoppedException
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.GoogleMap.CameraPerspective
@@ -34,6 +38,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.PointOfInterest
 import com.google.android.libraries.navigation.AlternateRoutesStrategy
 import com.google.android.libraries.navigation.CustomRoutesOptions
 import com.google.android.libraries.navigation.DisplayOptions
@@ -60,7 +65,7 @@ import java.util.Date
 import java.util.Locale
 
 
-class StartNavigationsActivity : AppCompatActivity() {
+class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListener{
 
     private val TAG = "StartNavigationsActivity"
     private lateinit var navigator: Navigator
@@ -79,9 +84,9 @@ class StartNavigationsActivity : AppCompatActivity() {
     private lateinit var placeIds: ArrayList<String>
     private var isSimulated = false
     private lateinit var speechRecognitionHelper: SpeechRecognitionHelper
+    private lateinit var textToSpeech: TextToSpeechHelper
     private lateinit var binding: ActivityStartNavigationsBinding
     private lateinit var aiProcessor: AIProcessor
-    private lateinit var textToSpeech: TextToSpeech
     private var mMap: GoogleMap? = null
     private val markersList = mutableListOf<Marker>()
     private val markerPlaceIdMap = HashMap<Marker, String>()
@@ -89,6 +94,9 @@ class StartNavigationsActivity : AppCompatActivity() {
     private var NUM_STOPS = 1
     private lateinit var sharedPreferences: SharedPreferences
     private var isAudioGuidanceEnabled = true
+    private var isTrafficOverlayEnabled = false
+    private var hasAlreadyArrivedAtFinalDestination = false
+    private var DEFAULT_STOPS = 0
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -98,9 +106,12 @@ class StartNavigationsActivity : AppCompatActivity() {
 
         sharedPreferences = getSharedPreferences(SettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
         isAudioGuidanceEnabled = sharedPreferences.getBoolean("set_audio", true)
+        isTrafficOverlayEnabled = sharedPreferences.getBoolean("map_overlay", false)
 
 
         Log.e("StartNavigationsActivity", "audio guidance at oncreate: $isAudioGuidanceEnabled" )
+        Log.e("StartNavigationsActivity", "traffic overlay at oncreate: $isTrafficOverlayEnabled" )
+
 
 
         travelMode = intent.getStringExtra("TRAVEL_MODE") ?: ""
@@ -110,6 +121,8 @@ class StartNavigationsActivity : AppCompatActivity() {
 
         initializer()
 
+        DEFAULT_STOPS = placeIds.size
+
         Log.e("StartNavigationsActivity", "TRAVEL MODE AT NAVIGATION: $travelMode" )
         Log.e("StartNavigationsActivity", "ROUTE TOKEN AT NAVIGATION: $routeToken" )
 
@@ -118,9 +131,12 @@ class StartNavigationsActivity : AppCompatActivity() {
             routeToken = "NO ROUTE TOKEN"
         // Use the placeIds and routeToken for further navigation logic
         requestLocationPermissions(routeToken!!, placeIds, travelMode)
+        showNavigationOptionsBottomSheet()
     }
 
-    private fun initializeSpeechRecognizer() {
+
+
+    private fun initializeSpeechRecognizerAndTextSpeech() {
         speechRecognitionHelper = SpeechRecognitionHelper(
             activity = this,
             onResult = { transcription ->
@@ -136,25 +152,15 @@ class StartNavigationsActivity : AppCompatActivity() {
             }
         )
 
+        textToSpeech = TextToSpeechHelper()
+        textToSpeech.initializeTTS(this)
+
     }
 
     private fun initializer() {
         aiProcessor = AIProcessor(this)
-        initializeTTS()
-        initializeSpeechRecognizer()
-    }
 
-    private fun initializeTTS() {
-        textToSpeech = TextToSpeech(this) { status ->
-            if (status == TextToSpeech.SUCCESS) {
-                val result = textToSpeech.setLanguage(Locale.US)
-                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                    Log.e("TTS", "Language not supported")
-                }
-            } else {
-                Log.e("TTS", "Initialization failed")
-            }
-        }
+        initializeSpeechRecognizerAndTextSpeech()
     }
 
     private fun processUserQuery(query: String) {
@@ -162,33 +168,36 @@ class StartNavigationsActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 // Call the processUserQuery method of AIProcessor
-                speakResponse("Searching, please wait.")
+                textToSpeech.speakResponse("Searching, please wait.")
                 val result = aiProcessor.processUserQuery(query)
+                displayMessage("RESULT VALUE: $result")
                 aiProcessor.intentClassification(aiProcessor.parseUserQuery(result))
-                displayMessage("Searching... Please wait.")
 
                 val placesInfo = aiProcessor.extractPlaceInfo()
 
-                if (placesInfo.isNotEmpty()) {
-                    speakResponse("Here's what I've got.")
+                if (aiProcessor.hasPlaceIdAndIsValidPlace()) {
+                    textToSpeech.speakResponse("Here's what I've got.")
                     plotMarkers(placesInfo)
-                } else
-                    speakResponse("Unfortunately, I cannot find what you are looking for.")
+                } else {
+                    textToSpeech.speakResponse("Unfortunately, I couldn't find any information related to your query, '$query.' Please consider trying alternative keywords for your search.")
+                }
 
                 // Log the result
                 Log.e("AIProcessor", result)
-
-
+            } catch (e: ResponseStoppedException) {
+                Log.e("AIProcessor", "Response generation stopped due to safety concerns: ${e.message}")
+                textToSpeech.speakResponse("Unfortunately, I cannot find what you are looking for.")
             } catch (e: Exception) {
-                // Handle any exceptions that might occur during processing
-                Log.e("AI Error", "Error processing query", e)
+                Log.e("AIProcessor", "Error processing query: ${e.message}", e)
+                textToSpeech.speakResponse("Unfortunately, I cannot find what you are looking for right now.")
             }
-        } }
-
-    private fun speakResponse(response: String) {
-        // Speak the response
-        textToSpeech.speak(response, TextToSpeech.QUEUE_FLUSH, null, null)
+        }
     }
+
+
+
+
+
 
 
     @SuppressLint("PotentialBehaviorOverride")
@@ -257,19 +266,38 @@ class StartNavigationsActivity : AppCompatActivity() {
     }
 
 
-    private fun showAddStopBottomSheet(marker: Marker, placeId: String) {
+    private fun showAddStopBottomSheet(marker: Marker?, placeId: String) {
         val bottomSheetView = BottomSheetAddStopBinding.inflate(layoutInflater)
 
         val bottomSheetDialog = BottomSheetDialog(this)
         bottomSheetDialog.setContentView(bottomSheetView.root)
 
-        // Set the marker's title and snippet (name and address) in the text views
-        bottomSheetView.textViewPlaceName.text = marker.title
-        bottomSheetView.textViewPlaceAddress.text = marker.snippet
+        if (marker != null){
+            // Set the marker's title and snippet (name and address) in the text views
+            bottomSheetView.textViewPlaceName.text = marker.title
+            bottomSheetView.textViewPlaceAddress.text = marker.snippet
+        } else {
+            fetchPlaceDetailsFromAPI(placeId) { place ->
+                if (place != null) {
+                    bottomSheetView.textViewPlaceName.text = place.name
+                    bottomSheetView.textViewPlaceAddress.text = place.address
+                }
+
+            }
+        }
 
         // Handle Add Stop button click
         bottomSheetView.buttonAddStop.setOnClickListener {
             // Add the placeId at the first index of placeIds
+            if (hasAlreadyArrivedAtFinalDestination) {
+                NUM_STOPS = 0
+                placeIds.removeAt(0)
+            }
+
+            if (DEFAULT_STOPS > 0) {
+                NUM_STOPS = DEFAULT_STOPS
+                DEFAULT_STOPS = 0
+            }
             placeIds.add(0, placeId)
             displayMessage("PLACEIDS: $placeIds")
             IS_ADDING_STOP = true
@@ -280,8 +308,11 @@ class StartNavigationsActivity : AppCompatActivity() {
             Log.e(TAG, "Place ID $placeId added to placeIds at index 0")
             Log.e(TAG, "IS ADDING STOP VALUE: $IS_ADDING_STOP")
 
+            navigator.stopGuidance()
+            navigator.removeArrivalListener(mArrivalListener)
+            navigator.removeRemainingTimeOrDistanceChangedListener(mRemainingTimeOrDistanceChangedListener)
             navigateWithMultipleStops("NO ROUTE TOKEN", placeIds, travelMode)
-            fetchPlaceDetailsForCard()
+            fetchPlaceDetailsForCard(NUM_STOPS)
 
 
             // Dismiss the bottom sheet
@@ -307,7 +338,7 @@ class StartNavigationsActivity : AppCompatActivity() {
         behavior.isHideable = false  // Prevent it from being fully dismissed
         behavior.state = BottomSheetBehavior.STATE_COLLAPSED
 
-        fetchPlaceDetailsForCard()
+        fetchPlaceDetailsForCard(DEFAULT_STOPS)
         binding.continueToNextDestinationLayout.visibility = if (NUM_STOPS == 1) View.GONE else View.VISIBLE
         binding.spacer1.visibility = if (NUM_STOPS == 1 ) View.GONE else View.VISIBLE
         binding.voiceGuidanceSwitch.isChecked = isAudioGuidanceEnabled
@@ -315,6 +346,13 @@ class StartNavigationsActivity : AppCompatActivity() {
         // Set up click listeners for the actions
         binding.assistantButton.setOnClickListener {
             speechRecognitionHelper.startListening()
+        }
+
+        binding.buttonShutdown.setOnClickListener {
+            cleanup()
+            Handler(Looper.getMainLooper()).postDelayed({
+                ActivityNavigationUtils.navigateToActivity(this, PlacesActivity::class.java, true)
+            }, 300)
         }
 
         binding.voiceGuidanceSwitch.setOnCheckedChangeListener { _, isChecked ->
@@ -341,16 +379,13 @@ class StartNavigationsActivity : AppCompatActivity() {
             }
         }
 
-
-
-
         binding.continueToNextDestinationLayout.setOnClickListener {
            if (NUM_STOPS != 1) {
-               navigator.continueToNextDestination()
+               handleNextStop()
                NUM_STOPS -= 1
                placeIds.removeAt(0)
                displayMessage("NUM STOPS VALUE: $NUM_STOPS")
-               fetchPlaceDetailsForCard()
+               fetchPlaceDetailsForCard(NUM_STOPS)
            }
             binding.continueToNextDestinationLayout.visibility = if (NUM_STOPS == 1) View.GONE else View.VISIBLE
             binding.spacer1.visibility = if (NUM_STOPS == 1 ) View.GONE else View.VISIBLE
@@ -359,48 +394,29 @@ class StartNavigationsActivity : AppCompatActivity() {
         binding.viewZoomedOutLayout.setOnClickListener {
             navFragment.showRouteOverview()
         }
+    }
 
-
+    private fun recalculateWaypointOrder() {
 
     }
 
-
-    private fun fetchPlaceDetailsForCard(){
+    private fun fetchPlaceDetailsForCard(stop: Int){
         fetchPlaceDetailsFromAPI(placeIds[0]) { place ->
             if (place != null) {
                 binding.tvPlaceName.text = place.name
                 binding.tvPlaceAddress.text = place.address
-                binding.tvRemainingStop.text = "Remaining destination(s): ${NUM_STOPS}"
+                binding.tvRemainingStop.text = "Remaining destination(s): ${stop}"
             }
 
         }
     }
 
-
-
-
-
-    // Method to clear existing markers from the map
     private fun clearMarkers() {
         // Remove markers from the map
         markersList.forEach { it.remove() }
         // Clear the list
         markersList.clear()
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     private fun initializeNavigationSdk(routeToken: String, placeIds: ArrayList<String>, travelMode: String) {
         // Request location permission.
@@ -455,9 +471,12 @@ class StartNavigationsActivity : AppCompatActivity() {
                         } catch (e: SecurityException) {
                             displayMessage("Error accessing location: ${e.message}")
                         }
-                    }
-                    showNavigationOptionsBottomSheet()
 
+                        googleMap.isTrafficEnabled = isTrafficOverlayEnabled
+                        googleMap.setIndoorEnabled(true)
+                        googleMap.setOnPoiClickListener(this@StartNavigationsActivity)
+
+                    }
                     navigateWithMultipleStops(routeToken, placeIds, travelMode)
                 }
                 override fun onError(@NavigationApi.ErrorCode errorCode: Int) {
@@ -590,8 +609,14 @@ class StartNavigationsActivity : AppCompatActivity() {
             when (code) {
                 Navigator.RouteStatus.OK -> {
                     displayMessage("Route successfully calculated with multiple stops!")
-                    if (isAudioGuidanceEnabled)
+                    if (isAudioGuidanceEnabled) {
                         navigator.setAudioGuidance(Navigator.AudioGuidance.VOICE_ALERTS_AND_GUIDANCE)
+                        displayMessage("AUDIO GUIDANCE: $isAudioGuidanceEnabled")
+                    } else {
+                        navigator.setAudioGuidance(Navigator.AudioGuidance.SILENT)
+                        displayMessage("AUDIO GUIDANCE: $isAudioGuidanceEnabled")
+
+                    }
 
                     registerNavigationListeners()
 
@@ -618,12 +643,35 @@ class StartNavigationsActivity : AppCompatActivity() {
                 vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
                 showTripSummaryDialog(computeTotalDistance(), computeTotalTime(), computeArrivalTime(), computeAverageSpeed(),getTrafficConditions())
                 navigator.simulator.unsetUserLocation()
+                hasAlreadyArrivedAtFinalDestination = true
             } else {
-                // Continue to the next waypoint if not at the final destination
-                navigator.continueToNextDestination()
-                navigator.startGuidance()
+                // Determine which stop counter to use
+                val stopsCount = if (IS_ADDING_STOP) NUM_STOPS else DEFAULT_STOPS
 
+                // Proceed only if there are more stops remaining
+                if (stopsCount > 1) {
+                    handleNextStop()  // Extract repeated logic into a function
+
+                    // Update stop counter
+                    if (IS_ADDING_STOP) {
+                        NUM_STOPS -= 1
+                    } else {
+                        DEFAULT_STOPS -= 1
+                    }
+
+                    // Remove the first placeId
+                    placeIds.removeAt(0)
+
+                    // Fetch the details for the next stop
+                    fetchPlaceDetailsForCard(stopsCount - 1)
+                }
+
+                // Update the UI based on the remaining stops
+                val stopsRemaining = if (IS_ADDING_STOP) NUM_STOPS else DEFAULT_STOPS
+                binding.continueToNextDestinationLayout.visibility = if (stopsRemaining == 1) View.GONE else View.VISIBLE
+                binding.spacer1.visibility = if (stopsRemaining == 1) View.GONE else View.VISIBLE
             }
+
 
         }
 
@@ -647,11 +695,15 @@ class StartNavigationsActivity : AppCompatActivity() {
                 binding.tvEta.text = "ETA: ${calculateETA(remainingTimeInSeconds)}" // Calculate and display ETA
             }
         }
-
-// Register the remaining time or distance changed listener
+        // Register the remaining time or distance changed listener
         navigator.addRemainingTimeOrDistanceChangedListener(5, 10, mRemainingTimeOrDistanceChangedListener) // Change thresholds as needed
-
     }
+
+    private fun handleNextStop() {
+        navigator.continueToNextDestination()
+        navigator.startGuidance()
+    }
+
 
     private fun formatTime(seconds: Int): String {
         val minutes = seconds / 60
@@ -685,7 +737,6 @@ class StartNavigationsActivity : AppCompatActivity() {
 
         return totalDistance
     }
-
 
     private fun calculateDistance(start: LatLng, end: LatLng): Float {
         val results = FloatArray(1)
@@ -751,7 +802,6 @@ class StartNavigationsActivity : AppCompatActivity() {
         }
     }
 
-
     private fun showTripSummaryDialog(totalDistance: String, totalTime: String, arrivalTime: String, averageSpeed: String, trafficConditions: String) {
         // Inflate the custom layout using View Binding
         val binding = DialogTripRecapBinding.inflate(layoutInflater)
@@ -791,9 +841,6 @@ class StartNavigationsActivity : AppCompatActivity() {
             finish()
         }
 
-        binding.closeButton.setOnClickListener {
-            alertDialog.dismiss()
-        }
 
         // Show the dialog
         alertDialog.show()
@@ -818,14 +865,10 @@ class StartNavigationsActivity : AppCompatActivity() {
             }
     }
 
-
-    override fun onDestroy() {
-        super.onDestroy()
-
+    private fun cleanup() {
         if (::speechRecognitionHelper.isInitialized || ::textToSpeech.isInitialized) {
             speechRecognitionHelper.stopListening()
-            textToSpeech.stop()
-            textToSpeech.shutdown()
+            textToSpeech.stopResponse()
         }
 
         // Stop any ongoing navigation
@@ -845,6 +888,7 @@ class StartNavigationsActivity : AppCompatActivity() {
             mRouteChangedListener?.let { navigator.removeRouteChangedListener(it) }
             mRemainingTimeOrDistanceChangedListener?.let { navigator.removeRemainingTimeOrDistanceChangedListener(it) }
             mRoadSnappedLocationProvider?.removeLocationListener(mLocationListener)
+            navigator.simulator.unsetUserLocation()
             displayMessage("OnDestroy: Released navigation listeners.")
         }
 
@@ -852,6 +896,17 @@ class StartNavigationsActivity : AppCompatActivity() {
         if (::navigator.isInitialized) {
             navigator.clearDestinations()
             navigator.cleanup()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        cleanup()
+    }
+
+    override fun onPoiClick(p0: PointOfInterest?) {
+        if (p0 != null) {
+            showAddStopBottomSheet(null, p0.placeId)
         }
     }
 
