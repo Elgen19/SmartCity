@@ -10,6 +10,7 @@ import android.speech.SpeechRecognizer
 import android.util.Log
 import android.widget.TextView
 import com.elgenium.smartcity.R
+import com.google.android.material.button.MaterialButton
 import java.util.Locale
 
 class SpeechRecognitionHelper(
@@ -49,9 +50,11 @@ class SpeechRecognitionHelper(
 
             override fun onError(error: Int) {
                 Log.e("SpeechRecognizer", "Error occurred: $error")
+
                 onError("Error occurred: $error") // Pass error to the UI
                 stopListening()
             }
+
 
             override fun onResults(results: Bundle?) {
                 val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
@@ -89,15 +92,27 @@ class SpeechRecognitionHelper(
     }
 
     private fun showDialog() {
+        // Inflate the custom dialog view
         val dialogView = activity.layoutInflater.inflate(R.layout.dialog_speech_result, null)
 
+        // Initialize the dialog
         dialog = AlertDialog.Builder(activity)
             .setView(dialogView)
             .setCancelable(true) // Allow the dialog to be canceled
             .create()
 
+        // Set up the Close button click listener
+        val closeButton = dialogView.findViewById<MaterialButton>(R.id.closeButton)
+        closeButton.setOnClickListener {
+            // Dismiss the dialog when the Close button is clicked
+            dialog?.dismiss()
+            stopListening() // Stop the speech recognizer when the dialog is closed
+        }
+
+        // Show the dialog
         dialog?.show()
     }
+
 
     private fun updateDialog(transcription: String) {
         dialog?.let {
