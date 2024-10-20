@@ -40,6 +40,8 @@ import com.elgenium.smartcity.singletons.ActivityNavigationUtils.navigateToActiv
 import com.elgenium.smartcity.singletons.BottomNavigationManager
 import com.elgenium.smartcity.singletons.LayoutStateManager
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
+import com.elgenium.smartcity.singletons.NotificationDataHandler
+import com.elgenium.smartcity.singletons.TokenManager
 import com.elgenium.smartcity.viewpager_adapter.PhotoPagerAdapter
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -74,6 +76,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.storage.FirebaseStorage
 import retrofit2.Call
 import retrofit2.Callback
@@ -197,20 +200,60 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
             // Use the userLatLng here
             fetchAndAddPois(userLatLng, category)
         }
-        Log.e("PlacesActivity", "type 2: ${savedPlace.types}")
 
 
+        userTokenForNotifSetup()
+
+        NotificationDataHandler.init(this)
+        fetchAndSaveCityName()
     }
 
 
 
+    private fun fetchAndSaveCityName() {
+        NotificationDataHandler.getUserCityName(this) { cityName ->
+            if (cityName != null) {
+                Log.d("MainActivity", "Fetched city name: $cityName")
+
+                // Check if the current city is different from the saved one
+                if (NotificationDataHandler.isCurrentCityDifferent(this, cityName)) {
+                    // If the city is different, save it to SharedPreferences and Firebase
+                    NotificationDataHandler.checkAndSaveCityName(this, cityName)
+                } else {
+                    Log.d("MainActivity", "City name is already up-to-date.")
+                }
+            } else {
+                Log.e("MainActivity", "Failed to retrieve city name")
+            }
+        }
+    }
 
 
 
+    private fun userTokenForNotifSetup() {
+        val savedToken = TokenManager.getSavedToken(this)
+        if (savedToken == null) {
+            getToken() // Implement this to fetch the token
+        } else {
+            Log.d("FCM", "Token already saved: $savedToken")
+            TokenManager.saveTokenToFirebase(this,savedToken)
+        }
+    }
 
+    private fun getToken() {
+        // Fetch the FCM registration token
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val token = task.result
+                Log.d("FCM", "New token retrieved: $token")
 
-
-
+                // Send the token to the server
+                TokenManager.saveTokenToFirebase(this, token ?: "NO TOKEN")
+            } else {
+                Log.e("FCM", "Fetching FCM registration token failed", task.exception)
+            }
+        }
+    }
 
 
      private fun retrievePreferences() {

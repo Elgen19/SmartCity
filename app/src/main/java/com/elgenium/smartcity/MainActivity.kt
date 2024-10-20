@@ -54,7 +54,11 @@ class MainActivity : AppCompatActivity() {
 
         // Initial check for location services and permissions
         checkLocationAndPermissions()
+
+
     }
+
+
 
     override fun onResume() {
         super.onResume()

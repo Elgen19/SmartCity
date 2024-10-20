@@ -15,6 +15,7 @@ object SettingsKeys {
     const val KEY_OPTIMIZED_WAYPOINTS = "optimized_waypoints"
     const val KEY_SET_AUDIO = "set_audio"
     const val KEY_RECOMPUTE_WAYPOINTS = "recompute_waypoint"
+    const val KEY_SAVE_TOKEN = "fcm_token"
 
 
 
