@@ -284,6 +284,49 @@
                         app:trackTint="@color/switch_track_color_state_list"
                         tools:ignore="TouchTargetSizeCheck" />
                 </LinearLayout>
+
+                <View
+                    android:id="@+id/spacer3"
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:background="@color/dark_gray" />
+
+                <LinearLayout
+                    android:id="@+id/recomputeOrderLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
+                    tools:ignore="UseCompoundDrawables">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/reorder" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:gravity="center_vertical"
+                        android:text="Enable/disable recompute waypoints"
+                        android:textColor="@color/gray" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/enableRecomputeSwitch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:thumbTint="@color/switch_thumb_color_state_list"
+                        app:trackTint="@color/switch_track_color_state_list"
+                        tools:ignore="TouchTargetSizeCheck" />
+                </LinearLayout>
             </LinearLayout>
 
         </androidx.cardview.widget.CardView>

@@ -23,13 +23,23 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.elgenium.smartcity.databinding.ActivityStartNavigationsBinding
 import com.elgenium.smartcity.databinding.BottomSheetAddStopBinding
+import com.elgenium.smartcity.databinding.DialogRecomputeStopsBinding
 import com.elgenium.smartcity.databinding.DialogTripRecapBinding
 import com.elgenium.smartcity.intelligence.AIProcessor
+import com.elgenium.smartcity.routes_network_request.LatLngMatrix
+import com.elgenium.smartcity.routes_network_request.LocationMatrix
+import com.elgenium.smartcity.routes_network_request.RouteMatrixDestination
+import com.elgenium.smartcity.routes_network_request.RouteMatrixOrigin
+import com.elgenium.smartcity.routes_network_request.RouteMatrixRequest
+import com.elgenium.smartcity.routes_network_request.WaypointMatrix
 import com.elgenium.smartcity.shared_preferences_keys.SettingsKeys
 import com.elgenium.smartcity.singletons.ActivityNavigationUtils
+import com.elgenium.smartcity.singletons.RoutesMatrixClientSingleton
 import com.elgenium.smartcity.speech.SpeechRecognitionHelper
 import com.elgenium.smartcity.speech.TextToSpeechHelper
 import com.google.ai.client.generativeai.type.ResponseStoppedException
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.GoogleMap.CameraPerspective
@@ -59,7 +69,10 @@ import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -95,18 +108,26 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
     private lateinit var sharedPreferences: SharedPreferences
     private var isAudioGuidanceEnabled = true
     private var isTrafficOverlayEnabled = false
+    private var isRecomputeWaypointEnabled = false
     private var hasAlreadyArrivedAtFinalDestination = false
+    private var isNeedOptimization = false
     private var DEFAULT_STOPS = 0
-
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private val rearrangedDestinations = mutableListOf<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityStartNavigationsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
         sharedPreferences = getSharedPreferences(SettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
         isAudioGuidanceEnabled = sharedPreferences.getBoolean("set_audio", true)
         isTrafficOverlayEnabled = sharedPreferences.getBoolean("map_overlay", false)
+        isRecomputeWaypointEnabled = sharedPreferences.getBoolean("recompute_waypoint", false)
+        displayMessage("IS RECOMPUTE ENABLED: $isRecomputeWaypointEnabled")
+
 
 
         Log.e("StartNavigationsActivity", "audio guidance at oncreate: $isAudioGuidanceEnabled" )
@@ -132,6 +153,9 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         // Use the placeIds and routeToken for further navigation logic
         requestLocationPermissions(routeToken!!, placeIds, travelMode)
         showNavigationOptionsBottomSheet()
+        Log.e("WaypointOrder", "PLACEID AT ONCREATE AFTER CHANGES: $placeIds" )
+
+
     }
 
 
@@ -265,7 +289,6 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         }
     }
 
-
     private fun showAddStopBottomSheet(marker: Marker?, placeId: String) {
         val bottomSheetView = BottomSheetAddStopBinding.inflate(layoutInflater)
 
@@ -282,7 +305,6 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
                     bottomSheetView.textViewPlaceName.text = place.name
                     bottomSheetView.textViewPlaceAddress.text = place.address
                 }
-
             }
         }
 
@@ -298,21 +320,24 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
                 NUM_STOPS = DEFAULT_STOPS
                 DEFAULT_STOPS = 0
             }
-            placeIds.add(0, placeId)
-            displayMessage("PLACEIDS: $placeIds")
-            IS_ADDING_STOP = true
-            NUM_STOPS += 1
-            clearMarkers()
-            binding.continueToNextDestinationLayout.visibility = if (NUM_STOPS == 1) View.GONE else View.VISIBLE
-            binding.spacer1.visibility = if (NUM_STOPS == 1 ) View.GONE else View.VISIBLE
-            Log.e(TAG, "Place ID $placeId added to placeIds at index 0")
-            Log.e(TAG, "IS ADDING STOP VALUE: $IS_ADDING_STOP")
+            stopConfig(placeId)
 
-            navigator.stopGuidance()
-            navigator.removeArrivalListener(mArrivalListener)
-            navigator.removeRemainingTimeOrDistanceChangedListener(mRemainingTimeOrDistanceChangedListener)
-            navigateWithMultipleStops("NO ROUTE TOKEN", placeIds, travelMode)
-            fetchPlaceDetailsForCard(NUM_STOPS)
+            // Call recalculateWaypointOrder and handle completion
+            recalculateWaypointOrder {
+                Log.e("StartNavigationsActivity", "Rearranged list: $rearrangedDestinations")
+                Log.e("StartNavigationsActivity", "Placeids: $placeIds")
+                Log.e("StartNavigationsActivity", "Is need of optimization: ${(rearrangedDestinations != placeIds)}")
+
+                if (placeIds != rearrangedDestinations) {
+                    showRecomputeStopsDialog(placeId) // Show dialog if optimization is needed
+                    Log.e("StartNavigationsActivity", "Is need optimization should be true")
+                } else {
+                    navigationConfig() // Proceed with navigation if no optimization is needed
+                    Log.e("StartNavigationsActivity", "Is need optimization should be false")
+                }
+            }
+
+
 
 
             // Dismiss the bottom sheet
@@ -326,6 +351,41 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
 
         // Show the BottomSheetDialog
         bottomSheetDialog.show()
+    }
+
+    private fun showRecomputeStopsDialog(placeId: String) {
+        if (isRecomputeWaypointEnabled == true){
+            // Inflate the binding to get the custom layout
+            val binding = DialogRecomputeStopsBinding.inflate(layoutInflater)
+
+            // Create an AlertDialog using AlertDialog.Builder
+            val dialogBuilder = AlertDialog.Builder(this)
+                .setView(binding.root) // Set the custom layout
+                .setCancelable(false) // Prevent closing by tapping outside
+
+            // Create the AlertDialog instance
+            val alertDialog = dialogBuilder.create()
+
+            // Set button listeners
+            binding.buttonCancel.setOnClickListener {
+                Log.e("StartNavigationsActivity", "Cancel button fires" )
+                navigationConfig()
+                alertDialog.dismiss() // Dismiss the dialog when "Cancel" is clicked
+            }
+
+            binding.buttonConfirm.setOnClickListener {
+                // Handle confirmation logic here
+                replacePlaceIds()
+                navigationConfig()
+                Log.e("StartNavigationsActivity", "Confirm button fires" )
+                Log.e("StartNavigationsActivity", "PlaceIDs size at confirm: ${placeIds.size}" )
+
+                alertDialog.dismiss()
+            }
+
+            // Show the dialog
+            alertDialog.show()
+        }
     }
 
     private fun showNavigationOptionsBottomSheet() {
@@ -342,6 +402,7 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         binding.continueToNextDestinationLayout.visibility = if (NUM_STOPS == 1) View.GONE else View.VISIBLE
         binding.spacer1.visibility = if (NUM_STOPS == 1 ) View.GONE else View.VISIBLE
         binding.voiceGuidanceSwitch.isChecked = isAudioGuidanceEnabled
+        binding.enableRecomputeSwitch.isChecked = isRecomputeWaypointEnabled
 
         // Set up click listeners for the actions
         binding.assistantButton.setOnClickListener {
@@ -379,12 +440,29 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
             }
         }
 
+        binding.enableRecomputeSwitch.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                with(sharedPreferences.edit()) {
+                    putBoolean(SettingsKeys.KEY_RECOMPUTE_WAYPOINTS, true)
+                    apply()
+                }
+                isRecomputeWaypointEnabled = true
+            } else {
+                with(sharedPreferences.edit()) {
+                    putBoolean(SettingsKeys.KEY_RECOMPUTE_WAYPOINTS, false)
+                    apply()
+                }
+                isRecomputeWaypointEnabled = false
+            }
+        }
+
         binding.continueToNextDestinationLayout.setOnClickListener {
            if (NUM_STOPS != 1) {
                handleNextStop()
                NUM_STOPS -= 1
                placeIds.removeAt(0)
                displayMessage("NUM STOPS VALUE: $NUM_STOPS")
+               Log.e("StartNavigationsActivity", "PlaceIDs size at confirm: ${placeIds.size}" )
                fetchPlaceDetailsForCard(NUM_STOPS)
            }
             binding.continueToNextDestinationLayout.visibility = if (NUM_STOPS == 1) View.GONE else View.VISIBLE
@@ -396,8 +474,178 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         }
     }
 
-    private fun recalculateWaypointOrder() {
+    private fun stopConfig(placeId: String) {
+        placeIds.add(0, placeId)
+        IS_ADDING_STOP = true
+        NUM_STOPS += 1
+        clearMarkers()
+        binding.continueToNextDestinationLayout.visibility = if (NUM_STOPS == 1) View.GONE else View.VISIBLE
+        binding.spacer1.visibility = if (NUM_STOPS == 1 ) View.GONE else View.VISIBLE
+        Log.e(TAG, "Place ID $placeId added to placeIds at index 0")
+        Log.e(TAG, "IS ADDING STOP VALUE: $IS_ADDING_STOP")
 
+
+    }
+
+    private fun navigationConfig(){
+        navigator.stopGuidance()
+        navigator.removeArrivalListener(mArrivalListener)
+        navigator.removeRemainingTimeOrDistanceChangedListener(mRemainingTimeOrDistanceChangedListener)
+        navigateWithMultipleStops("NO ROUTE TOKEN", placeIds, travelMode)
+        fetchPlaceDetailsForCard(NUM_STOPS)
+    }
+
+    private fun replacePlaceIds() {
+        // Output the final rearranged waypoints after all iterations are complete
+        Log.e("StartNavigationsActivity", "Rearranged Waypoints: $rearrangedDestinations")
+        placeIds.clear()
+        placeIds.addAll(rearrangedDestinations)
+        Log.e("StartNavigationsActivity", "PlaceIDS: $placeIds")
+
+        Log.e("StartNavigationsActivity", "IS NEED OPTIMIZATION: $isNeedOptimization")
+
+    }
+
+    private fun recalculateWaypointOrder(onCompletion: () -> Unit) {
+        // Initialize lists for origins and destinations
+        val waypointOrigins = mutableListOf<RouteMatrixOrigin>()
+        val waypointDestinations = mutableListOf<RouteMatrixDestination>()
+        rearrangedDestinations.clear()
+
+        // Get the current location
+        getCurrentLocation { latLng ->
+            latLng?.let {
+                // Convert LatLng to WaypointMatrix
+                val currentWaypoint = WaypointMatrix(location = LocationMatrix(latLng = LatLngMatrix(it.latitude, it.longitude)))
+
+                // Create a RouteMatrixOrigin using the current waypoint
+                var currentOrigin = RouteMatrixOrigin(waypoint = currentWaypoint)
+                waypointOrigins.add(currentOrigin)
+
+                // Create a mutable copy of placeIds to remove as waypoints are added
+                val remainingWaypoints = placeIds.toMutableList()
+
+                // Log the added origin for debugging
+                Log.e("WaypointOrder", "Current location added as origin: Lat: ${currentWaypoint.location?.latLng?.latitude}, Lng: ${currentWaypoint.location?.latLng?.longitude}")
+
+                // Use Coroutine to perform the rearrangement asynchronously
+                CoroutineScope(Dispatchers.IO).launch {
+                    while (remainingWaypoints.isNotEmpty()) {
+                        var closestDestination: String? = null
+                        var minDistance = Double.MAX_VALUE
+
+                        // Prepare destinations for the remaining waypoints
+                        waypointDestinations.clear()
+                        for (placeId in remainingWaypoints) {
+                            // Create a WaypointMatrix using the Place ID
+                            val destinationWaypoint = WaypointMatrix(placeId = placeId)
+                            waypointDestinations.add(RouteMatrixDestination(waypoint = destinationWaypoint))
+                        }
+
+                        // Create the RouteMatrixRequest
+                        val routeMatrixRequest = RouteMatrixRequest(
+                            origins = waypointOrigins,
+                            destinations = waypointDestinations,
+                            travelMode = travelMode,
+                            routingPreference = "TRAFFIC_AWARE"
+                        )
+
+                        // Make the API call asynchronously using Retrofit
+                        val apiKey = BuildConfig.MAPS_API_KEY
+
+                        // Ensure computeRouteMatrix is a suspend function in your Retrofit service
+                        try {
+                            val routesMatrixResponse = RoutesMatrixClientSingleton.instance.computeRouteMatrix(apiKey, request = routeMatrixRequest)
+
+                            // Find the nearest waypoint
+                            routesMatrixResponse.forEach { routeMatrixElement ->
+                                if (routeMatrixElement.distanceMeters < minDistance) {
+                                    minDistance = routeMatrixElement.distanceMeters.toDouble()
+                                    closestDestination = remainingWaypoints[routeMatrixElement.destinationIndex]
+                                }
+                            }
+
+                            // Add the closest waypoint to the rearranged destinations
+                            closestDestination?.let { nearestWaypoint ->
+                                rearrangedDestinations.add(nearestWaypoint)
+                                remainingWaypoints.remove(nearestWaypoint)
+
+                                // Log the nearest waypoint
+                                Log.e("WaypointOrder", "Closest Waypoint: $nearestWaypoint, Distance: $minDistance")
+
+                                // Update the current origin to be the closest destination
+                                val newOriginWaypoint = WaypointMatrix(placeId = nearestWaypoint)
+                                currentOrigin = RouteMatrixOrigin(waypoint = newOriginWaypoint)
+
+                                // Reset origins for the next iteration
+                                waypointOrigins.clear()
+                                waypointOrigins.add(currentOrigin)
+                            }
+                        } catch (e: Exception) {
+                            Log.e("WaypointOrder", "Error: ${e.message}")
+                            onCompletion()
+                        }
+                    }
+                    // After rearrangement is complete, update the isNeedOptimization variable
+                    Log.e("WaypointOrder", "Full rearranged destinations: $rearrangedDestinations")
+                    Log.e("WaypointOrder", "Placeid before: $placeIds")
+
+                    // Check if the rearranged destinations differ from the original placeIds
+                    isNeedOptimization = placeIds != rearrangedDestinations
+                    Log.e("StartNavigationsActivity", "Rearranged list at recalculate: $rearrangedDestinations")
+                    Log.e("StartNavigationsActivity", "Placeids at recalculate: $placeIds")
+                    Log.e("StartNavigationsActivity", "Are they the same: ${placeIds == rearrangedDestinations}")
+                    Log.e("StartNavigationsActivity", "Recalculate method waypoint is need optmization: $isNeedOptimization")
+
+                    withContext(Dispatchers.Main) {
+                        onCompletion() // Call onCompletion to signal that rearrangement is done
+                    }
+
+
+                }
+            } ?: run {
+                Log.e("WaypointOrder", "Failed to obtain current location.")
+            }
+        }
+    }
+
+
+
+
+
+
+
+    private fun getCurrentLocation(callback: (LatLng?) -> Unit) {
+        // Check if the location permission is granted
+        if (ContextCompat.checkSelfPermission(
+                this,  // Use 'this' if inside an Activity or Fragment
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            // Permission is granted, get the location
+            fusedLocationClient.lastLocation
+                .addOnSuccessListener { location: Location? ->
+                    location?.let {
+                        // Convert Location to LatLng
+                        val latLng = LatLng(it.latitude, it.longitude)
+                        callback(latLng) // Return the location through the callback
+                    } ?: run {
+                        Log.e("WaypointOrder", "Location is null.")
+                        callback(null) // Handle case where location is null
+                    }
+                }
+                .addOnFailureListener { exception ->
+                    Log.e("WaypointOrder", "Failed to get location", exception)
+                    callback(null) // Return null on failure
+                }
+        } else {
+            // Permission is not granted, request it
+            ActivityCompat.requestPermissions(
+                this, // Ensure that 'this' is an Activity
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                1
+            )
+        }
     }
 
     private fun fetchPlaceDetailsForCard(stop: Int){
@@ -703,7 +951,6 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         navigator.continueToNextDestination()
         navigator.startGuidance()
     }
-
 
     private fun formatTime(seconds: Int): String {
         val minutes = seconds / 60
