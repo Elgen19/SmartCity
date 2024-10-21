@@ -40,6 +40,8 @@
 
             </LinearLayout>
 
+
+
             <!-- App Settings Title -->
             <TextView
                 android:id="@+id/appSettingsTitle"
@@ -236,12 +238,125 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
+
+            <!-- Push Notifications Title -->
+            <TextView
+                android:id="@+id/pushNotificationsTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/settingsCard"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginEnd="16dp"
+                android:text="Push Notifications"
+                android:textColor="@color/brand_color"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                tools:ignore="TextContrastCheck" />
+
+            <!-- Card for Push Notifications -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/pushNotificationsCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/pushNotificationsTitle"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="16dp"
+                android:backgroundTint="@color/white"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+
+
+                    <LinearLayout
+                        android:id="@+id/weatherNotificationLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentTop="true"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:layout_marginEnd="16dp"
+                            android:layout_weight="1"
+                            android:text="Weather notifications"
+                            android:textColor="@color/gray"
+                            android:textSize="16sp" />
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/weatherNotificationSwitch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            app:thumbTint="@color/switch_thumb_color_state_list"
+                            app:trackTint="@color/switch_track_color_state_list"
+                            tools:ignore="TouchTargetSizeCheck" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/weatherNotificationLayout"
+                        android:text="Enable or disable weather update push notifications"
+                        android:textColor="@color/sub_support_text"
+                        android:textSize="12sp" />
+
+
+
+                    <LinearLayout
+                        android:id="@+id/mealNotificationLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:layout_marginEnd="16dp"
+                            android:layout_weight="1"
+                            android:text="Meal notifications"
+                            android:textColor="@color/gray"
+                            android:textSize="16sp" />
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/mealNotificationSwitch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            app:thumbTint="@color/switch_thumb_color_state_list"
+                            app:trackTint="@color/switch_track_color_state_list"
+                            tools:ignore="TouchTargetSizeCheck" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/mealNotificationLayout"
+                        android:text="Enable or disable meal-related push notifications such as snack or lunch reminder."
+                        android:textColor="@color/sub_support_text"
+                        android:textSize="12sp" />
+
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
             <!-- Contextual Suggestions Title -->
             <TextView
                 android:id="@+id/appContextualSuggestionsTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/settingsCard"
+                android:layout_below="@id/pushNotificationsCard"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="16dp"
                 android:layout_marginEnd="16dp"
@@ -256,9 +371,9 @@
                 android:id="@+id/contextualSuggestionsCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/settingsCard"
+                android:layout_below="@id/appContextualSuggestionsTitle"
                 android:layout_marginStart="16dp"
-                android:layout_marginTop="48dp"
+                android:layout_marginTop="8dp"
                 android:layout_marginEnd="16dp"
                 android:backgroundTint="@color/white"
                 app:cardCornerRadius="8dp"

@@ -4,6 +4,7 @@ import PlacesClientSingleton
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.ActivityOptions
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Resources
@@ -30,6 +31,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
+import com.elgenium.smartcity.contextuals.MealPlaceRecommendationManager
 import com.elgenium.smartcity.databinding.ActivityPlacesBinding
 import com.elgenium.smartcity.models.RecommendedPlace
 import com.elgenium.smartcity.models.SavedPlace
@@ -112,6 +114,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
     private var isFewerLandmarks = false
     private var mapTheme = "Aubergine"
     private var isTrafficOverlayEnabled = false
+    private lateinit var mealPlaceRecommender: MealPlaceRecommendationManager
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -123,6 +126,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
 
         // Singleton object to set the color of the navigation bar making it more personalized
         NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
+        mealPlaceRecommender = MealPlaceRecommendationManager(this)
 
         retrievePreferences()
 
@@ -206,8 +210,78 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
 
         NotificationDataHandler.init(this)
         fetchAndSaveCityName()
+
+
+        setupMealRecommendationTimeOfDisplay(12)
     }
 
+
+    private fun setupMealRecommendationTimeOfDisplay(simulatedHour: Int? = null) {
+        val sharedPreferences = getSharedPreferences("MealRecommendationPrefs", Context.MODE_PRIVATE)
+        val lastRecommendedTime = sharedPreferences.getLong("recommended_time", 0)
+        val recommendationExecuted = sharedPreferences.getBoolean("recommendation_executed", false)
+
+        // Log the retrieved values
+        Log.e("MealRecommendation", "Last Recommended Time: $lastRecommendedTime")
+        Log.e("MealRecommendation", "Recommendation Executed: $recommendationExecuted")
+
+        // Use the simulated hour if provided, otherwise get the current hour
+        val currentHour = simulatedHour ?: Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+
+        // Log the current hour
+        Log.e("MealRecommendation", "Current Hour: $currentHour")
+
+        // Get the current time in milliseconds
+        val currentTime = System.currentTimeMillis()
+
+        // Determine if recommendations should be executed
+        val shouldExecute = shouldExecuteRecommendation(currentHour, lastRecommendedTime)
+
+        // Log the result of the shouldExecuteRecommendation check
+        Log.e("MealRecommendation", "Should Execute Recommendation: $shouldExecute")
+
+        if (!recommendationExecuted && shouldExecute) {
+            fetchRecommendedMealPlaces()
+
+            // Update preferences
+            sharedPreferences.edit()
+                .putBoolean("recommendation_executed", true)
+                .putLong("recommended_time", currentTime)
+                .apply()
+
+            Log.e("MealRecommendation", "Recommendations executed and preferences updated.")
+        } else {
+            Log.e("MealRecommendation", "Recommendations not executed. Either already executed or out of time range.")
+        }
+    }
+
+
+    private fun shouldExecuteRecommendation(currentHour: Int, lastRecommendedTime: Long): Boolean {
+        // Calculate the time difference (in hours) since the last recommendation was shown
+        val hoursSinceLastRecommendation = (System.currentTimeMillis() - lastRecommendedTime) / (1000 * 60 * 60)
+
+        return when (currentHour) {
+            in 5..11 -> hoursSinceLastRecommendation >= 1 // Can show breakfast once a day
+            in 12..13 -> hoursSinceLastRecommendation >= 1 // Can show lunch once a day
+            in 14..17 -> hoursSinceLastRecommendation >= 1 // Can show snacks once a day
+            in 18..22 -> hoursSinceLastRecommendation >= 1 // Can show dinner once a day
+            else -> true // Late-night recommendations can be shown any time
+        }
+    }
+
+    private fun fetchRecommendedMealPlaces() {
+        val mealTime = mealPlaceRecommender.getMealTime()
+        val recommendedPlaceTypes = mealPlaceRecommender.mealTimePlaceMappings[mealTime]
+
+        if (!recommendedPlaceTypes.isNullOrEmpty()) {
+            Log.d("Recommendation", "Performing text search for meal places...")
+            mealPlaceRecommender.performTextSearch(placesClient, recommendedPlaceTypes, this, null, null, null, false) {
+                Log.d("Recommendation", "Text search for meal places complete.")
+            }
+        } else {
+            Log.e("MealRecommendationActivity", "No recommended place types found for meal time: $mealTime")
+        }
+    }
 
 
     private fun fetchAndSaveCityName() {

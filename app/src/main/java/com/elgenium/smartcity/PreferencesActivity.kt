@@ -121,6 +121,8 @@ class PreferencesActivity : AppCompatActivity() {
             putBoolean("map_labels", false)
             putBoolean("map_overlay", true)
             putBoolean("start_screen", false)
+            putBoolean("weather_notifications", false)
+            putBoolean("meal_notifications", false)
 
             apply()
         }
