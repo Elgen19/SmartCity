@@ -16,6 +16,11 @@ object SettingsKeys {
     const val KEY_SET_AUDIO = "set_audio"
     const val KEY_RECOMPUTE_WAYPOINTS = "recompute_waypoint"
     const val KEY_SAVE_TOKEN = "fcm_token"
+    const val KEY_WEATHER = "weather_notifications"
+    const val KEY_MEAL = "meal_notifications"
+
+
+
 
 
 

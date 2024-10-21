@@ -81,6 +81,9 @@ class SettingsActivity : AppCompatActivity() {
             putBoolean(SettingsKeys.KEY_MAP_LABELS, isFewerLabels)
             putBoolean(SettingsKeys.KEY_MAP_OVERLAY, isTrafficOverlayEnabled)
             putBoolean(SettingsKeys.KEY_STARTER_SCREEN, binding.setDashboardAsStarterSwitch.isChecked)
+            putBoolean(SettingsKeys.KEY_WEATHER, binding.weatherNotificationSwitch.isChecked)
+            putBoolean(SettingsKeys.KEY_MEAL, binding.mealNotificationSwitch.isChecked)
+
 
 
 
@@ -127,10 +130,12 @@ class SettingsActivity : AppCompatActivity() {
             "map_labels" to isFewerLabels,
             "map_overlay" to isTrafficOverlayEnabled,
             "start_screen" to binding.setDashboardAsStarterSwitch.isChecked,
+            "weather_notifications" to binding.weatherNotificationSwitch.isChecked,
+            "meal_notifications" to binding.weatherNotificationSwitch.isChecked,
 
 
 
-            )
+        )
 
         userRef.child("settings").updateChildren(settings).addOnCompleteListener { task ->
             if (task.isSuccessful) {
@@ -154,6 +159,9 @@ class SettingsActivity : AppCompatActivity() {
         isFewerLandmarks = sharedPreferences.getBoolean(SettingsKeys.KEY_MAP_LANDMARKS, false)
         isFewerLabels = sharedPreferences.getBoolean(SettingsKeys.KEY_MAP_LABELS, false)
         isTrafficOverlayEnabled = sharedPreferences.getBoolean(SettingsKeys.KEY_MAP_OVERLAY, true)
+        binding.weatherNotificationSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_WEATHER, true)
+        binding.mealNotificationSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_MEAL, true)
+
 
     }
 

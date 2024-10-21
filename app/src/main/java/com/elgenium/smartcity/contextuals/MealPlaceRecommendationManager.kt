@@ -105,9 +105,9 @@ class MealPlaceRecommendationManager(context: Context) {
         placesClient: PlacesClient,
         currentPlaceTypes: List<String>,
         context: Context,
-        recyclerView: RecyclerView,
-        titleTextView: TextView,
-        supportTextView: TextView,
+        recyclerView: RecyclerView?,
+        titleTextView: TextView?,
+        supportTextView: TextView?,
         isForCarousel: Boolean,
         callback: (List<Place>) -> Unit) {
         // Get the current location first
@@ -205,7 +205,7 @@ class MealPlaceRecommendationManager(context: Context) {
 
                                                 Log.e("MealPlaceRecommendationManager", "places: $recommendedPlacesList")
 
-                                                if (isForCarousel){
+                                                if (isForCarousel && recyclerView != null && titleTextView != null && supportTextView != null){
                                                     setupRecommendationUI(context, placesClient, recommendedPlacesList, recyclerView, titleTextView, supportTextView)
                                                 } else {
                                                     showMealRecommendationBottomSheet(context, recommendedPlacesList, placesClient) // Show the bottom sheet with all places
