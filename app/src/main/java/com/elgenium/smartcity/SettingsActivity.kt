@@ -82,10 +82,9 @@ class SettingsActivity : AppCompatActivity() {
             putBoolean(SettingsKeys.KEY_MAP_OVERLAY, isTrafficOverlayEnabled)
             putBoolean(SettingsKeys.KEY_STARTER_SCREEN, binding.setDashboardAsStarterSwitch.isChecked)
             putBoolean(SettingsKeys.KEY_WEATHER, binding.weatherNotificationSwitch.isChecked)
+            putBoolean(SettingsKeys.KEY_CYCLONE, binding.cycloneAlertSwitch.isChecked)
+            putBoolean(SettingsKeys.KEY_TRAFFIC, binding.trafficUpdateSwitch.isChecked)
             putBoolean(SettingsKeys.KEY_MEAL, binding.mealNotificationSwitch.isChecked)
-
-
-
 
             apply()
         }
@@ -132,10 +131,13 @@ class SettingsActivity : AppCompatActivity() {
             "start_screen" to binding.setDashboardAsStarterSwitch.isChecked,
             "weather_notifications" to binding.weatherNotificationSwitch.isChecked,
             "meal_notifications" to binding.weatherNotificationSwitch.isChecked,
+            "cyclone_alert" to binding.cycloneAlertSwitch.isChecked,
+            "traffic_alert" to binding.trafficUpdateSwitch.isChecked,
 
 
 
-        )
+
+            )
 
         userRef.child("settings").updateChildren(settings).addOnCompleteListener { task ->
             if (task.isSuccessful) {
@@ -161,6 +163,10 @@ class SettingsActivity : AppCompatActivity() {
         isTrafficOverlayEnabled = sharedPreferences.getBoolean(SettingsKeys.KEY_MAP_OVERLAY, true)
         binding.weatherNotificationSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_WEATHER, true)
         binding.mealNotificationSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_MEAL, true)
+        binding.cycloneAlertSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_CYCLONE, true)
+        binding.trafficUpdateSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_TRAFFIC, true)
+
+
 
 
     }
