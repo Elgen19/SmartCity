@@ -17,6 +17,8 @@ import com.google.firebase.messaging.RemoteMessage
 class PushNotificationsMessaging : FirebaseMessagingService() {
     private  var isWeatherNotificationEnabled = false
     private var isMealNotificationEnabled = false
+    private var isCycloneAlertEnabled = false
+    private var isTrafficAlertEnabled = false
 
     override fun onCreate() {
         super.onCreate()
@@ -50,6 +52,14 @@ class PushNotificationsMessaging : FirebaseMessagingService() {
                     if (!isMealNotificationEnabled) return  // Exit if meal notifications are disabled
                     "BREAKFAST_CHANNEL"
                 }
+                "Cyclone Alerts" -> {
+                    if (!isCycloneAlertEnabled) return
+                    "CYCLONE_CHANNEL"
+                }
+                "Traffic Alerts" -> {
+                    if (!isTrafficAlertEnabled) return
+                    "TRAFFIC_CHANNEL"
+                }
                 else -> {
                     if (!isWeatherNotificationEnabled) return  // Exit if weather notifications are disabled
                     "WEATHER_CHANNEL"
@@ -70,6 +80,9 @@ class PushNotificationsMessaging : FirebaseMessagingService() {
         // Optionally log the retrieved value
         Log.e("Preferences", "weather notif value: $isWeatherNotificationEnabled")
         Log.e("Preferences", "meal notif value: $isMealNotificationEnabled")
+        Log.e("Preferences", "cyclone notif value: $isCycloneAlertEnabled")
+        Log.e("Preferences", "traffic notif value: $isTrafficAlertEnabled")
+
 
 
     }
@@ -130,6 +143,12 @@ class PushNotificationsMessaging : FirebaseMessagingService() {
 
         // Create Breakfast Notifications Channel
         createNotificationChannel("BREAKFAST_CHANNEL", "Breakfast Recommendations", "Channel for breakfast recommendations")
+
+        // Create Cyclone Notifications Channel
+        createNotificationChannel("CYCLONE_CHANNEL", "Cyclone Alerts", "Channel for cyclone alerts")
+
+        // Create Traffic Update Notifications Channel
+        createNotificationChannel("TRAFFIC_CHANNEL", "Traffic Alerts", "Channel for traffic alerts")
     }
 
 

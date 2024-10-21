@@ -18,6 +18,9 @@ object SettingsKeys {
     const val KEY_SAVE_TOKEN = "fcm_token"
     const val KEY_WEATHER = "weather_notifications"
     const val KEY_MEAL = "meal_notifications"
+    const val KEY_CYCLONE = "cyclone_alert"
+    const val KEY_TRAFFIC = "traffic_alert"
+
 
 
 

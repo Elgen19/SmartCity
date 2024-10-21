@@ -348,6 +348,79 @@
                         android:textSize="12sp" />
 
 
+
+
+                    <LinearLayout
+                        android:id="@+id/cycloneAlertLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:layout_marginEnd="16dp"
+                            android:layout_weight="1"
+                            android:text="Cyclone Alerts"
+                            android:textColor="@color/gray"
+                            android:textSize="16sp" />
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/cycloneAlertSwitch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            app:thumbTint="@color/switch_thumb_color_state_list"
+                            app:trackTint="@color/switch_track_color_state_list"
+                            tools:ignore="TouchTargetSizeCheck" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Enable or disable tropical cyclone alerts"
+                        android:textColor="@color/sub_support_text"
+                        android:textSize="12sp" />
+
+
+
+                    <LinearLayout
+                        android:id="@+id/trafficUpdateLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:layout_marginEnd="16dp"
+                            android:layout_weight="1"
+                            android:text="Traffic Updates"
+                            android:textColor="@color/gray"
+                            android:textSize="16sp" />
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/trafficUpdateSwitch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            app:thumbTint="@color/switch_thumb_color_state_list"
+                            app:trackTint="@color/switch_track_color_state_list"
+                            tools:ignore="TouchTargetSizeCheck" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Enable or disable traffic alerts within the city"
+                        android:textColor="@color/sub_support_text"
+                        android:textSize="12sp" />
+
+
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
