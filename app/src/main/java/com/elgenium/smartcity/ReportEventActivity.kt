@@ -1,5 +1,6 @@
 package com.elgenium.smartcity
 
+import PlacesClientSingleton
 import android.Manifest
 import android.app.Activity
 import android.app.AlertDialog
@@ -8,7 +9,6 @@ import android.app.TimePickerDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
-import android.location.Geocoder
 import android.location.Location
 import android.net.Uri
 import android.os.Bundle
@@ -31,10 +31,14 @@ import com.bumptech.glide.Glide
 import com.elgenium.smartcity.databinding.ActivityReportEventBinding
 import com.elgenium.smartcity.models.Event
 import com.elgenium.smartcity.models.ReportImages
+import com.elgenium.smartcity.network.GeocodingService
+import com.elgenium.smartcity.network_reponses.GeocodingResponse
 import com.elgenium.smartcity.recyclerview_adapter.ImageAdapter
 import com.elgenium.smartcity.singletons.LayoutStateManager
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
@@ -48,6 +52,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
+import retrofit2.Call
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
@@ -64,6 +71,7 @@ class ReportEventActivity : AppCompatActivity() {
     private lateinit var placeName: String
     private lateinit var placeAddress: String
     private var currentPhotoPath: String? = null
+    private val placesClient by lazy { PlacesClientSingleton.getClient(this) }
     private val imageList = mutableListOf<ReportImages>()
     private lateinit var placeLatLng: String
     private lateinit var placeId: String
@@ -595,6 +603,7 @@ class ReportEventActivity : AppCompatActivity() {
                     intent.putExtra("FROM_REPORT_EVENTS_ACTIVITY", true)
                     searchActivityLauncher.launch(intent)
                 }
+
             }
         }
 
@@ -1011,25 +1020,77 @@ class ReportEventActivity : AppCompatActivity() {
             return
         }
 
+        // Fetch location using fusedLocationClient
         fusedLocationClient.lastLocation
             .addOnSuccessListener { location: Location? ->
                 Log.d("ReportEventActivity", "Location received: $location")
                 if (location != null) {
-                    val geocoder = Geocoder(this)
-                    val addresses =
-                        geocoder.getFromLocation(location.latitude, location.longitude, 1)
-                    if (addresses != null) {
-                        if (addresses.isNotEmpty()) {
-                            val address = addresses[0].getAddressLine(0)  // Full address
-                            Log.d("ReportEventActivity", "Address found: $address")
-                            binding.tvAdditionalInfo.visibility = View.VISIBLE
-                            binding.tvLocation.text = "My Location"
-                            binding.tvAdditionalInfo.text = address
-                        } else {
-                            Log.d("ReportEventActivity", "No address found")
+                    // Create Retrofit instance inside the method
+                    val retrofit = Retrofit.Builder()
+                        .baseUrl("https://maps.googleapis.com/")  // Google Maps API base URL
+                        .addConverterFactory(GsonConverterFactory.create())
+                        .build()
+
+                    // Get the service instance
+                    val geocodingService = retrofit.create(GeocodingService::class.java)
+
+                    // Latitude and longitude as a string
+                    val latLng = "${location.latitude},${location.longitude}"
+                    val apiKey = BuildConfig.MAPS_API_KEY
+
+                    // Call the reverse geocoding API
+                    val call = geocodingService.getPlace(latLng, apiKey)
+
+                    call.enqueue(object : retrofit2.Callback<GeocodingResponse> {
+                        override fun onResponse(
+                            call: Call<GeocodingResponse>,
+                            response: retrofit2.Response<GeocodingResponse>
+                        ) {
+                            if (response.isSuccessful && response.body() != null) {
+                                val geocodingResponse = response.body()!!
+                                if (geocodingResponse.results.isNotEmpty()) {
+                                    val placeId = geocodingResponse.results[0].place_id
+                                    Log.d("ReportEventActivity", "Place ID found: $placeId")
+
+                                    val address = geocodingResponse.results[0].formatted_address
+                                    binding.tvAdditionalInfo.visibility = View.VISIBLE
+                                    binding.tvAdditionalInfo.text = address
+
+                                    // Fetch the place details using the placeId
+                                    fetchPlaceDetailsFromAPI(placeId) { place ->
+                                        if (place != null) {
+                                            Log.d("ReportEventActivity", "Place found: ${place.name}")
+                                            binding.tvLocation.text = place.name  // Assign place name to the view
+
+                                            // Assign placeName after the view is updated
+                                            placeName = place.name?.toString() ?: "No place name"
+                                        } else {
+                                            Log.d("ReportEventActivity", "Place name could not be retrieved")
+                                            binding.tvLocation.text = ""  // Set the view to empty string if no place found
+                                            placeName = ""  // Set placeName to empty as well
+                                        }
+
+                                        // Since address is already set, assign it here too
+                                        placeAddress = binding.tvAdditionalInfo.text.toString()
+                                    }
+
+                                    placeName = binding.tvLocation.text.toString()
+                                    placeAddress = binding.tvAdditionalInfo.text.toString()
+                                } else {
+                                    Log.d("ReportEventActivity", "No place ID found")
+                                    binding.tvLocation.text = getString(R.string.address_not_found)
+                                }
+                            } else {
+                                Log.d("ReportEventActivity", "Failed to get address")
+                                binding.tvLocation.text = getString(R.string.address_not_found)
+                            }
+                        }
+
+                        override fun onFailure(call: Call<GeocodingResponse>, t: Throwable) {
+                            Log.e("ReportEventActivity", "Failed to get address", t)
                             binding.tvLocation.text = getString(R.string.address_not_found)
                         }
-                    }
+                    })
                 } else {
                     Log.d("ReportEventActivity", "Location is null")
                     binding.tvLocation.text = getString(R.string.address_not_found)
@@ -1039,6 +1100,26 @@ class ReportEventActivity : AppCompatActivity() {
                 Log.e("ReportEventActivity", "Failed to get location", e)
             }
     }
+
+    private fun fetchPlaceDetailsFromAPI(placeId: String, callback: (Place?) -> Unit) {
+        val fields = listOf(
+            Place.Field.ID,
+            Place.Field.NAME,
+            Place.Field.ADDRESS
+        )
+        val request = FetchPlaceRequest.builder(placeId, fields).build()
+
+        placesClient.fetchPlace(request)
+            .addOnSuccessListener { response ->
+                val place = response.place
+                callback(place)
+            }
+            .addOnFailureListener {
+                callback(null) // Return null if the API call fails
+            }
+    }
+
+
 
     private fun showDateTimePicker(onDateTimeSelected: (String) -> Unit) {
         Log.d("ReportEventActivity", "Showing date time picker")

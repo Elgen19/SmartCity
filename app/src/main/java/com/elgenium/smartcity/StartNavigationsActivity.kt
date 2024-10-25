@@ -95,6 +95,7 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
     private var routeToken: String? = null
     private lateinit var travelMode: String
     private lateinit var placeIds: ArrayList<String>
+    private var transitLatlng: ArrayList<String> = ArrayList()
     private var isSimulated = false
     private lateinit var speechRecognitionHelper: SpeechRecognitionHelper
     private lateinit var textToSpeech: TextToSpeechHelper
@@ -140,12 +141,27 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         placeIds = intent.getStringArrayListExtra("PLACE_IDS") ?: ArrayList()
         isSimulated = intent.getBooleanExtra("IS_SIMULATED", false)
 
+        transitLatlng = intent.getStringArrayListExtra("TRANSIT_LATLNG_LIST") ?: ArrayList()
+        Log.e("StartNavigationsActivity", "Transit LatLng List: $transitLatlng")
+
+//        transitLatlng.clear()
+//        transitLatlng.add("10.335217845207357,123.93389861854995")
+
+
+
         initializer()
 
-        DEFAULT_STOPS = placeIds.size
+        DEFAULT_STOPS = if (placeIds.size != 0) placeIds.size else transitLatlng.size
+        Log.e("StartNavigationsActivity", "Default stops is: $DEFAULT_STOPS")
+        Log.e("StartNavigationsActivity", "Transit Lat lng size is: $transitLatlng.size")
+
+        Log.e("StartNavigationsActivity", "Placeids size is: ${placeIds.size}")
+
+
 
         Log.e("StartNavigationsActivity", "TRAVEL MODE AT NAVIGATION: $travelMode" )
         Log.e("StartNavigationsActivity", "ROUTE TOKEN AT NAVIGATION: $routeToken" )
+
 
 
         if (routeToken == null)
@@ -398,7 +414,9 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         behavior.isHideable = false  // Prevent it from being fully dismissed
         behavior.state = BottomSheetBehavior.STATE_COLLAPSED
 
-        fetchPlaceDetailsForCard(DEFAULT_STOPS)
+        if (travelMode != "TRANSIT")
+            fetchPlaceDetailsForCard(DEFAULT_STOPS)
+
         binding.continueToNextDestinationLayout.visibility = if (NUM_STOPS == 1) View.GONE else View.VISIBLE
         binding.spacer1.visibility = if (NUM_STOPS == 1 ) View.GONE else View.VISIBLE
         binding.voiceGuidanceSwitch.isChecked = isAudioGuidanceEnabled
@@ -725,7 +743,11 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
                         googleMap.setOnPoiClickListener(this@StartNavigationsActivity)
 
                     }
-                    navigateWithMultipleStops(routeToken, placeIds, travelMode)
+
+                    if (travelMode == "TRANSIT")
+                        navigateUsingTransit()
+                    else
+                        navigateWithMultipleStops(routeToken, placeIds, travelMode)
                 }
                 override fun onError(@NavigationApi.ErrorCode errorCode: Int) {
                     when (errorCode) {
@@ -799,19 +821,66 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         }
     }
 
+    private fun navigateUsingTransit() {
+        val waypoints = mutableListOf<Waypoint>()
+
+        try {
+            // Process each transit lat-lng to create waypoints
+            for (transit in transitLatlng) {
+                val latLng = transit.split(",")
+                val latitude = latLng[0].toDouble()
+                val longitude = latLng[1].toDouble()
+
+                // Build each waypoint using latitude and longitude
+                val waypoint = Waypoint.builder()
+                    .setLatLng(latitude, longitude)
+                    .setVehicleStopover(true)
+                    .build()
+
+                waypoints.add(waypoint) // Add to waypoints list
+            }
+
+            val displayOptions = DisplayOptions().apply {
+                showStopSigns(showStopSigns)
+                showTrafficLights(showTrafficLights)
+            }
+
+            // Always use DRIVING as the travel mode
+            val routingOptions = RoutingOptions().apply {
+                travelMode(TravelMode.WALKING)
+                avoidFerries(true)
+                avoidTolls(true)
+            }
+
+            Log.e("StartNavigationsActivity", "ROUTE TOKEN: $routeToken")
+            Log.e("StartNavigationsActivity", "TRAVEL MODE: DRIVING")
+            Log.e("StartNavigationsActivity", "IS ADDING STOP VALUE: $IS_ADDING_STOP")
+
+            // Set the destinations using waypoints and routing options
+            val pendingRoute = navigator.setDestinations(waypoints, routingOptions, displayOptions)
+
+            handleRouteResult(pendingRoute)
+
+        } catch (e: Exception) {
+            Log.e("StartNavigationsActivity", "Error while navigating using transit: ${e.message}")
+            e.printStackTrace()
+        }
+    }
+
+
     private fun navigateWithMultipleStops(routeToken: String, placesIds: List<String>, travelMode: String) {
         // Create a list of waypoints based on the provided place IDs
         val waypoints = mutableListOf<Waypoint>()
 
         try {
-            for (placeId in placesIds) {
-                // Build each waypoint using the placeId and add to the list
-                val waypoint = Waypoint.builder()
-                    .setPlaceIdString(placeId)
-                    .setVehicleStopover(true)
-                    .build()
-                waypoints.add(waypoint)
-            }
+                for (placeId in placesIds) {
+                    // Build each waypoint using the placeId and add to the list
+                    val waypoint = Waypoint.builder()
+                        .setPlaceIdString(placeId)
+                        .setVehicleStopover(true)
+                        .build()
+                    waypoints.add(waypoint)
+                }
         } catch (e: Waypoint.UnsupportedPlaceIdException) {
             displayMessage("Error starting navigation: One or more Place IDs are not supported.")
             return
@@ -907,11 +976,12 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
                         DEFAULT_STOPS -= 1
                     }
 
-                    // Remove the first placeId
-                    placeIds.removeAt(0)
+                    if (travelMode != "TRANSIT") {
+                        // Remove the first placeId
+                        placeIds.removeAt(0)
+                        fetchPlaceDetailsForCard(stopsCount - 1)
+                    }
 
-                    // Fetch the details for the next stop
-                    fetchPlaceDetailsForCard(stopsCount - 1)
                 }
 
                 // Update the UI based on the remaining stops

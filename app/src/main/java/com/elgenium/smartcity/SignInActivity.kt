@@ -2,6 +2,7 @@ package com.elgenium.smartcity
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -24,6 +25,7 @@ class SignInActivity : AppCompatActivity() {
     private lateinit var googleSignInClient: GoogleSignInClient
     private lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
     private lateinit var database: DatabaseReference
+    private var starterScreen: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -117,7 +119,9 @@ class SignInActivity : AppCompatActivity() {
                                 val preferencesSet = dataTask.result.child("preferencesSet").getValue(Boolean::class.java) ?: false
                                 if (preferencesSet) {
                                     // Preferences already set, redirect to Dashboard
-                                    startDashboardActivity()
+                                    retrieveUserSettings {
+                                        startDashboardActivity()
+                                    }
                                 } else {
                                     // Preferences not set, redirect to PreferencesActivity
                                     startPreferencesActivity()
@@ -135,19 +139,88 @@ class SignInActivity : AppCompatActivity() {
             }
     }
 
+    private fun retrieveUserSettings(onSettingsRetrieved: () -> Unit) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId != null) {
+            database.child(userId).child("settings").get().addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val dataSnapshot = task.result
+                    if (dataSnapshot != null && dataSnapshot.exists()) {
+                        // Retrieve values from snapshot
+                        val eventRecommender = dataSnapshot.child("event_recommender").getValue(Boolean::class.java) ?: true
+                        val mapLabels = dataSnapshot.child("map_labels").getValue(Boolean::class.java) ?: false
+                        val mapLandmarks = dataSnapshot.child("map_landmarks").getValue(Boolean::class.java) ?: false
+                        val mapOverlay = dataSnapshot.child("map_overlay").getValue(Boolean::class.java) ?: true
+                        val mapTheme = dataSnapshot.child("map_theme").getValue(String::class.java) ?: "Light"
+                        val mealNotifications = dataSnapshot.child("meal_notifications").getValue(Boolean::class.java) ?: true
+                        starterScreen = dataSnapshot.child("start_screen").getValue(Boolean::class.java) ?: false // Update global variable
+                        val weatherNotifications = dataSnapshot.child("weather_notifications").getValue(Boolean::class.java) ?: true
+                        val cycloneAlerts = dataSnapshot.child("cyclone_alert").getValue(Boolean::class.java) ?: true
+                        val trafficAlerts = dataSnapshot.child("traffic_alert").getValue(Boolean::class.java) ?: true
+                        val contextRecomender = dataSnapshot.child("context_recommender").getValue(Boolean::class.java) ?: true
+
+
+                        // Save values to SharedPreferences
+                        val sharedPreferences = getSharedPreferences("user_settings", MODE_PRIVATE)
+                        with(sharedPreferences.edit()) {
+                            putBoolean("event_recommender", eventRecommender)
+                            putString("map_theme", mapTheme)
+                            putBoolean("map_landmarks", mapLandmarks)
+                            putBoolean("map_labels", mapLabels)
+                            putBoolean("map_overlay", mapOverlay)
+                            putBoolean("meal_notifications", mealNotifications)
+                            putBoolean("start_screen", starterScreen)
+                            putBoolean("traffic_alert", trafficAlerts)
+                            putBoolean("cyclone_alert", cycloneAlerts)
+                            putBoolean("context_recommender", contextRecomender)
+                            putBoolean("weather_notifications", weatherNotifications)
+                            apply()  // Use apply() to save asynchronously
+
+                            // Log the updated SharedPreferences
+                            Log.d("Settings", "SharedPreferences updated: map_theme=$mapTheme, map_labels=$mapLabels, map_landmarks=$mapLandmarks")
+                        }
+
+                        // Call the callback once settings are saved
+                        onSettingsRetrieved()
+                    } else {
+                        Log.e("Settings", "No settings found for this user")
+                        onSettingsRetrieved()  // Proceed even if no settings are found
+                    }
+                } else {
+                    // Handle failure
+                    Log.e("Settings", "Failed to retrieve settings: ${task.exception?.message}")
+                    onSettingsRetrieved()  // Proceed on failure
+                }
+            }
+        } else {
+            Log.e("Settings", "User ID is null, user might not be logged in.")
+            onSettingsRetrieved()  // Proceed even if user is not logged in
+        }
+    }
+
 
     private fun startDashboardActivity() {
         Toast.makeText(this, "Sign in successful!", Toast.LENGTH_LONG).show()
-        val intent = Intent(this, DashboardActivity::class.java)
+
+        // Choose the activity based on the starterScreen value
+        val intent = if (starterScreen) {
+            Intent(this, DashboardActivity::class.java)
+        } else {
+            Intent(this, PlacesActivity::class.java)
+        }
+
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
     }
+
 
     private fun startPreferencesActivity() {
         val intent = Intent(this, PreferencesActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
     }
+
+
 
     private fun storeUserInfo(email: String?, fullName: String?, photoUrl: String?) {
         val userId = auth.currentUser?.uid ?: return
@@ -195,7 +268,9 @@ class SignInActivity : AppCompatActivity() {
                                 val preferencesSet = dataTask.result.child("preferencesSet").getValue(Boolean::class.java) ?: false
                                 if (preferencesSet) {
                                     // Preferences already set, redirect to Dashboard
-                                    startDashboardActivity()
+                                    retrieveUserSettings {
+                                        startDashboardActivity()
+                                    }
                                 } else {
                                     // Preferences not set, redirect to PreferencesActivity
                                     startPreferencesActivity()

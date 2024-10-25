@@ -38,19 +38,19 @@
  </LinearLayout>
 
 
-    <!-- Clear All Button -->
     <Button
         android:id="@+id/btnClearAll"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_below="@+id/notificationRecyclerView"
+        android:layout_alignParentEnd="true"
         android:text="Clear All"
         android:layout_marginTop="8dp"
         android:textColor="@color/gray"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
         android:backgroundTint="@color/primary_color"
-        android:layout_alignParentEnd="true"
-        android:layout_below="@id/topComponents" />
+        android:paddingEnd="0dp" />
 
     <!-- LottieAnimationView for the empty state -->
     <com.airbnb.lottie.LottieAnimationView
@@ -85,10 +85,10 @@
         android:id="@+id/notificationRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:layout_marginStart="16dp"
-        android:layout_below="@+id/btnClearAll"
-        android:layout_marginEnd="16dp"
         android:visibility="gone"
-        android:layout_marginTop="100dp"/>
+        android:layout_below="@id/topComponents"
+        android:layout_marginEnd="16dp" />
 
 </RelativeLayout>

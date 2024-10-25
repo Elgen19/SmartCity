@@ -11,5 +11,12 @@ interface GeocodingService {
         @Query("latlng") latLng: String,
         @Query("key") apiKey: String
     ): Call<GeocodingResponse>
+
+
+    @GET("maps/api/geocode/json")
+    fun getPlace(
+        @Query("latlng") latLng: String,
+        @Query("key") apiKey: String
+    ): Call<GeocodingResponse>
 }
 

@@ -77,85 +77,7 @@
                     android:padding="16dp">
 
                     <!-- Turn on push notifications -->
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp">
 
-                        <TextView
-                            android:id="@+id/turnOnPushNotificationsLabel"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:text="@string/turn_on_push_notifications"
-                            android:textColor="@android:color/black"
-                            android:textSize="16sp"
-                            tools:ignore="RelativeOverlap" />
-
-                        <com.google.android.material.switchmaterial.SwitchMaterial
-                            android:id="@+id/turnOnPushNotificationsSwitch"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            app:thumbTint="@color/switch_thumb_color_state_list"
-                            app:trackTint="@color/switch_track_color_state_list"
-                            tools:ignore="TouchTargetSizeCheck" />
-                    </RelativeLayout>
-
-                    <!-- Enable traffic update notifications -->
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp">
-
-                        <TextView
-                            android:id="@+id/enableTrafficUpdateNotificationsLabel"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:text="@string/enable_traffic_update_notifications"
-                            android:textColor="@android:color/black"
-                            android:textSize="16sp"
-                            tools:ignore="RelativeOverlap" />
-
-                        <com.google.android.material.switchmaterial.SwitchMaterial
-                            android:id="@+id/enableTrafficUpdateNotificationsSwitch"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            app:thumbTint="@color/switch_thumb_color_state_list"
-                            app:trackTint="@color/switch_track_color_state_list"
-                            tools:ignore="TouchTargetSizeCheck" />
-                    </RelativeLayout>
-
-                    <!-- Enable events notifications -->
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp">
-
-                        <TextView
-                            android:id="@+id/enableEventsNotificationsLabel"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:text="@string/enable_events_notifications"
-                            android:textColor="@android:color/black"
-                            android:textSize="16sp"
-                            tools:ignore="RelativeOverlap" />
-
-                        <com.google.android.material.switchmaterial.SwitchMaterial
-                            android:id="@+id/enableEventsNotificationsSwitch"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            app:thumbTint="@color/switch_thumb_color_state_list"
-                            app:trackTint="@color/switch_track_color_state_list"
-                            tools:ignore="TouchTargetSizeCheck" />
-                    </RelativeLayout>
 
                     <RelativeLayout
                         android:layout_width="match_parent"
@@ -164,7 +86,6 @@
 
                         <LinearLayout
                             android:id="@+id/dashboardStarterLayout"
-                            android:layout_marginTop="16dp"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal">

@@ -91,6 +91,7 @@ class NotificationHistoryActivity : AppCompatActivity() {
             binding.emptyDataLabel.visibility = View.VISIBLE
             binding.notificationRecyclerView.visibility = View.GONE
             binding.btnClearAll.visibility = View.GONE
+
         }.addOnFailureListener { e ->
             Log.e("NotificationHistoryActivity", "Error loading notifications: $e")
         }

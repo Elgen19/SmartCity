@@ -1,5 +1,6 @@
 package com.elgenium.smartcity.recyclerview_adapter
 
+import android.app.Activity
 import android.graphics.Color
 import android.util.Log
 import android.view.LayoutInflater
@@ -106,6 +107,11 @@ class RecommendedPlaceAdapter(
         }
     }
 
+    override fun onViewRecycled(holder: PlaceViewHolder) {
+        super.onViewRecycled(holder)
+        Glide.with(holder.placeImage.context).clear(holder.placeImage) // Cancel any pending requests for this ImageView
+    }
+
 
     override fun getItemCount() = places.size
 
@@ -119,20 +125,25 @@ class RecommendedPlaceAdapter(
         placesClient.fetchPhoto(photoRequest)
             .addOnSuccessListener { response ->
                 val bitmap = response.bitmap
-                // Use Glide to load the bitmap into the ImageView
-                Glide.with(imageView.context)
-                    .load(bitmap)
-                    .placeholder(R.drawable.placeholder_viewpager_photos)  // Placeholder image
-                    .error(R.drawable.error_image)  // Error image
-                    .into(imageView) // Set the bitmap into the ImageView
+                // Check if the activity is still valid
+                if (imageView.context is Activity && !(imageView.context as Activity).isDestroyed) {
+                    Glide.with(imageView.context)
+                        .load(bitmap)
+                        .placeholder(R.drawable.placeholder_viewpager_photos)
+                        .error(R.drawable.error_image)
+                        .into(imageView)
+                }
             }
             .addOnFailureListener { exception ->
                 Log.e("PlacesActivity", "Error fetching photo", exception)
-                // Optionally, set a placeholder or error image using Glide
-                Glide.with(imageView.context)
-                    .load(R.drawable.error_image)
-                    .into(imageView)
+                // Check if the activity is still valid
+                if (imageView.context is Activity && !(imageView.context as Activity).isDestroyed) {
+                    Glide.with(imageView.context)
+                        .load(R.drawable.error_image)
+                        .into(imageView)
+                }
             }
     }
+
 
 }

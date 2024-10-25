@@ -214,6 +214,7 @@ class MainActivity : AppCompatActivity() {
     private fun navigateToDashboard() {
         if (starterScreen) {
             val intent = Intent(this, DashboardActivity::class.java)
+            Toast.makeText(this, "Starter screen at dashboard: $starterScreen", Toast.LENGTH_SHORT).show()
             startActivity(intent)
             finish()
         } else {
@@ -305,6 +306,4 @@ class MainActivity : AppCompatActivity() {
         // Show the dialog
         dialogBuilder.create().show()
     }
-
-
 }

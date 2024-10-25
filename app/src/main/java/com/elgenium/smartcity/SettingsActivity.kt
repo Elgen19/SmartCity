@@ -71,9 +71,6 @@ class SettingsActivity : AppCompatActivity() {
         saveUserSettings()
         // Save to SharedPreferences
         with(sharedPreferences.edit()) {
-            putBoolean(SettingsKeys.KEY_PUSH_NOTIFICATIONS, binding.turnOnPushNotificationsSwitch.isChecked)
-            putBoolean(SettingsKeys.KEY_TRAFFIC_UPDATES, binding.enableTrafficUpdateNotificationsSwitch.isChecked)
-            putBoolean(SettingsKeys.KEY_EVENTS_NOTIFICATIONS, binding.enableEventsNotificationsSwitch.isChecked)
             putBoolean(SettingsKeys.KEY_CONTEXT_RECOMMENDER, binding.contextRecommenderSwitch.isChecked)
             putBoolean(SettingsKeys.KEY_EVENT_RECOMMENDER, binding.eventRecommenderSwitch.isChecked)
             putString(SettingsKeys.KEY_MAP_THEME, selectedMapTheme)
@@ -119,9 +116,6 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun saveUserSettings() {
         val settings = mapOf(
-            "push_notifications" to binding.turnOnPushNotificationsSwitch.isChecked,
-            "traffic_updates" to binding.enableTrafficUpdateNotificationsSwitch.isChecked,
-            "events_notifications" to binding.enableEventsNotificationsSwitch.isChecked,
             "context_recommender" to binding.contextRecommenderSwitch.isChecked,
             "event_recommender" to binding.eventRecommenderSwitch.isChecked,
             "map_theme" to selectedMapTheme,
@@ -151,9 +145,6 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun loadUserSettings() {
         // Load from SharedPreferences
-        binding.turnOnPushNotificationsSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_PUSH_NOTIFICATIONS, false)
-        binding.enableTrafficUpdateNotificationsSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_TRAFFIC_UPDATES, false)
-        binding.enableEventsNotificationsSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_EVENTS_NOTIFICATIONS, false)
         binding.contextRecommenderSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_CONTEXT_RECOMMENDER, false)
         binding.eventRecommenderSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_EVENT_RECOMMENDER, false)
         binding.setDashboardAsStarterSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_STARTER_SCREEN, false)
@@ -242,4 +233,8 @@ class SettingsActivity : AppCompatActivity() {
 
         }
     }
+
+
+
+
 }

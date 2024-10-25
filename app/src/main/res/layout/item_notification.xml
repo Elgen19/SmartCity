@@ -2,13 +2,14 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
+    android:layout_marginBottom="8dp"
     android:padding="8dp">
 
     <TextView
         android:id="@+id/notificationTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="@color/gray"
+        android:textColor="@color/secondary_color"
         android:textSize="16sp"
         android:text="Title"
         android:textStyle="bold" />
@@ -17,6 +18,7 @@
         android:id="@+id/notificationMessage"
         android:text="Notification message"
         android:textColor="@color/gray"
+        android:layout_marginTop="4dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="14sp" />
@@ -24,7 +26,9 @@
     <TextView
         android:id="@+id/notificationTimestamp"
         android:layout_width="wrap_content"
+        android:layout_marginTop="16dp"
         android:text="time stamps"
+        android:layout_gravity="end"
         android:layout_height="wrap_content"
         android:textSize="12sp"
         android:textColor="@color/dark_gray" />

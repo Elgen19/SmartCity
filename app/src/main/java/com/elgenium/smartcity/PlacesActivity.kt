@@ -116,6 +116,8 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
     private var isTrafficOverlayEnabled = false
     private lateinit var mealPlaceRecommender: MealPlaceRecommendationManager
     private lateinit var sharedPreferences: SharedPreferences
+    private var isActivityVisible = false
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -214,11 +216,34 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
 
 
         sharedPreferences = getSharedPreferences("user_settings", MODE_PRIVATE)
-        fetchRecommendedMealPlaces()
+
+    }
+
+    override fun onResume() {
+        super.onResume()
+        isActivityVisible = true
+//        fetchRecommendedMealPlaces() // Call this method to check for recommendations
+    }
+
+    override fun onPause() {
+        super.onPause()
+        isActivityVisible = false
     }
 
 
+
     private fun fetchRecommendedMealPlaces() {
+        val currentDate = getCurrentDate()
+        val lastInteractionDate = sharedPreferences.getString("lastInteractionDate", null)
+        Log.d("Recommendation", "CURRENT DATE: $currentDate")
+        Log.d("Recommendation", "LAST INTERACTION DATE: $lastInteractionDate")
+
+
+        // If it's a new day, reset the recommendations
+        if (currentDate != lastInteractionDate) {
+            resetRecommendations()
+        }
+
         val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
 
         // Determine meal time
@@ -232,19 +257,11 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
 
         // Check if meal time is valid and if recommendations have already been shown
         val hasDisplayedRecommendation = sharedPreferences.getBoolean("hasDisplayedRecommendation_$mealTime", false)
-        val hasExecutedBreakfast  = sharedPreferences.getBoolean("hasDisplayedRecommendation_breakfast", false)
-        val hasExecutedLunch = sharedPreferences.getBoolean("hasDisplayedRecommendation_lunch", false)
-        val hasExecutedSnack = sharedPreferences.getBoolean("hasDisplayedRecommendation_snack", false)
-        val hasExecutedDinner = sharedPreferences.getBoolean("hasDisplayedRecommendation_dinner", false)
-        val hasExecutedLateNight = sharedPreferences.getBoolean("hasDisplayedRecommendation_late-night", false)
 
+        Log.d("Recommendation", "CURRENT HOUR: $currentHour")
         Log.d("Recommendation", "HAS EXECUTED FOR $mealTime: $hasDisplayedRecommendation")
+        Log.d("Recommendation", "LAST INTERACTION DATE:  $lastInteractionDate, CURRENT DATE: $currentDate")
 
-        Log.d("Recommendation", "HAS EXECUTED BREAKFAST: $hasExecutedBreakfast")
-        Log.d("Recommendation", "HAS EXECUTED LUNCH: $hasExecutedLunch")
-        Log.d("Recommendation", "HAS EXECUTED SNACK: $hasExecutedSnack")
-        Log.d("Recommendation", "HAS EXECUTED DINNER: $hasExecutedDinner")
-        Log.d("Recommendation", "HAS EXECUTED LATE NIGHT: $hasExecutedLateNight")
 
         if (!hasDisplayedRecommendation) {
             Log.d("Recommendation", "Performing text search for meal places...")
@@ -254,21 +271,25 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
 
             if (!recommendedPlaceTypes.isNullOrEmpty()) {
                 mealPlaceRecommender.performTextSearch(placesClient, recommendedPlaceTypes, this, null, null, null, false) {
-                    Log.d("Recommendation", "Text search for meal places complete.")
-                }
+                    // Check if the activity is still visible
+                    if (!isActivityVisible || isFinishing || isDestroyed) {
+                        Log.e("MealRecommendation", "Activity is not valid to show the dialog.")
+                        return@performTextSearch // Early return if the activity is not valid
+                    }
 
-                // Mark as displayed
-                sharedPreferences.edit().putBoolean("hasDisplayedRecommendation_$mealTime", true).apply()
+                    Log.d("Recommendation", "Text search for meal places complete.")
+                    // Mark as displayed
+                    sharedPreferences.edit().putBoolean("hasDisplayedRecommendation_$mealTime", true).apply()
+                    sharedPreferences.edit().putString("lastInteractionDate", currentDate).apply()
+                }
             } else {
                 Log.e("MealRecommendationActivity", "No recommended place types found for meal time: $mealTime")
             }
         }
 
-        if (mealTime == "late-night" && currentHour == 4)
-            resetRecommendations()
     }
 
-    // Optional: Reset the flags at the start of a new day (e.g., midnight)
+    // Helper function to reset recommendation flags
     private fun resetRecommendations() {
         val editor = sharedPreferences.edit()
         editor.putBoolean("hasDisplayedRecommendation_breakfast", false)
@@ -277,7 +298,19 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         editor.putBoolean("hasDisplayedRecommendation_dinner", false)
         editor.putBoolean("hasDisplayedRecommendation_late-night", false) // Reset late-night flag
         editor.apply()
+
+        Log.d("Recommendation", "Recommendation flags have been reset for a new day.")
     }
+
+    // Helper function to get the current date as a string
+    private fun getCurrentDate(): String {
+        val calendar = Calendar.getInstance()
+        val year = calendar.get(Calendar.YEAR)
+        val month = calendar.get(Calendar.MONTH) + 1 // Calendar.MONTH is zero-based
+        val day = calendar.get(Calendar.DAY_OF_MONTH)
+        return "$year-$month-$day" // Return date in the format "YYYY-MM-DD"
+    }
+
 
 
     private fun fetchAndSaveCityName() {
@@ -487,7 +520,10 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
                     // Return true to indicate the click event has been handled
                     true
                 } ?: false
+
+
             }
+
         } else {
             // Request location permission
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQUEST_CODE)

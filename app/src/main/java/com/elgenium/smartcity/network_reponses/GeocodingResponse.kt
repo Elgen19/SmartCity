@@ -6,7 +6,9 @@ data class GeocodingResponse(
 )
 
 data class Result(
-    val address_components: List<AddressComponent>
+    val address_components: List<AddressComponent>,
+    val place_id: String,  // Add place_id field
+    val formatted_address: String  // Optional: You may want this for convenience
 )
 
 data class AddressComponent(

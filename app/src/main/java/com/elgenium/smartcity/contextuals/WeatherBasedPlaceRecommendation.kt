@@ -287,7 +287,7 @@ class WeatherBasedPlaceRecommendation(
                         Log.e("WeatherBasedPlaceRecommendation", "Search query for places: $query")
 
                         val searchByTextRequest = SearchByTextRequest.builder(query, placeFields)
-                            .setMaxResultCount(5)
+                            .setMaxResultCount(1)
                             .setOpenNow(true)
                             .setLocationBias(locationBias)
                             .setRankPreference(SearchByTextRequest.RankPreference.DISTANCE)

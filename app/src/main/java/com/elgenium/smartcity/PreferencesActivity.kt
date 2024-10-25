@@ -1,25 +1,27 @@
 package com.elgenium.smartcity
 
+import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.elgenium.smartcity.databinding.ActivityPreferencesBinding
+import com.elgenium.smartcity.shared_preferences_keys.SettingsKeys
 import com.elgenium.smartcity.singletons.ActivityNavigationUtils
 import com.elgenium.smartcity.singletons.LayoutStateManager
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
-import kotlin.properties.Delegates
 
 class PreferencesActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityPreferencesBinding
     private lateinit var userRef: DatabaseReference
-    private var isNewUser by Delegates.notNull<Boolean>()
+    private var isNewUser = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,13 +33,16 @@ class PreferencesActivity : AppCompatActivity() {
         // Set the color of the navigation bar
         NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
 
-        isNewUser = intent.getBooleanExtra("IS_NEW_USER", false)
+        isNewUser = intent.getBooleanExtra("IS_NEW_USER", true)
 
         // Configure back button visibility
         binding.backButton.visibility = if (!isNewUser) View.VISIBLE else View.GONE
 
         // Adjust layout parameters for the title if needed
+        Log.e("PreferencesActivity", "IS NEW USER before if: $isNewUser")
+
         if (isNewUser) {
+            Log.e("PreferencesActivity", "IS NEW USER inside if: $isNewUser")
             val layoutParams = binding.preferencesTitle.layoutParams as LinearLayout.LayoutParams
             layoutParams.marginStart = 0
             binding.preferencesTitle.layoutParams = layoutParams
@@ -109,23 +114,57 @@ class PreferencesActivity : AppCompatActivity() {
 
     private fun setDefaultPreferences() {
         val sharedPreferences = getSharedPreferences("user_settings", MODE_PRIVATE)
+
+        // Set default preferences
         with(sharedPreferences.edit()) {
-            putBoolean("push_notifications", true)
-            putBoolean("traffic_updates", true)
-            putBoolean("events_notifications", true)
-            putBoolean("context_recommender", true)
-            putBoolean("event_recommender", true)
-            putBoolean("start_screen", false)
-            putString("map_theme", "Light")
-            putBoolean("map_landmarks", false)
-            putBoolean("map_labels", false)
-            putBoolean("map_overlay", true)
-            putBoolean("start_screen", false)
-            putBoolean("weather_notifications", false)
-            putBoolean("meal_notifications", false)
+            putBoolean(SettingsKeys.KEY_CONTEXT_RECOMMENDER, true)
+            putBoolean(SettingsKeys.KEY_EVENT_RECOMMENDER, true)
+            putBoolean(SettingsKeys.KEY_STARTER_SCREEN, false)
+            putString(SettingsKeys.KEY_MAP_THEME, "Standard")
+            putBoolean(SettingsKeys.KEY_MAP_LANDMARKS, false)
+            putBoolean(SettingsKeys.KEY_MAP_LABELS, false)
+            putBoolean(SettingsKeys.KEY_MAP_OVERLAY, true)
+            putBoolean(SettingsKeys.KEY_WEATHER, false)
+            putBoolean(SettingsKeys.KEY_MEAL, false)
+            putBoolean(SettingsKeys.KEY_CYCLONE, false)
+            putBoolean(SettingsKeys.KEY_TRAFFIC, false)
+
+
 
             apply()
         }
+
+        // Log the values of SharedPreferences
+        logSharedPreferences(sharedPreferences)
+    }
+
+    // Function to log SharedPreferences values
+    private fun logSharedPreferences(sharedPreferences: SharedPreferences) {
+        val contextRecommender = sharedPreferences.getBoolean("context_recommender", false)
+        val eventRecommender = sharedPreferences.getBoolean("event_recommender", false)
+        val startScreen = sharedPreferences.getBoolean("start_screen", false)
+        val mapTheme = sharedPreferences.getString("map_theme", "Standard")
+        val mapLandmarks = sharedPreferences.getBoolean("map_landmarks", false)
+        val mapLabels = sharedPreferences.getBoolean("map_labels", false)
+        val mapOverlay = sharedPreferences.getBoolean("map_overlay", false)
+        val weatherNotifications = sharedPreferences.getBoolean("weather_notifications", false)
+        val mealNotifications = sharedPreferences.getBoolean("meal_notifications", false)
+        val cyclones = sharedPreferences.getBoolean("cyclone_alert", false)
+        val traffic = sharedPreferences.getBoolean("traffic_alert", false)
+
+
+        Log.e("PreferencesActivity", "context_recommender: $contextRecommender")
+        Log.e("PreferencesActivity", "event_recommender: $eventRecommender")
+        Log.e("PreferencesActivity", "start_screen: $startScreen")
+        Log.e("PreferencesActivity", "map_theme: $mapTheme")
+        Log.e("PreferencesActivity", "map_landmarks: $mapLandmarks")
+        Log.e("PreferencesActivity", "map_labels: $mapLabels")
+        Log.e("PreferencesActivity", "map_overlay: $mapOverlay")
+        Log.e("PreferencesActivity", "weather_notifications: $weatherNotifications")
+        Log.e("PreferencesActivity", "meal_notifications: $mealNotifications")
+        Log.e("PreferencesActivity", "cyclones: $cyclones")
+        Log.e("PreferencesActivity", "traffic: $traffic")
+
     }
 
 
@@ -196,7 +235,7 @@ class PreferencesActivity : AppCompatActivity() {
                 if (!isNewUser) {
                     LayoutStateManager.showSuccessLayout(this, "Preferences Updated!", "Your preferences were successfully updated.", DashboardActivity::class.java)
                 } else {
-                    ActivityNavigationUtils.navigateToActivity(this, DashboardActivity::class.java, true)
+                    ActivityNavigationUtils.navigateToActivity(this, PlacesActivity::class.java, true)
                 }
             } else {
                 LayoutStateManager.showFailureLayout(this, "Failed to update preferences. Please try again.", "Return to Settings")

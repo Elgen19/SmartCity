@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.ActivityOptions
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.location.Location
@@ -89,6 +90,9 @@ class DashboardActivity : AppCompatActivity() {
     private lateinit var weatherRecommendation: WeatherBasedPlaceRecommendation
     private var contextRecommender: Boolean = false
     private var eventRecommender: Boolean = false
+    private lateinit var sharedPreferences: SharedPreferences
+    private lateinit var mealPlaceRecommender: MealPlaceRecommendationManager
+
 
 
 
@@ -99,6 +103,7 @@ class DashboardActivity : AppCompatActivity() {
 
         // sets the color of the navigation bar making it more personalized
         NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
+        mealPlaceRecommender = MealPlaceRecommendationManager(this)
 
         // get the shared preferences
         retrievePreferences()
@@ -167,6 +172,8 @@ class DashboardActivity : AppCompatActivity() {
 
     }
 
+
+
     private fun handleViewVisibilityBasedOnSettings() {
 
         if (contextRecommender) {
@@ -206,7 +213,7 @@ class DashboardActivity : AppCompatActivity() {
         val RECOMMENDATION_PREFS = "recommendation_prefs"
         val CURRENT_RECOMMENDATION_KEY = "current_recommendation"
 
-        val sharedPreferences = this.getSharedPreferences(RECOMMENDATION_PREFS, Context.MODE_PRIVATE)
+        val sharedPreferences = getSharedPreferences(RECOMMENDATION_PREFS, Context.MODE_PRIVATE)
 
         // If nextTag is provided, save it.
         if (nextTag != null) {
@@ -219,6 +226,7 @@ class DashboardActivity : AppCompatActivity() {
         Log.d("Recommendation", "Current tag: $currentTag")
         return currentTag
     }
+
 
     private fun showNextRecommendation() {
         val currentTag = processRecommendationTag() // Get the current recommendation tag
@@ -238,19 +246,17 @@ class DashboardActivity : AppCompatActivity() {
                     processRecommendationTag("WEATHER") // Set the next tag
                 }
             }
-
             "WEATHER" -> {
-                Log.d("Recommendation", "Fetching popular recommendations...")
+                Log.d("Recommendation", "Fetching weather recommendations...")
                 fetchWeatherRecommendations {
-                    Log.d("Recommendation", "Popular recommendations fetched.")
+                    Log.d("Recommendation", "Weather recommendations fetched.")  // Ensure this is reached
                     processRecommendationTag("MEAL") // Set the next tag
+                    Log.d("Recommendation", "Next tag set to MEAL.") // Confirm tag change
                 }
             }
-
-
-
         }
     }
+
 
     private fun fetchWeatherRecommendations(callback: () -> Unit) {
         weatherRecommendation.fetchWeatherAndRecommend(this) { recommendations ->

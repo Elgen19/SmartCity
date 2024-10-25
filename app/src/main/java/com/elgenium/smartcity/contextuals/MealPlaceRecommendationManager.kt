@@ -131,7 +131,7 @@ class MealPlaceRecommendationManager(context: Context) {
 
                 getCityName(currentLocation) { cityName ->
                     var completedQueries = 0
-                    var placesList = mutableListOf<Place>()
+                    val placesList = mutableListOf<Place>()
                     Log.e(
                         "MealPlaceRecommendationManager",
                         "PLACE TYPE COUNT: ${currentPlaceTypes.size}"
@@ -144,7 +144,7 @@ class MealPlaceRecommendationManager(context: Context) {
                         )
 
                         val searchByTextRequest = SearchByTextRequest.builder(query, placeFields)
-                            .setMaxResultCount(5)
+                            .setMaxResultCount(1)
                             .setLocationBias(locationBias)
                             .setOpenNow(true)
                             .setRankPreference(SearchByTextRequest.RankPreference.DISTANCE)
@@ -270,47 +270,53 @@ class MealPlaceRecommendationManager(context: Context) {
 
 
     private fun showMealRecommendationBottomSheet(context: Context, placesList: List<RecommendedPlace>, placesClient: PlacesClient) {
-        // Create a new instance of BottomSheetDialog
-        val bottomSheetDialog = BottomSheetDialog(context)
+        if (context is Activity) { // Ensure context is an Activity
+            // Create a new instance of BottomSheetDialog
+            val bottomSheetDialog = BottomSheetDialog(context)
 
-        // Inflate the layout for the bottom sheet
-        val bottomSheetView = LayoutInflater.from(context).inflate(
-            R.layout.bottom_sheet_contextual_recommendation,
-            null
-        )
+            // Inflate the layout for the bottom sheet
+            val bottomSheetView = LayoutInflater.from(context).inflate(
+                R.layout.bottom_sheet_contextual_recommendation,
+                null
+            )
 
-        // Set up view binding for the bottom sheet layout
-        val binding = BottomSheetContextualRecommendationBinding.bind(bottomSheetView)
+            // Set up view binding for the bottom sheet layout
+            val binding = BottomSheetContextualRecommendationBinding.bind(bottomSheetView)
 
-        val (title, recommendation) = getMealRecommendations()
-        binding.textViewRecommendationTitle.text = title
-        binding.textViewRecommendationDescription.text = recommendation
+            val (title, recommendation) = getMealRecommendations()
+            binding.textViewRecommendationTitle.text = title
+            binding.textViewRecommendationDescription.text = recommendation
 
-        // Set up the RecyclerView with the adapter
-        val adapter = RecommendedPlaceAdapter(
-            placesList,  // Pass the list of places
-            false,
-            placesClient,  // Pass the PlacesClient
-            onPlaceClick = { place ->
-                Log.e("MealRecommendation", "Place clicked: ${place.name}")
-                val intent = Intent(context, PlacesActivity::class.java)
+            // Set up the RecyclerView with the adapter
+            val adapter = RecommendedPlaceAdapter(
+                placesList,  // Pass the list of places
+                false,
+                placesClient,  // Pass the PlacesClient
+                onPlaceClick = { place ->
+                    Log.e("MealRecommendation", "Place clicked: ${place.name}")
+                    val intent = Intent(context, PlacesActivity::class.java)
 
-                intent.putExtra("DASHBOARD_RECOMMENDED_PLACE_ID", place.placeId)
-                context.startActivity(intent)
+                    intent.putExtra("DASHBOARD_RECOMMENDED_PLACE_ID", place.placeId)
+                    context.startActivity(intent)
+                }
+            )
+            binding.recyclerViewMealRecommendations.adapter = adapter
+            binding.recyclerViewMealRecommendations.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+
+            // Set up the close button (ImageButton)
+            binding.buttonClose.setOnClickListener {
+                bottomSheetDialog.dismiss()
             }
-        )
-        binding.recyclerViewMealRecommendations.adapter = adapter
-        binding.recyclerViewMealRecommendations.layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
 
-        // Set up the close button (ImageButton)
-        binding.buttonClose.setOnClickListener {
-            bottomSheetDialog.dismiss()
+            bottomSheetDialog.setContentView(bottomSheetView)
+
+            // Show the bottom sheet dialog if context is valid
+            if (!context.isFinishing && !context.isDestroyed) {
+                bottomSheetDialog.show()
+            }
+        } else {
+            Log.e("MealPlaceRecommendationManager", "Invalid context: ${context::class.java.simpleName}")
         }
-
-
-        bottomSheetDialog.setContentView(bottomSheetView)
-        // Show the bottom sheet dialog
-        bottomSheetDialog.show()
     }
 
     // Get current location

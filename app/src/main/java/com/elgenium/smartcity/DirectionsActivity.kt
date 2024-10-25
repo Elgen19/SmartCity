@@ -74,6 +74,7 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
     private val stopoverMarkers = mutableListOf<Marker>()
     private lateinit var stepsAdapter: StepAdapter
     private var stepsList: MutableList<Step> = mutableListOf()
+    private val transitLatLngStringList: ArrayList<String> = ArrayList()
     private var stopList: MutableList<OriginDestinationStops> = mutableListOf()
     private var isWaypointOptimized = false
     private var routeIndex = 0
@@ -195,18 +196,12 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private fun showRoutePickerBottomSheet(routes: List<Routes>?) {
         val bottomSheetDialog = BottomSheetDialog(this)
-
-        // Use View Binding to inflate the layout
         val binding = BottomSheetAlternateRoutePickerBinding.inflate(layoutInflater)
 
         binding.btnCancel.setOnClickListener { bottomSheetDialog.dismiss() }
-
-        // Setup RecyclerView using the binding reference
         binding.rvBottomSheetRoutes.layoutManager = LinearLayoutManager(this)
 
-        // Add Divider Item Decoration to the RecyclerView
         val dividerDrawableForRecentSearches = ColorDrawable(ContextCompat.getColor(this, R.color.dark_gray))
-
         val dividerItemDecorationForRecentSearches = DividerItemDecoration(
             binding.rvBottomSheetRoutes.context,
             (binding.rvBottomSheetRoutes.layoutManager as LinearLayoutManager).orientation
@@ -214,24 +209,23 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         dividerItemDecorationForRecentSearches.setDrawable(dividerDrawableForRecentSearches)
         binding.rvBottomSheetRoutes.addItemDecoration(dividerItemDecorationForRecentSearches)
 
-        val adapter = routes?.let {
-            RoutePickerAdapter(it) { selectedRoute, position ->
-                // Handle the selected route when clicked
-                bottomSheetDialog.dismiss()
-                Log.e("DirectionsActivity", "Selected Route: $selectedRoute at index: $position")
-                routeIndex = position
-                fetchRoute()
-            }
+        // Pass raw routes to the adapter
+        val adapter = RoutePickerAdapter(routes ?: emptyList()) { position ->
+            bottomSheetDialog.dismiss()
+            routeIndex = position
+            Log.e("RouteIndex" , "Route Index is: $routeIndex")
+            fetchRoute()
         }
 
         binding.rvBottomSheetRoutes.adapter = adapter
-
-        // Set the content view for the bottom sheet using the binding's root view
         bottomSheetDialog.setContentView(binding.root)
-
-        // Show the bottom sheet
         bottomSheetDialog.show()
     }
+
+
+
+
+
 
 
     private fun fetchRoute() {
@@ -506,6 +500,26 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
 
                                 val stepData = bestRoute.legs[0].steps
 
+
+
+                                for (step in stepData) {
+                                    // Extract start location
+                                    val startLatLng = "${step.startLocation.latLng.latitude},${step.startLocation.latLng.longitude}"
+                                    if (!transitLatLngStringList.contains(startLatLng)) {
+                                        transitLatLngStringList.add(startLatLng)  // Add only if it doesn't already exist
+                                    }
+
+                                    // Extract end location
+                                    val endLatLng = "${step.endLocation.latLng.latitude},${step.endLocation.latLng.longitude}"
+                                    if (!transitLatLngStringList.contains(endLatLng)) {
+                                        transitLatLngStringList.add(endLatLng)  // Add only if it doesn't already exist
+                                    }
+                                }
+
+
+                                Log.e("DirectionsActivity", "transit lat lng: $transitLatLngStringList")
+                                transitLatLngStringList.removeAt(0)
+
                                 // List of available TextViews for names and short names
                                 val transitNames =
                                     listOf(binding.transit1, binding.transit2, binding.transit3)
@@ -676,7 +690,10 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
 
                             binding.startNavigationButton.setOnClickListener {
                                 // Log or check the filtered placeIds if needed
-                                Log.e("Place IDs", placeIds.joinToString())
+                                Log.e("DirectionsActivity", placeIds.joinToString())
+
+                                // Log the contents of transitLatLngStringList
+                                Log.e("DirectionsActivity", transitLatLngStringList.joinToString())
 
                                 // Create the intent for starting the navigation activity
                                 val intent = Intent(
@@ -686,17 +703,25 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
                                     putExtra("ROUTE_TOKEN", routeToken)
                                     putExtra("IS_SIMULATED", false)
                                     putExtra("TRAVEL_MODE", travelMode)
-                                    putStringArrayListExtra(
-                                        "PLACE_IDS",
-                                        ArrayList(placeIds)
-                                    )  // Pass place IDs as an extra
+                                    if (travelMode == "TRANSIT")
+                                        putStringArrayListExtra("TRANSIT_LATLNG_LIST", transitLatLngStringList) // Ensure this list is not empty
+                                    else
+                                        putStringArrayListExtra("PLACE_IDS", ArrayList(placeIds)) // Pass place IDs as an extra
                                 }
+
+                                // Log the intent before starting the activity
+                                Log.e("DirectionsActivity", intent.extras.toString())
+
                                 startActivity(intent)
                             }
+
 
                             binding.btnPickAlternateRoute.setOnClickListener {
                                 showRoutePickerBottomSheet(response.body()!!.routes)
                             }
+
+
+
 
                             binding.simulateButton.setOnClickListener {
                                 val intent = Intent(
@@ -706,10 +731,10 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
                                     putExtra("ROUTE_TOKEN", routeToken)
                                     putExtra("IS_SIMULATED", true)
                                     putExtra("TRAVEL_MODE", travelMode)
-                                    putStringArrayListExtra(
-                                        "PLACE_IDS",
-                                        ArrayList(placeIds)
-                                    )  // Pass place IDs as an extra
+                                    if (travelMode == "TRANSIT")
+                                        putStringArrayListExtra("TRANSIT_LATLNG_LIST", transitLatLngStringList) // Ensure this list is not empty
+                                    else
+                                        putStringArrayListExtra("PLACE_IDS", ArrayList(placeIds)) // Pass place IDs as an
                                 }
                                 startActivity(intent)
                             }
@@ -727,6 +752,12 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
                 }
             })
     }
+
+
+
+
+
+
 
     private fun retrievePreferences() {
         val sharedPreferences = getSharedPreferences("user_settings", MODE_PRIVATE)
