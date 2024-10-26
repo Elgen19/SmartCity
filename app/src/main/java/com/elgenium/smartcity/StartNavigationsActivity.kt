@@ -14,8 +14,10 @@ import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -24,6 +26,7 @@ import androidx.lifecycle.lifecycleScope
 import com.elgenium.smartcity.databinding.ActivityStartNavigationsBinding
 import com.elgenium.smartcity.databinding.BottomSheetAddStopBinding
 import com.elgenium.smartcity.databinding.DialogRecomputeStopsBinding
+import com.elgenium.smartcity.databinding.DialogTerminateNavigationBinding
 import com.elgenium.smartcity.databinding.DialogTripRecapBinding
 import com.elgenium.smartcity.intelligence.AIProcessor
 import com.elgenium.smartcity.routes_network_request.LatLngMatrix
@@ -95,7 +98,6 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
     private var routeToken: String? = null
     private lateinit var travelMode: String
     private lateinit var placeIds: ArrayList<String>
-    private var transitLatlng: ArrayList<String> = ArrayList()
     private var isSimulated = false
     private lateinit var speechRecognitionHelper: SpeechRecognitionHelper
     private lateinit var textToSpeech: TextToSpeechHelper
@@ -127,53 +129,38 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         isAudioGuidanceEnabled = sharedPreferences.getBoolean("set_audio", true)
         isTrafficOverlayEnabled = sharedPreferences.getBoolean("map_overlay", false)
         isRecomputeWaypointEnabled = sharedPreferences.getBoolean("recompute_waypoint", false)
-        displayMessage("IS RECOMPUTE ENABLED: $isRecomputeWaypointEnabled")
-
-
-
-        Log.e("StartNavigationsActivity", "audio guidance at oncreate: $isAudioGuidanceEnabled" )
-        Log.e("StartNavigationsActivity", "traffic overlay at oncreate: $isTrafficOverlayEnabled" )
-
 
 
         travelMode = intent.getStringExtra("TRAVEL_MODE") ?: ""
         routeToken = intent.getStringExtra("ROUTE_TOKEN") ?: "NO ROUTE TOKEN"
         placeIds = intent.getStringArrayListExtra("PLACE_IDS") ?: ArrayList()
         isSimulated = intent.getBooleanExtra("IS_SIMULATED", false)
-
-        transitLatlng = intent.getStringArrayListExtra("TRANSIT_LATLNG_LIST") ?: ArrayList()
-        Log.e("StartNavigationsActivity", "Transit LatLng List: $transitLatlng")
-
-//        transitLatlng.clear()
-//        transitLatlng.add("10.335217845207357,123.93389861854995")
-
-
+        DEFAULT_STOPS = placeIds.size
 
         initializer()
 
-        DEFAULT_STOPS = if (placeIds.size != 0) placeIds.size else transitLatlng.size
+        Log.e("StartNavigationsActivity", "audio guidance at oncreate: $isAudioGuidanceEnabled" )
+        Log.e("StartNavigationsActivity", "traffic overlay at oncreate: $isTrafficOverlayEnabled" )
+        displayMessage("IS RECOMPUTE ENABLED: $isRecomputeWaypointEnabled")
         Log.e("StartNavigationsActivity", "Default stops is: $DEFAULT_STOPS")
-        Log.e("StartNavigationsActivity", "Transit Lat lng size is: $transitLatlng.size")
-
         Log.e("StartNavigationsActivity", "Placeids size is: ${placeIds.size}")
-
-
-
         Log.e("StartNavigationsActivity", "TRAVEL MODE AT NAVIGATION: $travelMode" )
         Log.e("StartNavigationsActivity", "ROUTE TOKEN AT NAVIGATION: $routeToken" )
 
 
-
         if (routeToken == null)
             routeToken = "NO ROUTE TOKEN"
-        // Use the placeIds and routeToken for further navigation logic
+
         requestLocationPermissions(routeToken!!, placeIds, travelMode)
         showNavigationOptionsBottomSheet()
         Log.e("WaypointOrder", "PLACEID AT ONCREATE AFTER CHANGES: $placeIds" )
 
-
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                showNavigationTerminationDialog()
+            }
+        })
     }
-
 
 
     private fun initializeSpeechRecognizerAndTextSpeech() {
@@ -233,12 +220,6 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
             }
         }
     }
-
-
-
-
-
-
 
     @SuppressLint("PotentialBehaviorOverride")
     private fun plotMarkers(placesInfo: List<Map<String, Any>>) {
@@ -353,9 +334,6 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
                 }
             }
 
-
-
-
             // Dismiss the bottom sheet
             bottomSheetDialog.dismiss()
         }
@@ -404,6 +382,31 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         }
     }
 
+    private fun showNavigationTerminationDialog() {
+        val binding = DialogTerminateNavigationBinding.inflate(LayoutInflater.from(this))
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(binding.root)
+            .setCancelable(true) // Allows closing on back press or touch outside
+            .create()
+
+        // Set button actions
+        binding.buttonShutdown.setOnClickListener {
+            cleanup()
+            Handler(Looper.getMainLooper()).postDelayed({
+                ActivityNavigationUtils.navigateToActivity(this, PlacesActivity::class.java, true)
+            }, 300)
+        }
+
+        binding.buttonCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        // Show the dialog
+        dialog.show()
+    }
+
+
     private fun showNavigationOptionsBottomSheet() {
         // Inflate the bottom sheet layout using view binding
         val bottomSheet = binding.bottomSheet
@@ -414,8 +417,7 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         behavior.isHideable = false  // Prevent it from being fully dismissed
         behavior.state = BottomSheetBehavior.STATE_COLLAPSED
 
-        if (travelMode != "TRANSIT")
-            fetchPlaceDetailsForCard(DEFAULT_STOPS)
+        fetchPlaceDetailsForCard(DEFAULT_STOPS)
 
         binding.continueToNextDestinationLayout.visibility = if (NUM_STOPS == 1) View.GONE else View.VISIBLE
         binding.spacer1.visibility = if (NUM_STOPS == 1 ) View.GONE else View.VISIBLE
@@ -428,10 +430,7 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         }
 
         binding.buttonShutdown.setOnClickListener {
-            cleanup()
-            Handler(Looper.getMainLooper()).postDelayed({
-                ActivityNavigationUtils.navigateToActivity(this, PlacesActivity::class.java, true)
-            }, 300)
+            showNavigationTerminationDialog()
         }
 
         binding.voiceGuidanceSwitch.setOnCheckedChangeListener { _, isChecked ->
@@ -744,10 +743,7 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
 
                     }
 
-                    if (travelMode == "TRANSIT")
-                        navigateUsingTransit()
-                    else
-                        navigateWithMultipleStops(routeToken, placeIds, travelMode)
+                    navigateWithMultipleStops(routeToken, placeIds, travelMode)
                 }
                 override fun onError(@NavigationApi.ErrorCode errorCode: Int) {
                     when (errorCode) {
@@ -818,52 +814,6 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 routeToken?.let { requestLocationPermissions(it, placeIds, travelMode) }
             }
-        }
-    }
-
-    private fun navigateUsingTransit() {
-        val waypoints = mutableListOf<Waypoint>()
-
-        try {
-            // Process each transit lat-lng to create waypoints
-            for (transit in transitLatlng) {
-                val latLng = transit.split(",")
-                val latitude = latLng[0].toDouble()
-                val longitude = latLng[1].toDouble()
-
-                // Build each waypoint using latitude and longitude
-                val waypoint = Waypoint.builder()
-                    .setLatLng(latitude, longitude)
-                    .setVehicleStopover(true)
-                    .build()
-
-                waypoints.add(waypoint) // Add to waypoints list
-            }
-
-            val displayOptions = DisplayOptions().apply {
-                showStopSigns(showStopSigns)
-                showTrafficLights(showTrafficLights)
-            }
-
-            // Always use DRIVING as the travel mode
-            val routingOptions = RoutingOptions().apply {
-                travelMode(TravelMode.WALKING)
-                avoidFerries(true)
-                avoidTolls(true)
-            }
-
-            Log.e("StartNavigationsActivity", "ROUTE TOKEN: $routeToken")
-            Log.e("StartNavigationsActivity", "TRAVEL MODE: DRIVING")
-            Log.e("StartNavigationsActivity", "IS ADDING STOP VALUE: $IS_ADDING_STOP")
-
-            // Set the destinations using waypoints and routing options
-            val pendingRoute = navigator.setDestinations(waypoints, routingOptions, displayOptions)
-
-            handleRouteResult(pendingRoute)
-
-        } catch (e: Exception) {
-            Log.e("StartNavigationsActivity", "Error while navigating using transit: ${e.message}")
-            e.printStackTrace()
         }
     }
 
@@ -975,13 +925,8 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
                     } else {
                         DEFAULT_STOPS -= 1
                     }
-
-                    if (travelMode != "TRANSIT") {
-                        // Remove the first placeId
-                        placeIds.removeAt(0)
-                        fetchPlaceDetailsForCard(stopsCount - 1)
-                    }
-
+                    placeIds.removeAt(0)
+                    fetchPlaceDetailsForCard(stopsCount - 1)
                 }
 
                 // Update the UI based on the remaining stops

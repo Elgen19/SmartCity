@@ -75,6 +75,8 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var stepsAdapter: StepAdapter
     private var stepsList: MutableList<Step> = mutableListOf()
     private val transitLatLngStringList: ArrayList<String> = ArrayList()
+    private val travelModes: ArrayList<String> = ArrayList()
+    private val transitNavigationInstructions: ArrayList<String> = ArrayList()
     private var stopList: MutableList<OriginDestinationStops> = mutableListOf()
     private var isWaypointOptimized = false
     private var routeIndex = 0
@@ -126,6 +128,9 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
         NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
 
         retrievePreferences()
+
+
+
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = supportFragmentManager
@@ -503,22 +508,15 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
 
 
                                 for (step in stepData) {
-                                    // Extract start location
-                                    val startLatLng = "${step.startLocation.latLng.latitude},${step.startLocation.latLng.longitude}"
-                                    if (!transitLatLngStringList.contains(startLatLng)) {
-                                        transitLatLngStringList.add(startLatLng)  // Add only if it doesn't already exist
-                                    }
-
                                     // Extract end location
                                     val endLatLng = "${step.endLocation.latLng.latitude},${step.endLocation.latLng.longitude}"
-                                    if (!transitLatLngStringList.contains(endLatLng)) {
-                                        transitLatLngStringList.add(endLatLng)  // Add only if it doesn't already exist
-                                    }
+                                    val travelModeTransit = step.travelMode.toString()
+                                    transitLatLngStringList.add(endLatLng)
+                                    travelModes.add(travelModeTransit)
                                 }
 
 
                                 Log.e("DirectionsActivity", "transit lat lng: $transitLatLngStringList")
-                                transitLatLngStringList.removeAt(0)
 
                                 // List of available TextViews for names and short names
                                 val transitNames =
@@ -602,6 +600,9 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
                                 var firstRide = true // To track if this is the first ride
 
                                 stepData.forEach { step ->
+                                    val maneuvers = step.navigationInstruction.instructions
+                                    transitNavigationInstructions.add(maneuvers)
+
                                     val transitDetails = step.transitDetails
 
                                     if (transitDetails != null && transitIndex < transitNames.size) {
@@ -644,6 +645,7 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
                                         transitIndex++
                                     }
                                 }
+
                             } else {
                                 binding.bestRouteText.text = Html.fromHtml(
                                     "Via <b>${route.description}</b>",
@@ -694,25 +696,41 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
 
                                 // Log the contents of transitLatLngStringList
                                 Log.e("DirectionsActivity", transitLatLngStringList.joinToString())
+                                Log.e("DirectionsActivity", "Maneuver instructions: $transitNavigationInstructions")
+                                Log.e("DirectionsActivity", "Maneuver size: ${transitNavigationInstructions.size}")
 
-                                // Create the intent for starting the navigation activity
-                                val intent = Intent(
-                                    this@DirectionsActivity,
-                                    StartNavigationsActivity::class.java
-                                ).apply {
-                                    putExtra("ROUTE_TOKEN", routeToken)
-                                    putExtra("IS_SIMULATED", false)
-                                    putExtra("TRAVEL_MODE", travelMode)
-                                    if (travelMode == "TRANSIT")
+
+                                if (travelMode == "TRANSIT") {
+                                    val intent = Intent(
+                                        this@DirectionsActivity,
+                                        TransitNavigationActivity::class.java
+                                    ).apply {
                                         putStringArrayListExtra("TRANSIT_LATLNG_LIST", transitLatLngStringList) // Ensure this list is not empty
-                                    else
-                                        putStringArrayListExtra("PLACE_IDS", ArrayList(placeIds)) // Pass place IDs as an extra
+                                        putExtra("IS_SIMULATED", false)
+                                        putExtra("NAVIGATION_INSTRUCTIONS", transitNavigationInstructions)
+                                        putStringArrayListExtra("PLACE_IDS", ArrayList(placeIds))
+                                        putStringArrayListExtra("TRAVEL_MODES", ArrayList(travelModes))
+
+                                    }
+                                    Log.e("DirectionsActivity", intent.extras.toString())
+
+                                    startActivity(intent)
+                                } else {
+                                    val intent = Intent(
+                                        this@DirectionsActivity,
+                                        StartNavigationsActivity::class.java
+                                    ).apply {
+                                        putExtra("IS_SIMULATED", false)
+                                        putExtra("ROUTE_TOKEN", routeToken)
+                                        putExtra("IS_SIMULATED", false)
+                                        putExtra("TRAVEL_MODE", travelMode)
+                                        putStringArrayListExtra("PLACE_IDS", ArrayList(placeIds))
+                                    }
+                                    // Log the intent before starting the activity
+                                    Log.e("DirectionsActivity", intent.extras.toString())
+
+                                    startActivity(intent)
                                 }
-
-                                // Log the intent before starting the activity
-                                Log.e("DirectionsActivity", intent.extras.toString())
-
-                                startActivity(intent)
                             }
 
 
@@ -721,22 +739,44 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
                             }
 
 
-
-
                             binding.simulateButton.setOnClickListener {
-                                val intent = Intent(
-                                    this@DirectionsActivity,
-                                    StartNavigationsActivity::class.java
-                                ).apply {
-                                    putExtra("ROUTE_TOKEN", routeToken)
-                                    putExtra("IS_SIMULATED", true)
-                                    putExtra("TRAVEL_MODE", travelMode)
-                                    if (travelMode == "TRANSIT")
+                                // Log or check the filtered placeIds if needed
+                                Log.e("DirectionsActivity", placeIds.joinToString())
+
+                                // Log the contents of transitLatLngStringList
+                                Log.e("DirectionsActivity", transitLatLngStringList.joinToString())
+
+                                if (travelMode == "TRANSIT") {
+                                    val intent = Intent(
+                                        this@DirectionsActivity,
+                                        TransitNavigationActivity::class.java
+                                    ).apply {
                                         putStringArrayListExtra("TRANSIT_LATLNG_LIST", transitLatLngStringList) // Ensure this list is not empty
-                                    else
-                                        putStringArrayListExtra("PLACE_IDS", ArrayList(placeIds)) // Pass place IDs as an
+                                        putExtra("IS_SIMULATED", true)
+                                        putStringArrayListExtra("PLACE_IDS", ArrayList(placeIds))
+                                        putExtra("NAVIGATION_INSTRUCTIONS", transitNavigationInstructions)
+                                        putStringArrayListExtra("TRAVEL_MODES", ArrayList(travelModes))
+
+                                    }
+                                    Log.e("DirectionsActivity", intent.extras.toString())
+
+                                    startActivity(intent)
+                                } else {
+                                    val intent = Intent(
+                                        this@DirectionsActivity,
+                                        StartNavigationsActivity::class.java
+                                    ).apply {
+                                        putExtra("IS_SIMULATED", false)
+                                        putExtra("ROUTE_TOKEN", routeToken)
+                                        putExtra("IS_SIMULATED", true)
+                                        putExtra("TRAVEL_MODE", travelMode)
+                                        putStringArrayListExtra("PLACE_IDS", ArrayList(placeIds))
+                                    }
+                                    // Log the intent before starting the activity
+                                    Log.e("DirectionsActivity", intent.extras.toString())
+
+                                    startActivity(intent)
                                 }
-                                startActivity(intent)
                             }
 
                         } ?: run {
