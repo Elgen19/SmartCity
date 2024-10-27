@@ -39,39 +39,7 @@
         android:background="@color/gray"
         android:layout_marginBottom="8dp" />
 
-    <!-- Delete Option -->
-    <LinearLayout
-        android:id="@+id/optionChangeView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="24dp"
-        android:clickable="true"
-        android:focusable="true">
-
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/map"
-            android:layout_marginEnd="8dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Show/Hide Event Map"
-            android:textSize="16sp"
-            android:textColor="@color/secondary_color" />
-    </LinearLayout>
-
-
-    <!-- Divider -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@color/gray"
-        android:layout_marginBottom="8dp" />
-
-    <!-- Delete Option -->
+    <!-- Show or Hide My Events Option -->
     <LinearLayout
         android:id="@+id/optionShowMyEvents"
         android:layout_width="match_parent"

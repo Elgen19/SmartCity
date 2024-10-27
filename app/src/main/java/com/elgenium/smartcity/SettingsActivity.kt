@@ -9,12 +9,10 @@ import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.elgenium.smartcity.databinding.ActivitySettingsBinding
-import com.elgenium.smartcity.databinding.BottomSheetMapDetailsOptionsBinding
 import com.elgenium.smartcity.shared_preferences_keys.SettingsKeys
 import com.elgenium.smartcity.singletons.ActivityNavigationUtils
 import com.elgenium.smartcity.singletons.BottomNavigationManager
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
@@ -54,8 +52,7 @@ class SettingsActivity : AppCompatActivity() {
         setupFAQ()
         setupEditPreferences()
         loadUserSettings()
-        showMapOptionsBottomSheet()
-
+        setupMapOptions()
     }
 
     private fun logSharedPreferences() {
@@ -162,75 +159,60 @@ class SettingsActivity : AppCompatActivity() {
 
     }
 
-    private fun showMapOptionsBottomSheet() {
-        binding.mapDisplayOptionsLayout.setOnClickListener {
-            val bottomSheetDialog = BottomSheetDialog(this)
-            val bottomSheetBinding = BottomSheetMapDetailsOptionsBinding.inflate(layoutInflater)
+    private fun setupMapOptions() {
+        when (selectedMapTheme) {
+            "Standard" -> {
+                binding.radioStandard.isChecked = true
+                binding.imgMapPreview.setImageResource(R.drawable.light)
 
-            bottomSheetDialog.setContentView(bottomSheetBinding.root)
-            bottomSheetDialog.show()
-
-            bottomSheetBinding.btnBack.setOnClickListener {
-                bottomSheetDialog.dismiss()
             }
+            "Retro" -> {
+                binding.radioRetro.isChecked = true
+                binding.imgMapPreview.setImageResource(R.drawable.retro)
 
-            when (selectedMapTheme) {
-                "Standard" -> {
-                    bottomSheetBinding.radioStandard.isChecked = true
-                    bottomSheetBinding.imgMapPreview.setImageResource(R.drawable.light)
-
-                }
-                "Retro" -> {
-                    bottomSheetBinding.radioRetro.isChecked = true
-                    bottomSheetBinding.imgMapPreview.setImageResource(R.drawable.retro)
-
-                }
-                "Aubergine" -> {
-                    bottomSheetBinding.radioAubergine.isChecked = true
-                    bottomSheetBinding.imgMapPreview.setImageResource(R.drawable.aubergine)
-
-                }
             }
+            "Aubergine" -> {
+                binding.radioAubergine.isChecked = true
+                binding.imgMapPreview.setImageResource(R.drawable.aubergine)
 
-            bottomSheetBinding.adjustLabelsSwitch.isChecked = isFewerLabels
-            bottomSheetBinding.adjustLandmarkSwitch.isChecked = isFewerLandmarks
-            bottomSheetBinding.adjustTrafficOverlaySwitch.isChecked = isTrafficOverlayEnabled
+            }
+        }
+
+        binding.adjustLabelsSwitch.isChecked = isFewerLabels
+        binding.adjustLandmarkSwitch.isChecked = isFewerLandmarks
+        binding.adjustTrafficOverlaySwitch.isChecked = isTrafficOverlayEnabled
 
 
 
-            // Handle interactions, such as radio button selection
-            val radioGroup = bottomSheetBinding.radioGroupMapThemes
-            radioGroup.setOnCheckedChangeListener { _, checkedId ->
-                when (checkedId) {
-                    R.id.radioStandard -> {
-                        bottomSheetBinding.imgMapPreview.setImageResource(R.drawable.light)
-                        selectedMapTheme = "Standard"
-                    }
-                    R.id.radioRetro -> {
-                        bottomSheetBinding.imgMapPreview.setImageResource(R.drawable.retro)
-                        selectedMapTheme = "Retro"
-                    }
-                    R.id.radioAubergine -> {
-                        bottomSheetBinding.imgMapPreview.setImageResource(R.drawable.aubergine)
-                        selectedMapTheme = "Aubergine"
-                    }
+        // Handle interactions, such as radio button selection
+        val radioGroup = binding.radioGroupMapThemes
+        radioGroup.setOnCheckedChangeListener { _, checkedId ->
+            when (checkedId) {
+                R.id.radioStandard -> {
+                    binding.imgMapPreview.setImageResource(R.drawable.light)
+                    selectedMapTheme = "Standard"
+                }
+                R.id.radioRetro -> {
+                    binding.imgMapPreview.setImageResource(R.drawable.retro)
+                    selectedMapTheme = "Retro"
+                }
+                R.id.radioAubergine -> {
+                    binding.imgMapPreview.setImageResource(R.drawable.aubergine)
+                    selectedMapTheme = "Aubergine"
                 }
             }
+        }
 
-            bottomSheetBinding.adjustLabelsSwitch.setOnCheckedChangeListener { _, isChecked ->
-                isFewerLabels = isChecked
-            }
+        binding.adjustLabelsSwitch.setOnCheckedChangeListener { _, isChecked ->
+            isFewerLabels = isChecked
+        }
 
-            bottomSheetBinding.adjustLandmarkSwitch.setOnCheckedChangeListener { _, isChecked ->
-                isFewerLandmarks = isChecked
-            }
+        binding.adjustLandmarkSwitch.setOnCheckedChangeListener { _, isChecked ->
+            isFewerLandmarks = isChecked
+        }
 
-            bottomSheetBinding.adjustTrafficOverlaySwitch.setOnCheckedChangeListener { _, isChecked ->
-                isTrafficOverlayEnabled = isChecked
-            }
-
-
-
+        binding.adjustTrafficOverlaySwitch.setOnCheckedChangeListener { _, isChecked ->
+            isTrafficOverlayEnabled = isChecked
         }
     }
 

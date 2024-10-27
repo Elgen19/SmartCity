@@ -15,4 +15,7 @@ data class Event(
     val submittedBy: String? = null,
     val submittedAt: String? = null,
     val userId: String?= null,
-)
+    val status: String?= null,
+
+    )
+

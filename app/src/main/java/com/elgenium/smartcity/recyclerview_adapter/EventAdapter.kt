@@ -44,11 +44,15 @@ class EventAdapter(
         events = if (query.isEmpty()) {
             allEvents
         } else {
-            allEvents.filter { it.eventName?.contains(query, ignoreCase = true) == true }
+            allEvents.filter {
+                it.eventName?.contains(query, ignoreCase = true) == true ||
+                         it.location?.contains(query, ignoreCase = true) == true
+            }
         }
         notifyDataSetChanged() // Notify adapter about data changes
         updateUI()
     }
+
 
     fun updateEvents(newEvents: List<Event>) {
         events = newEvents

@@ -36,6 +36,9 @@
         android:theme="@style/Theme.SmartCity"
         tools:targetApi="31">
         <activity
+            android:name=".MyEventsActivity"
+            android:exported="false" />
+        <activity
             android:name=".TransitNavigationActivity"
             android:exported="false" />
 
@@ -68,7 +71,8 @@
             android:exported="false" />
         <activity
             android:name=".EventsActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:windowSoftInputMode="adjustPan" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

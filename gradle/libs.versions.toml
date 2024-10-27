@@ -32,6 +32,7 @@ cardview = "1.0.0"
 navigationRuntimeKtx = "2.8.1"
 googleGmsGoogleServices = "4.4.2"
 firebaseMessaging = "24.0.2"
+workRuntimeKtx = "2.9.1"
 
 [libraries]
 android = { module = "com.mapbox.maps:android", version.ref = "android" }
@@ -64,6 +65,7 @@ play-services-maps = { group = "com.google.android.gms", name = "play-services-m
 androidx-cardview = { group = "androidx.cardview", name = "cardview", version.ref = "cardview" }
 androidx-navigation-runtime-ktx = { group = "androidx.navigation", name = "navigation-runtime-ktx", version.ref = "navigationRuntimeKtx" }
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging", version.ref = "firebaseMessaging" }
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

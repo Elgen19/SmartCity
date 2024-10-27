@@ -83,8 +83,8 @@ class ReportEventActivity : AppCompatActivity() {
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
                 val data = result.data
-                val placeName = data?.getStringExtra("PLACE_NAME")
-                val placeAddress = data?.getStringExtra("PLACE_ADDRESS")
+                placeName = data?.getStringExtra("PLACE_NAME").toString()
+                placeAddress = data?.getStringExtra("PLACE_ADDRESS").toString()
                 placeLatLng = data?.getStringExtra("PLACE_LATLNG").toString()
                 placeId = data?.getStringExtra("PLACE_ID").toString()
 
@@ -247,7 +247,6 @@ class ReportEventActivity : AppCompatActivity() {
         // Load images from Firebase
         loadImagesSavedFromEvent(checker)
     }
-
 
     private fun showBottomSheetImageOptionsDialog(position: Int) {
         // Create the bottom sheet dialog
@@ -440,7 +439,6 @@ class ReportEventActivity : AppCompatActivity() {
         // Show the dialog
         alertDialog.show()
     }
-
 
     private fun showCustomPhotoPickerDialog() {
         val dialogView = layoutInflater.inflate(R.layout.dialog_photo_picker_launcher, null)
@@ -733,7 +731,8 @@ class ReportEventActivity : AppCompatActivity() {
                     "additionalInfo" to additionalInfo,
                     "placeLatLng" to placeLatLng,
                     "checker" to "${eventName}_${location}",
-                    "placeId" to placeId
+                    "placeId" to placeId,
+                    "status" to "Unverified"
                 )
 
                 Log.e("ReportEventActivity", "image list: $imageList")
@@ -1118,8 +1117,6 @@ class ReportEventActivity : AppCompatActivity() {
                 callback(null) // Return null if the API call fails
             }
     }
-
-
 
     private fun showDateTimePicker(onDateTimeSelected: (String) -> Unit) {
         Log.d("ReportEventActivity", "Showing date time picker")

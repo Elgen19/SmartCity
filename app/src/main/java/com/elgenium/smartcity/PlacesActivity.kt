@@ -33,6 +33,8 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.elgenium.smartcity.contextuals.MealPlaceRecommendationManager
 import com.elgenium.smartcity.databinding.ActivityPlacesBinding
+import com.elgenium.smartcity.databinding.BottomSheetEventDetailsBinding
+import com.elgenium.smartcity.models.Event
 import com.elgenium.smartcity.models.RecommendedPlace
 import com.elgenium.smartcity.models.SavedPlace
 import com.elgenium.smartcity.network.PlaceDistanceService
@@ -44,6 +46,7 @@ import com.elgenium.smartcity.singletons.LayoutStateManager
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.singletons.NotificationDataHandler
 import com.elgenium.smartcity.singletons.TokenManager
+import com.elgenium.smartcity.viewpager_adapter.EventImageAdapter
 import com.elgenium.smartcity.viewpager_adapter.PhotoPagerAdapter
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -59,6 +62,7 @@ import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
@@ -80,16 +84,23 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.storage.FirebaseStorage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
+import retrofit2.await
 import retrofit2.converter.gson.GsonConverterFactory
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
 import java.util.Locale
 import java.util.UUID
 
@@ -117,6 +128,9 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
     private lateinit var mealPlaceRecommender: MealPlaceRecommendationManager
     private lateinit var sharedPreferences: SharedPreferences
     private var isActivityVisible = false
+    private val eventLatlngs = ArrayList<LatLng>()
+    private val eventList = mutableListOf<Event>()
+
 
 
 
@@ -217,7 +231,410 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
 
         sharedPreferences = getSharedPreferences("user_settings", MODE_PRIVATE)
 
+        Log.e("PlacesActivity", "Event latlngs: $eventLatlngs")
+
+        loadEventsFromFirebase()
     }
+
+    private fun loadEventsFromFirebase() {
+        val firebaseAuth = FirebaseAuth.getInstance()
+        val user = firebaseAuth.currentUser
+
+        if (user != null) {
+            // User is authenticated, proceed with loading events
+            val database = FirebaseDatabase.getInstance().getReference("Events")
+            database.addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    eventList.clear() // Clear the list before adding new data
+
+                    // Check if the snapshot contains any data
+                    if (snapshot.exists()) {
+                        for (eventSnapshot in snapshot.children) {
+                            val event = eventSnapshot.getValue(Event::class.java)
+                            Log.d("EventsActivity", "Images type: ${event?.images?.javaClass?.simpleName}")
+
+                            event?.let { eventList.add(it) }
+                        }
+
+                        Log.e("EventsActivity", "ALL EVENTS AT LOADEVENTSFROM FIREBASE: $eventList")
+                    } else {
+                        Log.e("EventsActivity", "No events found in Firebase.")
+                    }
+
+                    // Only plot markers if the eventList is not empty
+                    if (eventList.isNotEmpty()) {
+                        plotMarkers()
+                    } else {
+                        Log.e("EventsActivity", "Event list is empty. No markers to plot.")
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("EventsActivity", "Error loading data: ${error.message}")
+                }
+            })
+        } else {
+            // User is not authenticated
+            Log.e("EventsActivity", "User is not authenticated. Unable to load events.")
+            // Optionally handle the UI for non-authenticated state
+        }
+    }
+
+
+    @SuppressLint("PotentialBehaviorOverride")
+    private fun plotMarkers() {
+        // Clear existing markers if necessary
+        mMap.clear()
+
+        // Create a list to store the LatLng objects for the bounds
+        val boundsBuilder = LatLngBounds.Builder()
+
+        // Get the current date without the time (only year, month, and day)
+        val currentDate = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.time
+
+        // Define a date format to parse the endedDateTime string
+        val dateFormat = SimpleDateFormat("dd/MM/yyyy h:mm a", Locale.getDefault())
+
+        // Iterate through the eventList to extract the LatLng from placeLatLng
+        for (event in eventList) {
+            // Parse the event's endedDateTime string to a Date object
+            val eventDate = try {
+                dateFormat.parse(event.endedDateTime)
+            } catch (e: Exception) {
+                null
+            }
+
+            // If parsing was successful, check if the event's date is the same as the current date
+            if (eventDate != null && isSameDay(eventDate, currentDate)) {
+                event.placeLatLng?.let { latLngString ->
+                    // Use regex to extract latitude and longitude
+                    val regex = """lat/lng: \(([^,]+),([^)]+)\)""".toRegex()
+                    val matchResult = regex.find(latLngString)
+
+                    matchResult?.let {
+                        val latitude = it.groups[1]?.value?.toDoubleOrNull()
+                        val longitude = it.groups[2]?.value?.toDoubleOrNull()
+
+                        if (latitude != null && longitude != null) {
+                            // Create LatLng object
+                            val latLng = LatLng(latitude, longitude)
+
+                            // Determine the icon for the event based on its category or other properties
+                            val iconId = getIconResourceForEventCategory(event.eventCategory)
+                            Log.e("PlacesActivity", "Event category: ${event.eventCategory}")
+
+                            // Create a custom marker using the iconId
+                            val customMarker = createCustomMarker(iconId)
+
+                            // Add a marker for each event and set the event as a tag
+                            val marker = mMap.addMarker(
+                                MarkerOptions()
+                                    .position(latLng)
+                                    .title(event.location)
+                                    .snippet(event.eventName)
+                                    .icon(customMarker) // Use the custom marker
+                            )
+                            marker?.tag = event // Set the event object as a tag
+
+                            // Include the LatLng in the bounds builder
+                            boundsBuilder.include(latLng)
+
+                            // Log for debugging
+                            Log.e("PlacesActivity", "Custom Marker added for: ${event.eventName} at Lat: $latitude, Lng: $longitude")
+                        }
+                    }
+                }
+            }
+        }
+
+        // Create bounds from the LatLngs and move the camera to fit the markers
+        val bounds = boundsBuilder.build()
+        mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100)) // Add padding as needed
+
+        // Set marker click listener
+        mMap.setOnMarkerClickListener { marker ->
+            val event = marker.tag as? Event
+            event?.let {
+                showEventDetailsBottomSheetDialog(it) // Show bottom sheet with event details
+            }
+            true // Return true to indicate that the event was consumed
+        }
+    }
+
+    // Helper function to check if two dates are on the same day
+    private fun isSameDay(date1: Date, date2: Date): Boolean {
+        val calendar1 = Calendar.getInstance().apply { time = date1 }
+        val calendar2 = Calendar.getInstance().apply { time = date2 }
+        return calendar1.get(Calendar.YEAR) == calendar2.get(Calendar.YEAR) &&
+                calendar1.get(Calendar.DAY_OF_YEAR) == calendar2.get(Calendar.DAY_OF_YEAR)
+    }
+
+    private fun getIconResourceForEventCategory(category: String?): Int {
+        // Convert the category to lowercase and trim any spaces
+        return when (category?.trim()?.lowercase(Locale.getDefault())) {
+            "concerts & live performances" -> R.drawable.concert
+            "festivals & celebrations" -> R.drawable.festival
+            "sales & promotions" -> R.drawable.fare
+            "workshops & seminars" -> R.drawable.workshop
+            "community events" -> R.drawable.community_events
+            "outdoor & adventure events" -> R.drawable.outdoor
+            else -> R.drawable.events
+        }
+    }
+
+
+
+
+
+
+
+    private fun showEventDetailsBottomSheetDialog(event: Event) {
+        val bottomSheetDialog = BottomSheetDialog(this)
+        val bottomSheetBinding = BottomSheetEventDetailsBinding.inflate(LayoutInflater.from(this))
+        bottomSheetDialog.setContentView(bottomSheetBinding.root)
+
+        // Format the date and time
+        val inputFormat = SimpleDateFormat("dd/MM/yyyy hh:mm a", Locale.getDefault())
+        val outputFormat = SimpleDateFormat("MMMM d, yyyy 'at' h:mm a", Locale.getDefault())
+
+        // Populate event details in bottom sheet
+        with(bottomSheetBinding) {
+            eventName.text = event.eventName
+            placeName.text = event.location
+            placeAddress.text = event.additionalInfo
+            eventCategory.text = event.eventCategory
+
+            // Check if event category has Others placeholder
+            val category = event.eventCategory ?: ""
+            eventCategory.text = if (category.contains("Others: ", ignoreCase = true)) {
+                category.replace("Others: ", "").trim()
+            } else {
+                category
+            }
+
+            // Set up ViewPager2 with images
+            val imageUrls = event.images ?: emptyList()
+            val imageAdapter = EventImageAdapter(imageUrls)
+            viewPager.adapter = imageAdapter
+
+            // calculate distance from the event place
+            getUserLocation { userLocation ->
+                if (userLocation != null) {
+                    CoroutineScope(Dispatchers.Main).launch {
+                        val distance = getTravelDistance(event, userLocation).await()
+                        bottomSheetBinding.eventDistance.text = formatDistance(distance)
+                    }
+                } else {
+                    bottomSheetBinding.eventDistance.text = getString(R.string.location_not_available)
+                }
+            }
+
+            // format date and time as e.g., September 8, 2024 at 8:48 PM
+            eventTimeStartedValue.text = formatDate(event.startedDateTime, inputFormat, outputFormat)
+            eventTimeEndedValue.text = formatDate(event.endedDateTime, inputFormat, outputFormat)
+            eventDescriptionDetails.text = event.eventDescription
+
+            // close button
+            bottomSheetBinding.closeButton.setOnClickListener {
+                bottomSheetDialog.dismiss()
+            }
+
+            setupGetDirectionsButton(event, bottomSheetBinding, bottomSheetDialog)
+            setupSaveButton(bottomSheetBinding, bottomSheetDialog, event)
+            setupShareButton(bottomSheetBinding, bottomSheetDialog)
+        }
+
+        bottomSheetDialog.show()
+    }
+
+    private fun setupGetDirectionsButton(event: Event, bottomSheetBinding: BottomSheetEventDetailsBinding, bottomSheetDialog: BottomSheetDialog) {
+
+        bottomSheetBinding.btnGetDirections.setOnClickListener{
+            bottomSheetDialog.dismiss()
+
+            Log.e("EventsActivity", "Start Navigate button clicked")
+            val intent =
+                Intent(this@PlacesActivity, StartNavigationsActivity::class.java)
+            intent.putExtra("TRAVEL_MODE", "DRIVE")
+            intent.putExtra("IS_SIMULATED", false)
+            intent.putExtra("ROUTE_TOKEN", "NO_ROUTE_TOKEN")
+            intent.putStringArrayListExtra(
+                "PLACE_IDS",
+                arrayListOf(event.placeId)
+            )
+            startActivity(intent)
+        }
+    }
+
+    private fun setupShareButton(bottomSheetBinding: BottomSheetEventDetailsBinding, bottomSheetDialog: BottomSheetDialog) {
+
+        bottomSheetBinding.btnShare.setOnClickListener{
+            val eventName = bottomSheetBinding.eventName.text.toString()
+            val eventPlace = bottomSheetBinding.placeName.text.toString()
+            val eventAddress = bottomSheetBinding.placeAddress.text.toString()
+            val timeStarted = bottomSheetBinding.eventTimeStarted.text.toString()
+            val timeEnded = bottomSheetBinding.eventTimeEnded.text.toString()
+            val eventDescription = bottomSheetBinding.eventDescriptionDetails.text.toString()
+            bottomSheetDialog.dismiss()
+
+            val shareText = """
+            📍 Let's go to this event:
+            
+                Event Name: $eventName
+                Place: $eventPlace
+                Address: $eventAddress
+                Time Started: $timeStarted
+                Time Ended: $timeEnded
+                Event Details: $eventDescription
+            """.trimIndent()
+
+            val shareIntent = Intent().apply {
+                action = Intent.ACTION_SEND
+                putExtra(Intent.EXTRA_TEXT, shareText)
+                type = "text/plain"
+            }
+
+            startActivity(Intent.createChooser(shareIntent, "Share via"))
+        }
+    }
+
+    private fun setupSaveButton(bottomSheetBinding: BottomSheetEventDetailsBinding, bottomSheetDialog: BottomSheetDialog, event: Event) {
+        bottomSheetBinding.btnSave.setOnClickListener {
+            val user = FirebaseAuth.getInstance().currentUser
+            if (user != null) {
+                val userId = user.uid
+                val databaseReference = FirebaseDatabase.getInstance().getReference("Users")
+                    .child(userId)
+                    .child("saved_events")
+
+
+
+                // Check if the event already exists
+                databaseReference.orderByChild("checker").equalTo(event.checker)
+                    .addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(snapshot: DataSnapshot) {
+                            if (snapshot.exists()) {
+                                // Event already exists
+                                bottomSheetDialog.dismiss()
+                                LayoutStateManager.showFailureLayout(this@PlacesActivity, "The event has already been saved to Favorites. Please select another event.", "Return to Events", EventsActivity::class.java)
+                            } else {
+                                // Event does not exist, proceed with saving
+                                val newEventRef = databaseReference.push() // Create a new child node
+
+                                val savedEventData = mapOf(
+                                    "eventName" to event.eventName,
+                                    "location" to event.location,
+                                    "additionalInfo" to event.additionalInfo,
+                                    "eventCategory" to event.eventCategory,
+                                    "startedDateTime" to event.startedDateTime,
+                                    "endedDateTime" to event.endedDateTime,
+                                    "eventDescription" to event.eventDescription,
+                                    "placeLatLng" to event.placeLatLng,
+                                    "placeId" to event.placeId,
+                                    "submittedBy" to event.submittedBy,
+                                    "submittedAt" to event.submittedAt,
+                                    "userId" to event.userId,
+                                    "images" to event.images, // Save image URLs directly
+                                    "checker" to event.checker
+                                )
+
+                                bottomSheetDialog.dismiss() // Close the bottom sheet dialog
+                                LayoutStateManager.showLoadingLayout(this@PlacesActivity, "Please wait while we are saving your event")
+
+                                // Save to Firebase Realtime Database
+                                newEventRef.setValue(savedEventData).addOnCompleteListener { task ->
+                                    if (task.isSuccessful) {
+                                        Toast.makeText(bottomSheetBinding.root.context, "Event saved successfully!", Toast.LENGTH_SHORT).show()
+                                        LayoutStateManager.showSuccessLayout(this@PlacesActivity, "Event saved successfully!", "You can now view this saved event in Favorites.", EventsActivity::class.java)
+                                    } else {
+                                        Toast.makeText(bottomSheetBinding.root.context, "Failed to save event.", Toast.LENGTH_SHORT).show()
+                                        LayoutStateManager.showFailureLayout(this@PlacesActivity, "Something went wrong. Please check your connection or try again.", "Return to Events", EventsActivity::class.java)
+                                    }
+                                }
+                            }
+                        }
+
+                        override fun onCancelled(error: DatabaseError) {
+                            Toast.makeText(bottomSheetBinding.root.context, "Error checking saved events: ${error.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    })
+            } else {
+                Toast.makeText(bottomSheetBinding.root.context, "User not signed in!", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun formatDate(dateString: String?, inputFormat: SimpleDateFormat, outputFormat: SimpleDateFormat): String {
+        return try {
+            val date = dateString?.let { inputFormat.parse(it) }
+            date?.let { outputFormat.format(it) } ?: ""
+        } catch (e: ParseException) {
+            ""
+        }
+    }
+
+    private fun formatDistance(distance: Double?): String {
+        return distance?.let {
+            String.format(Locale.US, "%.1f km away from location", it) // Format to one decimal place
+        } ?: "Distance not available"
+    }
+
+    private fun getTravelDistance(event: Event, userLocation: LatLng): Deferred<Double?> = CoroutineScope(Dispatchers.IO).async {
+        val placeLatLngString = event.placeLatLng ?: return@async null
+        val placeLatLng = parseLatLng(placeLatLngString) ?: return@async null
+        val (eventLat, eventLng) = placeLatLng
+
+        val origin = "${userLocation.latitude},${userLocation.longitude}"
+        val destination = "$eventLat,$eventLng"
+        val apiKey = BuildConfig.MAPS_API_KEY
+
+        val retrofit = Retrofit.Builder()
+            .baseUrl("https://maps.googleapis.com/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        val service = retrofit.create(PlaceDistanceService::class.java)
+
+        try {
+            val response = service.getDirections(origin, destination, apiKey).await()
+            val distanceValue = response.routes[0].legs[0].distance.value
+            val distanceInKm = distanceValue / 1000.0 // Convert meters to kilometers
+            distanceInKm
+        } catch (e: Exception) {
+            Log.e("EventsActivity", "API Call Failure for event ${event.eventName}: ${e.message}")
+            null
+        }
+    }
+
+    private fun parseLatLng(latLngString: String): Pair<Double, Double>? {
+        // Regular expression to match the latitude and longitude
+        val regex = Regex("""lat/lng: \(([^,]+),([^)]*)\)""")
+        val matchResult = regex.find(latLngString)
+        val (latitude, longitude) = matchResult?.destructured ?: return null
+        return Pair(latitude.toDouble(), longitude.toDouble())
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     override fun onResume() {
         super.onResume()
@@ -229,7 +646,6 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         super.onPause()
         isActivityVisible = false
     }
-
 
 
     private fun fetchRecommendedMealPlaces() {
@@ -311,8 +727,6 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         return "$year-$month-$day" // Return date in the format "YYYY-MM-DD"
     }
 
-
-
     private fun fetchAndSaveCityName() {
         NotificationDataHandler.getUserCityName(this) { cityName ->
             if (cityName != null) {
@@ -330,8 +744,6 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
             }
         }
     }
-
-
 
     private fun userTokenForNotifSetup() {
         val savedToken = TokenManager.getSavedToken(this)
@@ -357,7 +769,6 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
             }
         }
     }
-
 
      private fun retrievePreferences() {
         val sharedPreferences = getSharedPreferences("user_settings", MODE_PRIVATE)
@@ -735,7 +1146,6 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         }
     }
 
-
     private fun uploadPlaceImagesAndSaveData(userRef: DatabaseReference, placeData: SavedPlace?, place: SavedPlace) {
         val storageRef = FirebaseStorage.getInstance().reference.child("places")
         val photoMetadatas = place.photoMetadataList
@@ -819,7 +1229,6 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         }
     }
 
-
     @SuppressLint("PotentialBehaviorOverride")
     private fun fetchAndAddPois(userLatLng: LatLng, category: String? = null) {
         // Check if category is null or empty
@@ -852,10 +1261,6 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
             placesClient.searchNearby(searchNearbyRequest)
                 .addOnSuccessListener { response ->
                     val places = response.places
-
-                    // Clear existing markers if needed (optional)
-                    // poiMarkers.forEach { it.remove() }
-                    // poiMarkers.clear()
 
                     places.forEach { place ->
                         val latLng = place.latLng ?: return@forEach
@@ -918,14 +1323,13 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         }
     }
 
-
     private fun createCustomMarker(iconId: Int): BitmapDescriptor {
-        val markerWidth = 100 // Desired width of the marker in pixels
-        val markerHeight = 100 // Desired height of the marker in pixels
-        val iconSize = 30 // Desired size of the icon in pixels
+        val markerWidth = 50 // Desired width of the marker in pixels
+        val markerHeight = 50 // Desired height of the marker in pixels
+        val iconSize = 40 // Desired size of the icon in pixels
 
         // Create the base marker bitmap with desired size
-        val markerDrawable = ContextCompat.getDrawable(this, R.drawable.marker_custom)?.apply {
+        val markerDrawable = ContextCompat.getDrawable(this, R.drawable.marker_bg)?.apply {
             setBounds(0, 0, markerWidth, markerHeight)
         }
         val markerBitmap = Bitmap.createBitmap(markerWidth, markerHeight, Bitmap.Config.ARGB_8888)
@@ -1114,6 +1518,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
             Log.d("PlacesActivity", "Place does not have a LatLng.")
         }
     }
+
 
     private fun showPlaceDetailsInBottomSheet(place: SavedPlace) {
         // Inflate the bottom sheet view

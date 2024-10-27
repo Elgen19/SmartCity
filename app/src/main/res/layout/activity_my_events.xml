@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/primary_color">
+
+    <!-- Search SearchView with drawable icon and filter ImageButton -->
+    <RelativeLayout
+        android:id="@+id/search_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/secondary_color"
+        android:padding="16dp">
+
+        <androidx.appcompat.widget.SearchView
+            android:id="@+id/search_event"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_alignParentStart="true"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/search_bar_bg"
+            app:iconifiedByDefault="false"
+            app:queryHint="Search for an event" />
+
+
+    </RelativeLayout>
+
+
+
+    <TextView
+        android:id="@+id/eventLabelTitle"
+        android:layout_width="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp"
+        android:layout_height="wrap_content"
+        android:textColor="@color/brand_color"
+        android:layout_below="@+id/search_layout"
+        android:text="My Events"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+
+
+    <!-- RecyclerView for my events -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/my_events_recyclerview"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/eventLabelTitle"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp" />
+
+
+
+    <!-- LottieAnimationView for loading indicator -->
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/lottieAnimation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/search_layout"
+        android:layout_centerHorizontal="true"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="40dp"
+        android:layout_marginEnd="16dp"
+        android:visibility="visible"
+        app:lottie_autoPlay="true"
+        app:lottie_cacheComposition="true"
+        app:lottie_loop="true"
+        app:lottie_rawRes="@raw/no_data" />
+
+    <TextView
+        android:id="@+id/emptyDataLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/lottieAnimation"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="-56dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:text="You do not have any reported events at this moment. Click the add button to get started."
+        android:textAlignment="center"
+        android:textColor="@color/gray"
+        android:textSize="14sp"
+        android:visibility="visible" />
+
+    <!-- Floating Action Button -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAddEvent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="16dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="16dp"
+        android:backgroundTint="@color/secondary_color"
+        android:contentDescription="Create Event"
+        android:src="@drawable/add"
+        app:tint="@color/primary_color"
+        app:fabSize="normal"
+        app:rippleColor="@color/brand_color" />
+
+
+</RelativeLayout>
