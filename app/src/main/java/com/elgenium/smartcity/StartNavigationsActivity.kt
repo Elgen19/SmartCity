@@ -23,6 +23,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.elgenium.smartcity.contextuals.FuelStopsRecommendation
+import com.elgenium.smartcity.contextuals.MealContextuals
+import com.elgenium.smartcity.contextuals.PlaceOpeningHoursContextuals
+import com.elgenium.smartcity.contextuals.RainLikelihoodCalculator
 import com.elgenium.smartcity.databinding.ActivityStartNavigationsBinding
 import com.elgenium.smartcity.databinding.BottomSheetAddStopBinding
 import com.elgenium.smartcity.databinding.DialogRecomputeStopsBinding
@@ -59,6 +63,7 @@ import com.google.android.libraries.navigation.ListenableResultFuture
 import com.google.android.libraries.navigation.NavigationApi
 import com.google.android.libraries.navigation.Navigator
 import com.google.android.libraries.navigation.Navigator.ArrivalListener
+import com.google.android.libraries.navigation.Navigator.AudioGuidance
 import com.google.android.libraries.navigation.Navigator.RemainingTimeOrDistanceChangedListener
 import com.google.android.libraries.navigation.Navigator.RouteChangedListener
 import com.google.android.libraries.navigation.RoadSnappedLocationProvider
@@ -116,7 +121,18 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
     private var isNeedOptimization = false
     private var DEFAULT_STOPS = 0
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private val allLatLngs = mutableListOf<LatLng>()
     private val rearrangedDestinations = mutableListOf<String>()
+    private lateinit var placeDetailsRelatedContextuals: PlaceOpeningHoursContextuals
+    private lateinit var mealPlaceRecommender: MealContextuals
+    private lateinit var fuelStopsRecommendation: FuelStopsRecommendation
+    private var hasExecutedSuggestions = false
+    private lateinit var rainLikelihoodCalculator: RainLikelihoodCalculator
+    private var isPlaceOpenNowClassifierFinished = false
+
+
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -129,6 +145,10 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         isAudioGuidanceEnabled = sharedPreferences.getBoolean("set_audio", true)
         isTrafficOverlayEnabled = sharedPreferences.getBoolean("map_overlay", false)
         isRecomputeWaypointEnabled = sharedPreferences.getBoolean("recompute_waypoint", false)
+        placeDetailsRelatedContextuals = PlaceOpeningHoursContextuals(this)
+        mealPlaceRecommender = MealContextuals(this)
+        fuelStopsRecommendation = FuelStopsRecommendation(this)
+        rainLikelihoodCalculator = RainLikelihoodCalculator(this)
 
 
         travelMode = intent.getStringExtra("TRAVEL_MODE") ?: ""
@@ -148,18 +168,39 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         Log.e("StartNavigationsActivity", "ROUTE TOKEN AT NAVIGATION: $routeToken" )
 
 
+        showNavigationOptionsBottomSheet()
         if (routeToken == null)
             routeToken = "NO ROUTE TOKEN"
 
         requestLocationPermissions(routeToken!!, placeIds, travelMode)
-        showNavigationOptionsBottomSheet()
         Log.e("WaypointOrder", "PLACEID AT ONCREATE AFTER CHANGES: $placeIds" )
+
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 showNavigationTerminationDialog()
             }
         })
+
+
+
+        binding.clearMarkers.setOnClickListener {
+            clearMarkers()
+            binding.assistantButton.visibility = View.VISIBLE
+            binding.clearMarkers.visibility = View.GONE
+        }
+
+    }
+
+    private fun displayRainCheckBottomSheet() {
+        getCurrentLocation { latLng ->
+            if (latLng != null) {
+                Log.d("PlacesActivity", "Current Location: ${latLng.latitude}, ${latLng.longitude}")
+                // Call the method to fetch rain likelihood and show the dialog
+                rainLikelihoodCalculator.fetchRainLikelihoodAndShowDialog(latLng.latitude, latLng.longitude)
+            }
+
+        }
     }
 
 
@@ -218,6 +259,78 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
                 Log.e("AIProcessor", "Error processing query: ${e.message}", e)
                 textToSpeech.speakResponse("Unfortunately, I cannot find what you are looking for right now.")
             }
+        }
+    }
+
+    private fun displayFuelStops(){
+        navigator.routeSegments.forEach { segment ->
+            // Add all LatLngs from the current segment to the list
+            allLatLngs.addAll(segment.latLngs)
+        }
+        Log.e("StartNavigationsActivity", "all latlngs: $allLatLngs")
+
+        fuelStopsRecommendation.performOptimizedTextSearch(
+            placesClient,
+            allLatLngs,
+            this
+        ) { places ->
+            // Step 3: Log and check place details retrieved
+            if (places.isEmpty()) {
+                Log.e(TAG, "No places found")
+                return@performOptimizedTextSearch
+            } else {
+                Log.e(TAG, "Found ${places.size} places")
+            }
+
+            // Step 4: Transform places into map-compatible format for markers
+            val placesInfo = places.mapNotNull { place ->
+                place.latLng?.let {
+                    mapOf(
+                        "latLng" to it,
+                        "name" to place.name.orEmpty(),
+                        "address" to place.address.orEmpty(),
+                        "placeId" to place.id.orEmpty()
+                    )
+                }
+            }
+            Log.e(TAG, "PlaceInfo: $placesInfo")
+
+            // Step 5: Plot markers on the map using the `plotMarkers` function
+            plotMarkers(placesInfo)
+        }
+    }
+
+    private fun onDialogProceed() {
+        // Step 1: Determine the current meal time
+        val mealTime = mealPlaceRecommender.getMealTime()
+
+        // Step 2: Retrieve appropriate place types for the meal time
+        val placeTypes = mealPlaceRecommender.mealTimePlaceMappings[mealTime] ?: emptyList()
+
+        mealPlaceRecommender.performTextSearch(placesClient, placeTypes, this) { places ->
+            // Step 3: Log and check place details retrieved
+            if (places.isEmpty()) {
+                Log.e(TAG, "No places found for $mealTime")
+                return@performTextSearch
+            } else {
+                Log.e(TAG, "Found ${places.size} places for $mealTime")
+            }
+
+            // Step 4: Transform places into map-compatible format for markers
+            val placesInfo = places.mapNotNull { place ->
+                place.latLng?.let {
+                    mapOf(
+                        "latLng" to it,
+                        "name" to place.name.orEmpty(),
+                        "address" to place.address.orEmpty(),
+                        "placeId" to place.id.orEmpty()
+                    )
+                }
+            }
+            Log.e(TAG, "PlaceInfo: $placesInfo")
+
+            // Step 5: Plot markers on the map using the `plotMarkers` function
+            plotMarkers(placesInfo)
         }
     }
 
@@ -319,6 +432,9 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
             }
             stopConfig(placeId)
 
+            binding.assistantButton.visibility = View.VISIBLE
+            binding.clearMarkers.visibility = View.GONE
+
             // Call recalculateWaypointOrder and handle completion
             recalculateWaypointOrder {
                 Log.e("StartNavigationsActivity", "Rearranged list: $rearrangedDestinations")
@@ -326,7 +442,7 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
                 Log.e("StartNavigationsActivity", "Is need of optimization: ${(rearrangedDestinations != placeIds)}")
 
                 if (placeIds != rearrangedDestinations) {
-                    showRecomputeStopsDialog(placeId) // Show dialog if optimization is needed
+                    showRecomputeStopsDialog() // Show dialog if optimization is needed
                     Log.e("StartNavigationsActivity", "Is need optimization should be true")
                 } else {
                     navigationConfig() // Proceed with navigation if no optimization is needed
@@ -347,7 +463,7 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         bottomSheetDialog.show()
     }
 
-    private fun showRecomputeStopsDialog(placeId: String) {
+    private fun showRecomputeStopsDialog() {
         if (isRecomputeWaypointEnabled == true){
             // Inflate the binding to get the custom layout
             val binding = DialogRecomputeStopsBinding.inflate(layoutInflater)
@@ -406,7 +522,6 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         dialog.show()
     }
 
-
     private fun showNavigationOptionsBottomSheet() {
         // Inflate the bottom sheet layout using view binding
         val bottomSheet = binding.bottomSheet
@@ -440,7 +555,7 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
                     putBoolean(SettingsKeys.KEY_SET_AUDIO, true)
                     apply()
                 }
-                navigator.setAudioGuidance(Navigator.AudioGuidance.VOICE_ALERTS_AND_GUIDANCE)
+                navigator.setAudioGuidance(AudioGuidance.VOICE_ALERTS_AND_GUIDANCE)
                 isAudioGuidanceEnabled = true
                 displayMessage("Audio guidance will be enabled in a moment")
                 Log.e("StartNavigationsActivity", "audio guidance at method: $isAudioGuidanceEnabled" )
@@ -450,7 +565,7 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
                     putBoolean(SettingsKeys.KEY_SET_AUDIO, false)
                     apply()
                 }
-                navigator.setAudioGuidance(Navigator.AudioGuidance.SILENT)
+                navigator.setAudioGuidance(AudioGuidance.SILENT)
                 isAudioGuidanceEnabled = false
                 displayMessage("Audio guidance will be disabled in a moment")
                 Log.e("StartNavigationsActivity", "audio guidance at method: $isAudioGuidanceEnabled" )
@@ -617,20 +732,12 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
                     withContext(Dispatchers.Main) {
                         onCompletion() // Call onCompletion to signal that rearrangement is done
                     }
-
-
                 }
             } ?: run {
                 Log.e("WaypointOrder", "Failed to obtain current location.")
             }
         }
     }
-
-
-
-
-
-
 
     private fun getCurrentLocation(callback: (LatLng?) -> Unit) {
         // Check if the location permission is granted
@@ -678,6 +785,8 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
 
     private fun clearMarkers() {
         // Remove markers from the map
+        binding.assistantButton.visibility = View.GONE
+        binding.clearMarkers.visibility = View.VISIBLE
         markersList.forEach { it.remove() }
         // Clear the list
         markersList.clear()
@@ -744,6 +853,7 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
                     }
 
                     navigateWithMultipleStops(routeToken, placeIds, travelMode)
+
                 }
                 override fun onError(@NavigationApi.ErrorCode errorCode: Int) {
                     when (errorCode) {
@@ -817,7 +927,6 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         }
     }
 
-
     private fun navigateWithMultipleStops(routeToken: String, placesIds: List<String>, travelMode: String) {
         // Create a list of waypoints based on the provided place IDs
         val waypoints = mutableListOf<Waypoint>()
@@ -875,23 +984,45 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         pendingRoute.setOnResultListener { code ->
             when (code) {
                 Navigator.RouteStatus.OK -> {
-                    displayMessage("Route successfully calculated with multiple stops!")
-                    if (isAudioGuidanceEnabled) {
-                        navigator.setAudioGuidance(Navigator.AudioGuidance.VOICE_ALERTS_AND_GUIDANCE)
-                        displayMessage("AUDIO GUIDANCE: $isAudioGuidanceEnabled")
-                    } else {
-                        navigator.setAudioGuidance(Navigator.AudioGuidance.SILENT)
-                        displayMessage("AUDIO GUIDANCE: $isAudioGuidanceEnabled")
 
+                    placeDetailsRelatedContextuals.isPlaceOpenNow(placeIds[0]) {
+                        placeDetailsRelatedContextuals.showClosedPlaceDialog(
+                            onCancel = {
+                                Toast.makeText(this, "Navigation terminated", Toast.LENGTH_SHORT).show()
+                                cleanup()
+                                Handler(Looper.getMainLooper()).postDelayed({
+                                    ActivityNavigationUtils.navigateToActivity(this, PlacesActivity::class.java, true)
+                                }, 300)
+                            },
+                            onProceed = {
+                                isPlaceOpenNowClassifierFinished = true
+                                displayMessage("Route successfully calculated with multiple stops!")
+                                if (isAudioGuidanceEnabled) {
+                                    navigator.setAudioGuidance(AudioGuidance.VOICE_ALERTS_AND_GUIDANCE)
+                                    displayMessage("AUDIO GUIDANCE: $isAudioGuidanceEnabled")
+                                } else
+                                    displayMessage("AUDIO GUIDANCE: $isAudioGuidanceEnabled")
+
+
+                                Log.e(TAG, "isPlaceOpenNowClassifierFinished: $isPlaceOpenNowClassifierFinished")
+                                if (isPlaceOpenNowClassifierFinished) {
+                                    displayRainCheckBottomSheet()
+                                    Log.e(TAG, "THE RAIN CHECK WAS EXECUTED")
+                                    hasExecutedSuggestions = true
+                                }
+
+                                registerNavigationListeners()
+
+                                if (isSimulated) {
+                                    navigator.simulator.simulateLocationsAlongExistingRoute(
+                                        SimulationOptions().speedMultiplier(5F))
+                                }
+
+                                navigator.startGuidance()
+                                startTrip()
+                            }
+                        )
                     }
-
-                    registerNavigationListeners()
-
-                    if (isSimulated) {
-                        navigator.simulator.simulateLocationsAlongExistingRoute(SimulationOptions().speedMultiplier(5F))
-                    }
-                    navigator.startGuidance()
-                    startTrip()
                 }
                 Navigator.RouteStatus.NO_ROUTE_FOUND -> displayMessage("Error starting navigation: No route found.")
                 Navigator.RouteStatus.NETWORK_ERROR -> displayMessage("Error starting navigation: Network error.")
@@ -943,21 +1074,45 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
 
 
         // Listener for remaining time or distance changes
+        val totalRouteDistanceInMeters = navigator.currentTimeAndDistance.meters // Assume you retrieve this on route setup
+        val fuelStopTriggerDistance = totalRouteDistanceInMeters * 0.25
+        val mealStopTriggerDistance = 1000
+
         mRemainingTimeOrDistanceChangedListener = RemainingTimeOrDistanceChangedListener {
-            // Get the current time and distance to the next destination
-            val timeAndDistance = navigator.currentTimeAndDistance
+            val remainingDistanceInMeters = navigator.currentTimeAndDistance.meters
+            val traveledDistance = totalRouteDistanceInMeters - remainingDistanceInMeters
 
-            // Get the remaining time in seconds and distance in meters
-            val remainingTimeInSeconds = timeAndDistance.seconds
-            val remainingDistanceInMeters = timeAndDistance.meters
+            if (totalRouteDistanceInMeters > 10000){
+                if (!hasExecutedSuggestions && traveledDistance >= fuelStopTriggerDistance) {
+                    hasExecutedSuggestions = true
+                    fuelStopsRecommendation.showPlaceDialog {
+                        displayFuelStops()
+                    }
+                }
+            }
 
-            // Update UI with the new remaining time and distance
+            if (totalRouteDistanceInMeters >= 5000 && traveledDistance >= mealStopTriggerDistance) {
+                // Silence the navigation audio guidance
+                navigator.setAudioGuidance(AudioGuidance.SILENT)
+
+                // Display the meal place recommendation dialog
+                mealPlaceRecommender.showPlaceDialogIfNeeded(
+                    onProceedClicked = {
+                        onDialogProceed()
+                    }
+                )
+                navigator.setAudioGuidance(AudioGuidance.VOICE_ALERTS_AND_GUIDANCE)
+            }
+
+
+            // Update UI as needed
             runOnUiThread {
-                binding.tvJourneyTime.text = formatTime(remainingTimeInSeconds) // Convert seconds to a readable format
-                binding.tvTotalKilometers.text = String.format("Distance: %.1f km", remainingDistanceInMeters / 1000.0) // Convert meters to kilometers
-                binding.tvEta.text = "ETA: ${calculateETA(remainingTimeInSeconds)}" // Calculate and display ETA
+                binding.tvJourneyTime.text = formatTime(navigator.currentTimeAndDistance.seconds)
+                binding.tvTotalKilometers.text = String.format("Distance: %.1f km", remainingDistanceInMeters / 1000.0)
+                binding.tvEta.text = "ETA: ${calculateETA(navigator.currentTimeAndDistance.seconds)}"
             }
         }
+
         // Register the remaining time or distance changed listener
         navigator.addRemainingTimeOrDistanceChangedListener(5, 10, mRemainingTimeOrDistanceChangedListener) // Change thresholds as needed
     }
@@ -1121,8 +1276,8 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
                 val place = response.place
                 callback(place)
             }
-            .addOnFailureListener { exception ->
-               displayMessage("Error fetching place details")
+            .addOnFailureListener {
+                displayMessage("Error fetching place details")
                 callback(null) // Return null if the API call fails
             }
     }

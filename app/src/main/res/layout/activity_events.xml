@@ -180,9 +180,7 @@
         android:layout_height="wrap_content"
         android:layout_above="@id/bottom_navigation"
         android:layout_below="@id/eventLabelTitle"
-        android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
         android:visibility="gone"
         android:layout_marginBottom="16dp" />
 
@@ -195,9 +193,7 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/scrollViewButtons"
         android:layout_centerHorizontal="true"
-        android:layout_marginStart="16dp"
         android:layout_marginTop="40dp"
-        android:layout_marginEnd="16dp"
         android:visibility="visible"
         app:lottie_autoPlay="true"
         app:lottie_cacheComposition="true"
@@ -219,22 +215,6 @@
         android:textSize="14sp"
         android:visibility="visible" />
 
-    <!-- Floating Action Button -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabAddEvent"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
-        android:layout_marginEnd="16dp"
-        android:layout_above="@+id/bottom_navigation"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="16dp"
-        android:backgroundTint="@color/secondary_color"
-        android:contentDescription="Create Event"
-        android:src="@drawable/add"
-        app:tint="@color/primary_color"
-        app:fabSize="normal"
-        app:rippleColor="@color/brand_color" />
 
     <!-- Bottom Navigation View -->
     <com.google.android.material.bottomnavigation.BottomNavigationView

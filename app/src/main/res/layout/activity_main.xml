@@ -3,16 +3,16 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:background="@drawable/backdraft">
+    android:background="@color/primary_color">
 
     <!-- Centered ImageView for the logo -->
     <ImageView
         android:id="@+id/imageViewLogo"
-        android:layout_width="wrap_content"
-        android:layout_height="300dp"
+        android:layout_width="match_parent"
+        android:layout_height="400dp"
         android:layout_centerInParent="true"
-        android:src="@drawable/smart_city_logo"
-        android:contentDescription="@string/app_name" />
+        android:contentDescription="@string/app_name"
+        android:src="@drawable/smartcity_mobile" />
 
     <!-- Lotify for loading -->
     <com.airbnb.lottie.LottieAnimationView
@@ -22,8 +22,21 @@
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         app:lottie_rawRes="@raw/loading_lotify"
+        app:lottie_cacheComposition="true"
         app:lottie_autoPlay="true"
         app:lottie_loop="true" />
+
+
+<!--    <com.airbnb.lottie.LottieAnimationView-->
+<!--        android:id="@+id/lottieAnimation"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_alignParentBottom="true"-->
+<!--        android:layout_height="200dp"-->
+<!--        app:lottie_autoPlay="true"-->
+<!--        android:layout_gravity="center_horizontal"-->
+<!--        app:lottie_cacheComposition="true"-->
+<!--        app:lottie_loop="true"-->
+<!--        app:lottie_rawRes="@raw/no_data" />-->
 
 
 

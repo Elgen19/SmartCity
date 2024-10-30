@@ -32,6 +32,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.elgenium.smartcity.contextuals.MealPlaceRecommendationManager
+import com.elgenium.smartcity.contextuals.RainLikelihoodCalculator
 import com.elgenium.smartcity.databinding.ActivityPlacesBinding
 import com.elgenium.smartcity.databinding.BottomSheetEventDetailsBinding
 import com.elgenium.smartcity.models.Event
@@ -130,7 +131,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
     private var isActivityVisible = false
     private val eventLatlngs = ArrayList<LatLng>()
     private val eventList = mutableListOf<Event>()
-
+    private lateinit var rainLikelihoodCalculator: RainLikelihoodCalculator
 
 
 
@@ -144,6 +145,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         // Singleton object to set the color of the navigation bar making it more personalized
         NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
         mealPlaceRecommender = MealPlaceRecommendationManager(this)
+        rainLikelihoodCalculator = RainLikelihoodCalculator(this)
 
         retrievePreferences()
 
@@ -234,6 +236,9 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         Log.e("PlacesActivity", "Event latlngs: $eventLatlngs")
 
         loadEventsFromFirebase()
+
+
+
     }
 
     private fun loadEventsFromFirebase() {
@@ -288,6 +293,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
 
         // Create a list to store the LatLng objects for the bounds
         val boundsBuilder = LatLngBounds.Builder()
+        var hasMarkers = false // Flag to check if we have added any markers
 
         // Get the current date without the time (only year, month, and day)
         val currentDate = Calendar.getInstance().apply {
@@ -304,7 +310,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         for (event in eventList) {
             // Parse the event's endedDateTime string to a Date object
             val eventDate = try {
-                dateFormat.parse(event.endedDateTime)
+                event.endedDateTime?.let { dateFormat.parse(it) }
             } catch (e: Exception) {
                 null
             }
@@ -343,6 +349,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
 
                             // Include the LatLng in the bounds builder
                             boundsBuilder.include(latLng)
+                            hasMarkers = true // Set flag to true as we have added a marker
 
                             // Log for debugging
                             Log.e("PlacesActivity", "Custom Marker added for: ${event.eventName} at Lat: $latitude, Lng: $longitude")
@@ -352,9 +359,15 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
             }
         }
 
-        // Create bounds from the LatLngs and move the camera to fit the markers
-        val bounds = boundsBuilder.build()
-        mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100)) // Add padding as needed
+        // Check if we have added any markers before building bounds
+        if (hasMarkers) {
+            // Create bounds from the LatLngs and move the camera to fit the markers
+            val bounds = boundsBuilder.build()
+            mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100)) // Add padding as needed
+        } else {
+            Log.e("PlacesActivity", "No markers to display for the current date.")
+            // Optionally, handle the case when no markers are available
+        }
 
         // Set marker click listener
         mMap.setOnMarkerClickListener { marker ->
@@ -365,6 +378,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
             true // Return true to indicate that the event was consumed
         }
     }
+
 
     // Helper function to check if two dates are on the same day
     private fun isSameDay(date1: Date, date2: Date): Boolean {

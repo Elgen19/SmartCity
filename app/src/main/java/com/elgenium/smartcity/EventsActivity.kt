@@ -3,7 +3,6 @@ package com.elgenium.smartcity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
-import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -16,7 +15,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.elgenium.smartcity.databinding.ActivityEventsBinding
 import com.elgenium.smartcity.databinding.BottomSheetEventDetailsBinding
@@ -27,6 +25,7 @@ import com.elgenium.smartcity.recyclerview_adapter.MyEventsAdapter
 import com.elgenium.smartcity.singletons.ActivityNavigationUtils
 import com.elgenium.smartcity.singletons.BottomNavigationManager
 import com.elgenium.smartcity.singletons.LayoutStateManager
+import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.viewpager_adapter.EventImageAdapter
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -88,36 +87,8 @@ class EventsActivity : AppCompatActivity() {
             showEventDetailsBottomSheetDialog(event)
         }, binding.lottieAnimation, binding.emptyDataLabel)
 
-        // Create a custom drawable with your desired color
-        val dividerDrawable = ColorDrawable(ContextCompat.getColor(this, R.color.dark_gray))
-
-        // Create the DividerItemDecoration and set the drawable
-        val dividerItemDecoration = DividerItemDecoration(
-            binding.eventsRecyclerView.context,
-            layoutManager.orientation
-        )
-        dividerItemDecoration.setDrawable(dividerDrawable)
-
-        // Add the custom divider to the RecyclerView
-        binding.eventsRecyclerView.addItemDecoration(dividerItemDecoration)
         binding.eventsRecyclerView.adapter = eventAdapter
 
-        binding.fabAddEvent.setOnClickListener {
-            getUserLocation { latLng ->
-                if (latLng != null) {
-                    // Create an Intent to start ReportEventActivity
-                    val intent = Intent(this, ReportEventActivity::class.java)
-                    intent.putExtra("PLACE_LATLNG", latLng.toString())
-                    Log.e("EventsActivity",latLng.toString())
-
-                    // Start the ReportEventActivity
-                    startActivity(intent)
-                } else {
-                    // Handle the case when location is null (optional)
-                    Toast.makeText(this, "Unable to get current location", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
 
 
         // Load events from Firebase
@@ -131,7 +102,9 @@ class EventsActivity : AppCompatActivity() {
         setupFilterButton()
 
         BottomNavigationManager.setupBottomNavigation(this, binding.bottomNavigation, EventsActivity::class.java)
+        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
     }
+
 
 
     private fun showEventDetailsBottomSheetDialog(event: Event) {

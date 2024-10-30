@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <!-- Use a solid color with transparency -->
+    <solid android:color="#80000000" /> <!-- 50% opacity black -->
+</shape>

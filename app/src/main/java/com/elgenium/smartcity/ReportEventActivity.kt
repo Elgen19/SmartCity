@@ -802,8 +802,8 @@ class ReportEventActivity : AppCompatActivity() {
                                         LayoutStateManager.showSuccessLayout(
                                             this@ReportEventActivity,
                                             "Event updated successfully!",
-                                            "",
-                                            EventsActivity::class.java
+                                            "Updated events will still undergo verification procedures. You will receive a notification regarding the results of the verification.",
+                                            MyEventsActivity::class.java
                                         )
                                         Log.e("ReportEventActivity", "Event data updated successfully")
                                     }
@@ -863,9 +863,9 @@ class ReportEventActivity : AppCompatActivity() {
                     promise.complete(url)
                     LayoutStateManager.showSuccessLayout(
                         this,
-                        "Event saved successfully!",
-                        "Thank you for your valuable contribution! You've earned 5 points for your efforts.",
-                        EventsActivity::class.java
+                        "Event saved successfully and on pending verification!",
+                        "The event you reported is currently undergoing verification. In the meantime, it will not be posted publicly and can only be viewed on the My Events screen until we confirm your report. You will receive a notification regarding the result of the verification.",
+                        MyEventsActivity::class.java
                     )
                 },
                 onFailure = { e ->

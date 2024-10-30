@@ -52,8 +52,9 @@ class ReportVerifier {
 
             for (snapshot in dataSnapshot.children) {
                 val event = snapshot.getValue(Event::class.java)
-                // Check if the event's userId matches the current user's ID
-                if (event != null && event.userId == currentUserId) {
+                // Check if the event is not null, matches the current user's ID, and has the desired status
+                if (event != null && event.userId == currentUserId &&
+                    (event.status == "Unverified" || event.status == "Verification_Failed")) {
                     eventList.add(event)
                 }
             }
@@ -61,6 +62,7 @@ class ReportVerifier {
             eventList
         }
     }
+
 
     // Helper function to fetch DataSnapshot from Firebase
     private suspend fun getDataSnapshotFromFirebase(ref: DatabaseReference): DataSnapshot {
@@ -157,7 +159,7 @@ class ReportVerifier {
         for (image in images) {
             val inputContent = content {
                 image(image)
-                text("Does this image relate to an event described as: '$eventDescription' under the category '$eventCategory' with the name '$eventName'? Respond with 'yes' or 'no'.")
+                text("Does this image relate to an event described as: '$eventDescription' or '$eventCategory'or '$eventName'? Respond with 'yes' or 'no' only no periods or explanations")
             }
 
             try {
@@ -240,16 +242,16 @@ class ReportVerifier {
                 // Prepare a detailed notification message
                 val reasonMessages = mutableListOf<String>()
                 if (eventDetailFailed) {
-                    reasonMessages.add("event details")
+                    reasonMessages.add("event description, event name or category do not relate with one another.")
                 }
                 if (imagesFailed) {
-                    reasonMessages.add("images")
+                    reasonMessages.add("images do not match the event name, description, or category.")
                 }
                 val reasons = reasonMessages.joinToString(" and ")
                 val notificationMessage = if (reasons.isNotEmpty()) {
-                    "Your reported event '${event.eventName}' has been updated to: $newStatus. Verification failed for: $reasons."
+                    "Your reported event '${event.eventName}' failed to be posted in public due to $reasons. Please consider editing the reported event."
                 } else {
-                    "Your reported event '${event.eventName}' has been updated to: $newStatus."
+                    "Your reported event '${event.eventName}' has been approved."
                 }
 
                 sendNotification(context, "Event Update", notificationMessage)

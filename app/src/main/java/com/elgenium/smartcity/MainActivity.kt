@@ -24,7 +24,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.elgenium.smartcity.sharedpreferences.PreferencesManager
 import com.elgenium.smartcity.singletons.GoogleSignInClientProvider
-import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.firebase.auth.FirebaseAuth
 
@@ -41,8 +40,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // sets the color of the navigation bar making it more personalized
-        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
 
         retrievePreferences()
 

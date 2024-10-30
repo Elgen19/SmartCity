@@ -81,6 +81,17 @@
                 android:elevation="6dp"
                 android:focusable="true"
                 android:padding="16dp" />
+
+            <ImageView
+                android:id="@+id/clearMarkers"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:background="@drawable/clear_markers"
+                android:clickable="true"
+                android:visibility="gone"
+                android:elevation="6dp"
+                android:focusable="true"
+                android:padding="16dp" />
         </LinearLayout>
 
         <!-- Row for stop icon and heading text -->
