@@ -23,7 +23,7 @@ class RegistrationActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         // sets the color of the navigation bar making it more personalized
-        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
+        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.primary_color)
 
         auth = FirebaseAuth.getInstance()
         database = FirebaseDatabase.getInstance().reference.child("Users")

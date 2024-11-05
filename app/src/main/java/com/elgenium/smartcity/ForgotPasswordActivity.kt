@@ -19,14 +19,11 @@ class ForgotPasswordActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         // sets the color of the navigation bar making it more personalized
-        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
+        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.primary_color)
 
         auth = FirebaseAuth.getInstance()
 
-        binding.backButton.setOnClickListener {
-            startActivity(Intent(this, SignInActivity::class.java))
-            finish() // Go back to the previous activity
-        }
+
 
         binding.submitButton.setOnClickListener {
             val email = binding.emailEditText.text.toString().trim()

@@ -7,40 +7,65 @@
     android:layout_height="match_parent">
 
     <!-- Title Section -->
-    <LinearLayout
-        android:id="@+id/titleSection"
+    <FrameLayout
+        android:id="@+id/top"
         android:layout_width="match_parent"
-        android:background="@drawable/background2"
         android:layout_height="200dp"
-        android:orientation="vertical"
+        android:layout_marginBottom="32dp"
         android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="32dp">
+        android:layout_centerHorizontal="true">
 
-        <!-- Title TextView -->
-        <TextView
-            android:id="@+id/signupTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:text="Register"
-            android:layout_marginTop="40dp"
-            android:textColor="@color/brand_color"
-            android:textSize="40sp"
-            android:textStyle="bold" />
+        <!-- Lottie Animation as Background -->
+        <com.airbnb.lottie.LottieAnimationView
+            android:id="@+id/lottieAnimation"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginStart="100dp"
+            android:layout_gravity="center"
+            app:lottie_rawRes="@raw/driving"
+            app:lottie_autoPlay="true"
+            app:lottie_loop="true"
+            app:lottie_cacheComposition="true" />
 
-        <!-- Subtitle TextView -->
-        <TextView
-            android:id="@+id/signupSubtitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@color/white"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:text="Create an acount to start exploring this \nbeautiful city"
-            android:textSize="16sp" />
-    </LinearLayout>
+        <!-- Semi-transparent overlay for text contrast -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#990E1550" />
+
+        <!-- Title and Subtitle Section -->
+        <LinearLayout
+            android:id="@+id/titleSection"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <!-- Title TextView -->
+            <TextView
+                android:id="@+id/signupTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Register"
+                android:layout_marginTop="40dp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:textColor="@color/brand_color"
+                android:textSize="40sp"
+                android:textStyle="bold" />
+
+            <!-- Subtitle TextView -->
+            <TextView
+                android:id="@+id/signupSubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:text="Create an account to start exploring \nthis beautiful city"
+                android:textColor="@color/white"
+                android:textSize="16sp" />
+        </LinearLayout>
+    </FrameLayout>
+
 
     <!-- Registration Section -->
     <LinearLayout
@@ -50,7 +75,7 @@
         android:orientation="vertical"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
-        android:layout_below="@id/titleSection"
+        android:layout_below="@id/top"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="16dp">
 

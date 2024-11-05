@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.LocationManager
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -24,6 +26,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.elgenium.smartcity.sharedpreferences.PreferencesManager
 import com.elgenium.smartcity.singletons.GoogleSignInClientProvider
+import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.firebase.auth.FirebaseAuth
 
@@ -40,6 +43,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+
+
+        // sets the color of the navigation bar making it more personalized
+        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.primary_color)
 
         retrievePreferences()
 
@@ -59,7 +66,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        Toast.makeText(this, "Permission handles: $permissionsHandled and Location enabled: ${isLocationEnabled()}", Toast.LENGTH_SHORT).show()
+        //Toast.makeText(this, "Permission handles: $permissionsHandled and Location enabled: ${isLocationEnabled()}", Toast.LENGTH_SHORT).show()
 
         // Ensure permissions are handled before proceeding
         if (permissionsHandled && isLocationEnabled()) {
@@ -172,22 +179,56 @@ class MainActivity : AppCompatActivity() {
         }, 1000)
     }
 
+    private fun isNetworkConnected(): Boolean {
+        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val activeNetwork = connectivityManager.activeNetwork ?: return false
+        val networkCapabilities = connectivityManager.getNetworkCapabilities(activeNetwork) ?: return false
+        return networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }
+
     private fun checkFirebaseAuthState() {
+        if (!isNetworkConnected()) {
+            Toast.makeText(this, "No internet connection. Please check your connection and try again.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+
         val currentUser = auth.currentUser
+        val timeoutHandler = Handler(Looper.getMainLooper())
+        val timeoutRunnable = Runnable {
+            Toast.makeText(this, "Taking longer than usual. Please wait...", Toast.LENGTH_SHORT).show()
+        }
+
+        // Start a timeout to check if the request takes too long
+        timeoutHandler.postDelayed(timeoutRunnable, 5000) // Adjust timeout as needed
+
         currentUser?.getIdToken(true)?.addOnCompleteListener { task ->
+            timeoutHandler.removeCallbacks(timeoutRunnable) // Remove timeout callback if the task completes
             if (task.isSuccessful) {
                 navigateToDashboard()
             } else {
-                if (task.exception?.message?.contains("BAD_AUTHENTICATION") == true) {
-                    signOut()
-                } else {
-                    Log.e("MainActivity", "FirebaseAuth token error: ${task.exception?.message}")
-                }
+                handleAuthFailure(task.exception)
             }
-        } ?: run {
-            navigateToSignIn()
+        }?.addOnFailureListener { e ->
+            timeoutHandler.removeCallbacks(timeoutRunnable) // Remove timeout callback on failure
+            handleAuthFailure(e)
         }
     }
+
+    // Handle Firebase authentication failure and prompt retry
+    private fun handleAuthFailure(exception: Exception?) {
+        Log.e("MainActivity", "FirebaseAuth token error: ${exception?.message}")
+        Toast.makeText(this, "Authentication failed. Please check your connection and try again.", Toast.LENGTH_SHORT).show()
+
+        // Optionally offer a retry
+        AlertDialog.Builder(this)
+            .setTitle("Retry Authentication")
+            .setMessage("Would you like to try again?")
+            .setPositiveButton("Retry") { _, _ -> checkFirebaseAuthState() }
+            .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+            .show()
+    }
+
 
     private fun signOut() {
         auth.signOut()

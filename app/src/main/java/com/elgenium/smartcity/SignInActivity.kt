@@ -8,6 +8,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.elgenium.smartcity.databinding.ActivitySignInBinding
+import com.elgenium.smartcity.singletons.ActivityNavigationUtils
 import com.elgenium.smartcity.singletons.GoogleSignInClientProvider
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -33,7 +34,7 @@ class SignInActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         // sets the color of the navigation bar making it more personalized
-        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
+        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.primary_color)
 
         auth = FirebaseAuth.getInstance()
         database = FirebaseDatabase.getInstance().getReference("Users")
@@ -89,8 +90,7 @@ class SignInActivity : AppCompatActivity() {
         }
 
         binding.forgotPasswordTextView.setOnClickListener {
-            startActivity(Intent(this, ForgotPasswordActivity::class.java))
-            finish()
+           ActivityNavigationUtils.navigateToActivity(this, ForgotPasswordActivity::class.java, false)
         }
 
         binding.registerTextView.setOnClickListener {
