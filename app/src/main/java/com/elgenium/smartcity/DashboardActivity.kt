@@ -17,10 +17,13 @@ import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.RelativeLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
@@ -42,6 +45,9 @@ import com.elgenium.smartcity.recyclerview_adapter.LeaderboardAdapter
 import com.elgenium.smartcity.singletons.BottomNavigationManager
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.singletons.PlacesNewClientSingleton
+import com.google.android.gms.ads.AdLoader
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.nativead.NativeAdView
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -98,6 +104,8 @@ class DashboardActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityDashboardBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+
 
         // sets the color of the navigation bar making it more personalized
         NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
@@ -160,6 +168,7 @@ class DashboardActivity : AppCompatActivity() {
         }
 
 
+        loadNativeAd()
         fetchWeather()
         updateGreeting()
         loadProfileImage()
@@ -169,6 +178,30 @@ class DashboardActivity : AppCompatActivity() {
         handleViewVisibilityBasedOnSettings()
 
     }
+
+    private fun loadNativeAd() {
+        val adLoader = AdLoader.Builder(this, "ca-app-pub-3940256099942544/2247696110")
+            .forNativeAd { nativeAd ->
+                val adView = findViewById<NativeAdView>(R.id.native_ad_view)
+
+                adView.headlineView = findViewById(R.id.ad_headline)
+                adView.bodyView = findViewById(R.id.ad_body)
+                adView.iconView = findViewById(R.id.ad_icon)
+
+                (adView.headlineView as TextView).text = nativeAd.headline
+                (adView.bodyView as TextView).text = nativeAd.body
+                (adView.iconView as ImageView).setImageDrawable(nativeAd.icon?.drawable)
+
+                // Make CardView visible
+                findViewById<CardView>(R.id.ad_card_view).visibility = View.VISIBLE
+            }
+            .build()
+
+        adLoader.loadAd(AdRequest.Builder().build())
+    }
+
+
+
 
 
 
@@ -189,11 +222,6 @@ class DashboardActivity : AppCompatActivity() {
 
 
 
-//        if (eventRecommender && weatherRecommendation.isRecommendationAvailable())  {
-//
-//        } else {
-//            binding.recommendedEventsTitle.visibility = View.GONE
-//        }
 
         eventRecommendation.fetchUserPreferencesAndEvents(binding)
     }
@@ -231,6 +259,8 @@ class DashboardActivity : AppCompatActivity() {
     private fun showNextRecommendation() {
         val currentTag = processRecommendationTag() // Get the current recommendation tag
 
+
+
         when (currentTag) {
             "MEAL" -> {
                 Log.d("Recommendation", "Fetching meal recommendations...")
@@ -249,6 +279,15 @@ class DashboardActivity : AppCompatActivity() {
             "WEATHER" -> {
                 Log.d("Recommendation", "Fetching weather recommendations...")
                 fetchWeatherRecommendations {
+                    if (weatherRecommendation.isRecommendationAvailable() == false)  {
+                        binding.textViewRecommendationTitle.visibility = View.GONE
+                        binding.textViewRecommendationDescription.visibility = View.GONE
+                        binding.recyclerViewContextRecommendations.visibility = View.GONE
+                    } else {
+                        binding.textViewRecommendationTitle.visibility = View.VISIBLE
+                        binding.textViewRecommendationDescription.visibility = View.GONE
+                        binding.recyclerViewContextRecommendations.visibility = View.VISIBLE
+                    }
                     Log.d("Recommendation", "Weather recommendations fetched.")  // Ensure this is reached
                     processRecommendationTag("MEAL") // Set the next tag
                     Log.d("Recommendation", "Next tag set to MEAL.") // Confirm tag change
@@ -260,22 +299,28 @@ class DashboardActivity : AppCompatActivity() {
 
     private fun fetchWeatherRecommendations(callback: () -> Unit) {
         weatherRecommendation.fetchWeatherAndRecommend(this) { recommendations ->
-            recommendations?.let {
-                Log.d("WeatherTestActivity", "Recommendations: $it")
-
-                // Call performTextSearch without modifying its parameters
-                weatherRecommendation.performTextSearch(placesClient, this, recommendations, binding.recyclerViewContextRecommendations, binding.textViewRecommendationTitle, binding.textViewRecommendationDescription, true) { _ ->
-                    // Pass the results to the provided callback
-                    callback()
-                }
-
-            } ?: run {
+            if (recommendations.isNullOrEmpty()) {
                 Log.e("WeatherTestActivity", "No recommendations available.")
-                // Call the callback with null or handle the case accordingly
-                callback()
+                callback() // Ensure callback is called even if there are no recommendations
+            } else {
+                Log.d("WeatherTestActivity", "Recommendations: $recommendations")
+
+                // Call performTextSearch with the recommendations
+                weatherRecommendation.performTextSearch(
+                    placesClient,
+                    this,
+                    recommendations,
+                    binding.recyclerViewContextRecommendations,
+                    binding.textViewRecommendationTitle,
+                    binding.textViewRecommendationDescription,
+                    true
+                ) { _ ->
+                    callback() // Pass the results to the provided callback
+                }
             }
         }
     }
+
 
     private fun fetchRecommendedMealPlaces(callback: () -> Unit) {
         val mealTime = mealRecommendationManager.getMealTime()

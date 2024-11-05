@@ -13,6 +13,7 @@ import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
@@ -203,6 +204,33 @@ class SearchActivity : AppCompatActivity() {
 
         binding.recentSearchRecyclerView.adapter = recentSearchAdapter
 
+        binding.clearAll.setOnClickListener {
+            recentSearches.clear()
+            recentSearchAdapter.notifyDataSetChanged()
+            val userId = currentUser.uid
+            val recentSearchesRef = FirebaseDatabase.getInstance().getReference("Users/$userId/recent_searches")
+
+            // Delete all child nodes
+            recentSearchesRef.removeValue().addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    // Successfully deleted all recent searches
+                    Toast.makeText(this, "All recent searches cleared", Toast.LENGTH_SHORT).show()
+                } else {
+                    // Failed to delete
+                    Toast.makeText(this, "Failed to clear recent searches", Toast.LENGTH_SHORT).show()
+                }
+            }
+            binding.labels.visibility = View.GONE
+            binding.lotifyAnimation.visibility = View.VISIBLE
+            binding.emptyDataLabel.visibility = View.VISIBLE
+        }
+
+
+
+
+
+
+
 
         loadRecentSearches()
 
@@ -373,7 +401,7 @@ class SearchActivity : AppCompatActivity() {
         if (recentSearches.isEmpty() && textSearchAdapter.itemCount == 0) {
             binding.lotifyAnimation.visibility = View.VISIBLE
             binding.emptyDataLabel.visibility = View.VISIBLE
-            binding.recentSearchesLabel.visibility = View.GONE
+            binding.labels.visibility = View.GONE
         } else {
             binding.lotifyAnimation.visibility = View.GONE
             binding.emptyDataLabel.visibility = View.GONE
@@ -507,7 +535,7 @@ class SearchActivity : AppCompatActivity() {
                     if (query.isNotEmpty()) {
                         // Show the RecyclerView and hide recent searches
                         binding.textSearchRecyclerView.visibility = View.VISIBLE
-                        binding.recentSearchesLabel.visibility = View.GONE
+                        binding.labels.visibility = View.GONE
                         binding.recentSearchRecyclerView.visibility = View.GONE
                         binding.emptyDataLabel.visibility = View.GONE
                         binding.lotifyAnimation.visibility = View.GONE
@@ -553,7 +581,7 @@ class SearchActivity : AppCompatActivity() {
                         // No query text, show recent searches and hide text search RecyclerView
                         binding.textSearchRecyclerView.visibility = View.GONE
                         binding.recentSearchRecyclerView.visibility = View.VISIBLE
-                        binding.recentSearchesLabel.visibility = View.VISIBLE
+                        binding.labels.visibility = View.VISIBLE
 
                         // Reload recent searches to ensure they are visible
                         loadRecentSearches()
@@ -574,7 +602,7 @@ class SearchActivity : AppCompatActivity() {
                 if (binding.searchView.query.isEmpty()) {
                     binding.textSearchRecyclerView.visibility = View.GONE
                     binding.recentSearchRecyclerView.visibility = View.VISIBLE
-                    binding.recentSearchesLabel.visibility = View.VISIBLE
+                    binding.labels.visibility = View.VISIBLE
 
                     // Reload recent searches to ensure they are visible
                     loadRecentSearches()

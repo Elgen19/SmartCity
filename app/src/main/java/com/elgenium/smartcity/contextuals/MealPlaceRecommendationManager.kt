@@ -195,7 +195,7 @@ class MealPlaceRecommendationManager(context: Context) {
                                             if (distancesCalculated == placesList.size) {
                                                 Log.e("MealPlaceRecommendationManager", "before: ${recommendedPlacesList.size}")
 
-                                                val allFilteredPlaces = recommendedPlacesList.distinctBy { it.placeId }
+                                                val allFilteredPlaces = recommendedPlacesList.distinctBy { it.name }
 
                                                 allFilteredPlaces.forEach{f->
                                                     Log.e("MealPlaceRecommendationManager", "NAME: ${f.name}, ID: ${f.placeId}")
@@ -206,9 +206,9 @@ class MealPlaceRecommendationManager(context: Context) {
                                                 Log.e("MealPlaceRecommendationManager", "places: $recommendedPlacesList")
 
                                                 if (isForCarousel && recyclerView != null && titleTextView != null && supportTextView != null){
-                                                    setupRecommendationUI(context, placesClient, recommendedPlacesList, recyclerView, titleTextView, supportTextView)
+                                                    setupRecommendationUI(context, placesClient, allFilteredPlaces, recyclerView, titleTextView, supportTextView)
                                                 } else {
-                                                    showMealRecommendationBottomSheet(context, recommendedPlacesList, placesClient) // Show the bottom sheet with all places
+                                                    showMealRecommendationBottomSheet(context, allFilteredPlaces, placesClient) // Show the bottom sheet with all places
                                                 }
                                             }
 

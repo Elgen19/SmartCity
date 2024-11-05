@@ -54,6 +54,10 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="${MAPS_API_KEY}" />
 
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-6972651814746322~2126456185"/>
+
         <activity
             android:name=".StartNavigationsActivity"
             android:exported="false" />

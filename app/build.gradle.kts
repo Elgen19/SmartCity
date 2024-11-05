@@ -113,7 +113,7 @@ dependencies {
     implementation(libs.material.v1120)
     implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.8.0"))
     implementation("com.google.ai.client.generativeai:generativeai:0.7.0")
-
+    implementation("com.google.android.gms:play-services-ads:23.5.0")
 
 
 

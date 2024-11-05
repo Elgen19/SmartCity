@@ -185,8 +185,9 @@ class PopularPlaceRecommendationManager(context: Context, userIdConstructor: Str
                                     val recommendedPlacesList = mutableListOf<RecommendedPlace>()
                                     var distancesCalculated = 0
                                     allFilteredPlaces.shuffle()
+                                    val distinctList = allFilteredPlaces.distinctBy { it.name }
 
-                                    allFilteredPlaces.forEach { filters ->
+                                    distinctList.forEach { filters ->
                                         Log.e("PopularPlaceRecommendationManager", "NAME: ${filters.name}, RATING: ${filters.rating}, NUMBER OF REVIEWS: ${filters.userRatingsTotal}")
                                         checkPlaceDistance(currentLatLng, filters) { calculatedDistanceString ->
                                             // Remove any non-numeric characters, such as "km", and convert the remaining string to a double
