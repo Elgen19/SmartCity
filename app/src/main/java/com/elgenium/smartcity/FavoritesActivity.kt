@@ -185,13 +185,25 @@ class FavoritesActivity : AppCompatActivity() {
         binding.viewPager.adapter = adapter
 
 
+
         // Link the TabLayout with the ViewPager2
         TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
             when (position) {
-                0 -> tab.text = "Saved Places"
-                1 -> tab.text = "Saved Events"
+                0 -> {
+                    tab.text = "Saved Places"
+                    tab.setIcon(R.drawable.place_selector) // Set icon for Saved Places
+                    tab.icon?.setTintList(ContextCompat.getColorStateList(binding.tabLayout.context, R.color.tab_icon_color_selector))
+                }
+                1 -> {
+                    tab.text = "Saved Events"
+                    tab.setIcon(R.drawable.event_selector) // Set icon for Saved Events
+                    tab.icon?.setTintList(ContextCompat.getColorStateList(binding.tabLayout.context, R.color.tab_icon_color_selector))
+                }
             }
         }.attach()
+
+
+
 
     }
 

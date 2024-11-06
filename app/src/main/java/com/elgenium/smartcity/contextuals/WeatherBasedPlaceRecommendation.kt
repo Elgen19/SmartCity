@@ -367,7 +367,7 @@ class WeatherBasedPlaceRecommendation(
 
 
                                     }
-                                    callback(allFilteredPlaces)
+                                    callback(distinctList)
                                 }
                             }
                             .addOnFailureListener { exception ->

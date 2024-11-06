@@ -13,10 +13,12 @@ import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
+import androidx.cardview.widget.CardView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
@@ -29,6 +31,9 @@ import com.elgenium.smartcity.recyclerview_adapter.TextSearchAdapter
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.singletons.PlacesNewClientSingleton
 import com.elgenium.smartcity.speech.SpeechRecognitionHelper
+import com.google.android.gms.ads.AdLoader
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.nativead.NativeAdView
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.LatLng
@@ -67,7 +72,7 @@ class SearchActivity : AppCompatActivity() {
 
 
         // sets the color of the navigation bar making it more personalized
-        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
+        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.primary_color)
 
         auth = FirebaseAuth.getInstance()
         val currentUser = auth.currentUser
@@ -231,7 +236,7 @@ class SearchActivity : AppCompatActivity() {
 
 
 
-
+        loadNativeAd()
         loadRecentSearches()
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -251,6 +256,27 @@ class SearchActivity : AppCompatActivity() {
             speechRecognizerHelper.startListening()
         }
 
+    }
+
+    private fun loadNativeAd() {
+        val adLoader = AdLoader.Builder(this, "ca-app-pub-3940256099942544/2247696110")
+            .forNativeAd { nativeAd ->
+                val adView = findViewById<NativeAdView>(R.id.native_ad_view)
+
+                adView.headlineView = findViewById(R.id.ad_headline)
+                adView.bodyView = findViewById(R.id.ad_body)
+                adView.iconView = findViewById(R.id.ad_icon)
+
+                (adView.headlineView as TextView).text = nativeAd.headline
+                (adView.bodyView as TextView).text = nativeAd.body
+                (adView.iconView as ImageView).setImageDrawable(nativeAd.icon?.drawable)
+
+                // Make CardView visible
+                findViewById<CardView>(R.id.ad_card_view).visibility = View.VISIBLE
+            }
+            .build()
+
+        adLoader.loadAd(AdRequest.Builder().build())
     }
 
     private fun initializeSpeechRecognizer() {

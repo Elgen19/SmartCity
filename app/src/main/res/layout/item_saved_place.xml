@@ -1,23 +1,41 @@
-<!-- item_saved_place.xml -->
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
+    android:orientation="horizontal"
     android:paddingTop="16dp"
     android:paddingBottom="16dp">
 
-        <TextView
-            android:id="@+id/placeName"
-            android:layout_width="wrap_content"
-            android:textColor="@color/gray"
-            android:text="Place Name"
-            android:layout_height="wrap_content"
-            android:textAppearance="?attr/textAppearanceListItem" />
+        <!-- ImageView for place image -->
+        <ImageView
+            android:id="@+id/placeImage"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:scaleType="centerCrop"
+            android:layout_marginEnd="8dp"
+            android:src="@drawable/placeholder_viewpager_photos" />
 
-        <TextView
-            android:id="@+id/placeAddress"
-            android:textColor="@color/gray2"
-            android:layout_width="wrap_content"
-            android:text="place address"
-            android:layout_height="wrap_content" />
+        <!-- Inner LinearLayout for place details -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_weight="1">
+
+                <TextView
+                    android:id="@+id/placeName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Place Name"
+                    android:textColor="@color/gray"
+                    android:textAppearance="?attr/textAppearanceListItem" />
+
+                <TextView
+                    android:id="@+id/placeAddress"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Place Address"
+                    android:textColor="@color/gray2" />
+        </LinearLayout>
+
 </LinearLayout>

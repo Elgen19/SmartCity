@@ -11,7 +11,6 @@ import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Rect
-import android.location.Location
 import android.net.Uri
 import android.os.Bundle
 import android.os.Looper
@@ -36,6 +35,7 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.elgenium.smartcity.contextuals.MealPlaceRecommendationManager
 import com.elgenium.smartcity.contextuals.RainLikelihoodCalculator
+import com.elgenium.smartcity.contextuals.SimilarPlacesRecommendationHelper
 import com.elgenium.smartcity.databinding.ActivityPlacesBinding
 import com.elgenium.smartcity.databinding.BottomSheetEventDetailsBinding
 import com.elgenium.smartcity.models.Event
@@ -77,7 +77,6 @@ import com.google.android.libraries.places.api.model.PhotoMetadata
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.net.FetchPhotoRequest
 import com.google.android.libraries.places.api.net.FetchPlaceRequest
-import com.google.android.libraries.places.api.net.SearchByTextRequest
 import com.google.android.libraries.places.api.net.SearchNearbyRequest
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
@@ -1143,6 +1142,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
                     rating = placeRating,
                     websiteUri = placeWebsite,
                     distance = placeDistance,
+                    types = place.types
                 )
 
                 if (placeData == null) {
@@ -1580,10 +1580,40 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         bottomSheetDialog.setContentView(bottomSheetView)
 
 
-        // Fetch recommendations based on place type
-//        place.types?.let { savedPlaceType ->
-//            getFilteredPlacesForRecommendationBasedOnType(savedPlaceType, bottomSheetView, bottomSheetDialog)
-//        }
+        val similarPlacesHelper = SimilarPlacesRecommendationHelper(
+            placesClient = placesClient,
+            fusedLocationClient = fusedLocationClient,
+            context = this
+        )
+
+        place.types?.let { savedPlaceType ->
+            similarPlacesHelper.getFilteredPlacesForRecommendationBasedOnType(
+                savedPlaceType,
+            ) { top10 ->
+                // Set up the RecyclerView
+                val recommendationRecyclerView: RecyclerView = bottomSheetView.findViewById(R.id.recommendationRecyclerView)
+                recommendationRecyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+
+                // Set up the adapter with the top 10 places
+                val adapter = RecommendedPlaceAdapter(top10, false, placesClient) { place ->
+                    // Handle click events or other interactions with the places
+                    fetchPlaceDetailsFromAPI(place.placeId) { savedPlace ->
+                        savedPlace?.let {
+                            this.savedPlace = it
+                            bottomSheetDialog.dismiss()
+                            plotMarkerOnMap(place.placeId, savedPlace)
+                            showPlaceDetailsInBottomSheet(savedPlace)
+                        } ?: run {
+                            Log.e("PlacesActivity", "Failed to fetch place details")
+                        }
+                    }
+                }
+
+                // Attach the adapter to the RecyclerView
+                recommendationRecyclerView.adapter = adapter
+            }
+        }
+
 
         // Update the UI with place details immediately
         updatePlaceDetailsUI(place, bottomSheetView)
@@ -2061,201 +2091,9 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         }
     }
 
-    private fun getFilteredPlacesForRecommendationBasedOnType(currentPlaceTypesString: String, bottomSheetView: View, bottomSheetDialog: BottomSheetDialog) {
-        // Clean up the input string to get a list of place types
-        val currentPlaceTypes = currentPlaceTypesString
-            .replace("[", "") // Remove opening bracket
-            .replace("]", "") // Remove closing bracket
-            .split(",") // Split by commas to get individual place types
-            .map { it.trim() } // Remove any extra spaces around each type
-            .filter { it.isNotEmpty() } // Filter out any empty strings
-
-        Log.e("PlacesActivity", "Current place types: $currentPlaceTypes")
-
-        val placeFields = listOf(
-            Place.Field.ID,
-            Place.Field.NAME,
-            Place.Field.ADDRESS,
-            Place.Field.TYPES,
-            Place.Field.RATING,
-            Place.Field.USER_RATINGS_TOTAL,
-            Place.Field.LAT_LNG,
-            Place.Field.PHOTO_METADATAS
-        )
-
-        // Construct search query based on cleaned-up current place types
-        val query = currentPlaceTypes.joinToString(" OR ")
-        Log.e("PlacesActivity", "Search query for places: $query")
-
-        val searchByTextRequest = SearchByTextRequest.builder(query, placeFields)
-            .setMaxResultCount(20)
-            .build()
-
-        // Get the current location first
-        getCurrentLocation {
-            placesClient.searchByText(searchByTextRequest)
-                .addOnSuccessListener { response ->
-                    Log.e("PlacesActivity", "Successfully retrieved places. Total places found: ${response.places.size}")
-
-                    val places: List<Place> = response.places
-                    placesList.clear()
-
-                    // Populate placesList and calculate scores and distances
-                    places.forEach { place ->
-                        // Ensure place.types is not null and convert to a list of strings
-                        val placeTypes = place.placeTypes?.map { it.toString() } ?: emptyList()
-
-                        // Calculate similarity based on common place types
-                        val commonTypes = currentPlaceTypes.intersect(placeTypes.toSet()).size
-                        val score = commonTypes.toDouble() // Higher number of common types results in a higher score
-
-                        Log.e("PlacesActivity", "Place: ${place.name}, Common types: $commonTypes")
-                        Log.e("PlacesActivity", "Current place types: $currentPlaceTypes")
-                        Log.e("PlacesActivity", "Place types: $placeTypes")
-
-                        // Calculate distance from user's current location using callback
-                        val placeLatLng = place.latLng
-
-                        if (placeLatLng != null) {
-                            checkLocationPermissionAndFetchDistance(null, null, placeLatLng) { distance ->
-                                val placeModel = place.id?.let {
-                                    val cleanDistance = distance.replace("[^\\d.]".toRegex(), "")
-                                    val distanceDouble = if (cleanDistance.isNotEmpty()) cleanDistance.toDouble() else 0.0
-                                    RecommendedPlace(
-                                        placeId = it,
-                                        name = place.name ?: "",
-                                        address = place.address ?: "",
-                                        placeTypes = placeTypes,
-                                        score = score, // Assign score based on similarity
-                                        rating = place.rating ?: 0.0, // Store rating
-                                        numReviews = place.userRatingsTotal ?: 0, // Store number of reviews
-                                        photoMetadata = place.photoMetadatas?.firstOrNull(),
-                                        distance = distanceDouble,
-                                        distanceString = distance, // Use distance from callback,
-                                    )
-                                }
-
-                                if (placeModel != null) {
-                                    placesList.add(placeModel)
-
-                                    // Once all places are added, sort by score and distance
-                                    if (placesList.size == response.places.size) {
-                                        // Sort places first by score (descending) and then by distance (ascending)
-
-                                        placesList.sortWith(compareByDescending<RecommendedPlace> { it.score }.thenBy { it.distance })
-                                        Log.e("PlacesActivity", "place list size: ${placesList.size}")
-                                        Log.e("PlacesActivity", "place : ${placeModel }")
-
-
-                                        // Get the top 10 after sorting
-                                        val top10 = placesList.take(10)
-
-                                        Log.e("PlacesActivity", "TOP 10 PLACE LIST: $top10")
-
-
-                                        // Set up the RecyclerView
-                                        val recommendationRecyclerview: RecyclerView = bottomSheetView.findViewById(R.id.recommendationRecyclerView)
-                                        recommendationRecyclerview.layoutManager = LinearLayoutManager(this@PlacesActivity, LinearLayoutManager.HORIZONTAL, false)
-
-                                        val adapter = RecommendedPlaceAdapter(top10, false, placesClient) { places ->
-                                            fetchPlaceDetailsFromAPI(places.placeId) { savedPlace ->
-                                                savedPlace?.let {
-                                                    this.savedPlace = it
-                                                    bottomSheetDialog.dismiss()
-                                                    plotMarkerOnMap(places.placeId, savedPlace)
-                                                    showPlaceDetailsInBottomSheet(savedPlace)
-                                                } ?: run {
-                                                    Log.e("PlacesActivity", "Failed to fetch place details from dashboard")
-                                                }
-                                            }
-                                        }
-
-                                        recommendationRecyclerview.adapter = adapter
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                .addOnFailureListener { exception ->
-                    Log.e("PlacesActivity", "Error retrieving places", exception)
-                }
-        }
-
-    }
-
-     //Calculate the score based on various factors like preferences, rating, reviews, and distance
-     private fun calculateScore(
-         place: Place,
-         placeTypes: List<String>,
-         preferredPlaces: List<String>,
-         userLocation: LatLng
-     ): Double {
-         // Step 1: Initialize base weight for all place types (default weight is 1.0 for preferred, 0.5 for others)
-         val weights = mutableMapOf<String, Double>().apply {
-             placeTypes.forEach { type -> this[type] = 0.5 } // Base weight for all place types
-             preferredPlaces.forEach { placeType ->
-                 this[placeType] = (this[placeType] ?: 0.5) + 1.0 // Increase weight for preferred place types
-             }
-         }
-
-         // Step 2: Extract ratings and number of reviews
-         val rating = place.rating ?: 0.0
-         val numReviews = place.userRatingsTotal ?: 0
-
-         // Step 3: Calculate distance between the user and the place
-         val placeLocation = place.latLng
-         val distance = placeLocation?.let { calculateDistance(userLocation, it) } ?: 0.0
-
-         // Step 4: Calculate the score based on the weighted sum
-         return (placeTypes.sumOf { type -> weights[type] ?: 0.0 } * 2) + // Double the weight based on place types
-                 (rating * 0.3) +  // Lower weight for rating (normalized by multiplying by 0.3)
-                 (numReviews / 100.0) * 0.1 - // Lower weight for normalized number of reviews
-                 (distance / 1000.0 * 2) // Subtract the normalized distance (distance in kilometers) with a higher impact
-     }
 
 
 
-    private fun calculateDistance(start: LatLng, end: LatLng): Double {
-        val results = FloatArray(1)
-        Location.distanceBetween(
-            start.latitude,
-            start.longitude,
-            end.latitude,
-            end.longitude,
-            results
-        )
-        return results[0].toDouble() // Distance in meters
-    }
-
-    private fun getCurrentLocation(callback: (LatLng) -> Unit) {
-        // Check if the location permission is granted
-        if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            // Permission is granted, get the location
-            fusedLocationClient.lastLocation
-                .addOnSuccessListener { location: Location? ->
-                    location?.let {
-                        // Convert Location to LatLng
-                        val latLng = LatLng(it.latitude, it.longitude)
-                        callback(latLng) // Return the location through the callback
-                    }
-                }
-                .addOnFailureListener { exception ->
-                    Log.e("SearchActivity", "Failed to get location", exception)
-                }
-        } else {
-            // Permission is not granted, request it
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                1
-            )
-        }
-    }
     
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1

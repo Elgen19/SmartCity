@@ -11,5 +11,9 @@
 
     </style>
 
+    <style name="CustomTabLayout" parent="Widget.Design.TabLayout">
+        <item name="tabIconTint">@color/tab_icon_color_selector</item> <!-- Reference your color state list -->
+    </style>
+
     <style name="Theme.SmartCity" parent="Base.Theme.SmartCity" />
 </resources>

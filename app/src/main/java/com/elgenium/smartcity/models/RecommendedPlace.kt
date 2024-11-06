@@ -6,7 +6,7 @@ data class RecommendedPlace(
     val placeId: String,
     val name: String,
     val address: String,
-    val placeTypes: List<String>,
+    val placeTypes: List<String> = emptyList(),
     var score: Double = 0.0, // Default score
     var rating: Double = 0.0, // Rating of the place
     var numReviews: Int = 0, // Number of reviews

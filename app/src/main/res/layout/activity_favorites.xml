@@ -15,6 +15,7 @@
         app:tabTextColor="@color/neutral_color"
         app:tabSelectedTextColor="@color/brand_color"
         app:tabIndicator="@color/brand_color"
+        style="@style/CustomTabLayout"
         android:backgroundTint="@color/secondary_color"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"

@@ -43,6 +43,8 @@ class RecommendedPlaceAdapter(
         holder.placeName.text = place.name
         holder.placeAddress.text = place.address
 
+        Log.d("RecommendedPlaceAdapter", "Binding place: ${place.name} at position $position")
+
         Log.e("PlacesActivity", "DISTANCE: ${place.distanceString}")
 
         // Extract the numeric part from the distance string (e.g., "2.9 km" becomes "2.9")
@@ -59,6 +61,9 @@ class RecommendedPlaceAdapter(
             val formattedDistance = String.format("%.2f km away", distanceInKm) // Keep two decimal places
             holder.placeDistance.text = formattedDistance
 
+            // Log the calculated distance
+            Log.d("RecommendedPlaceAdapter", "Calculated distance: $formattedDistance")
+
             // Set text color based on the numeric distance in meters
             holder.placeDistance.setTextColor(when {
                 distanceInMeters <= 1000 -> Color.GREEN // Walkable distance (≤ 1000 meters)
@@ -69,18 +74,20 @@ class RecommendedPlaceAdapter(
             // Handle case where distance is not available or invalid
             holder.placeDistance.text = holder.itemView.context.getString(R.string.distance_not_available)
             holder.placeDistance.setTextColor(Color.GRAY) // Default color for unavailable distance
+            Log.w("RecommendedPlaceAdapter", "Distance information is not available or invalid")
         }
 
         // Load the photo if available
         place.photoMetadata?.let { photoMetadata ->
+            Log.d("RecommendedPlaceAdapter", "Fetching photo for place: ${place.name}")
             fetchPhoto(photoMetadata, holder.placeImage) // Pass ImageView directly
         } ?: run {
             // Set a placeholder image if no photo is available
+            Log.d("RecommendedPlaceAdapter", "No photo available for place: ${place.name}")
             Glide.with(holder.placeImage.context)
                 .load(R.drawable.placeholder_viewpager_photos)
                 .into(holder.placeImage)
         }
-
 
         if (showRating) {
             holder.placeRating.visibility = View.VISIBLE
@@ -99,10 +106,12 @@ class RecommendedPlaceAdapter(
             // Handle case where rating is null or unavailable
             holder.placeRating.visibility = View.GONE
             holder.placeRating.setBackgroundResource(R.drawable.not_best_pill_bg) // Default to not-best background
+            Log.d("RecommendedPlaceAdapter", "Rating is hidden for place: ${place.name}")
         }
 
         // Set click listener for the item view
         holder.itemView.setOnClickListener {
+            Log.d("RecommendedPlaceAdapter", "Place clicked: ${place.name}")
             onPlaceClick(place)  // Trigger the click callback with the place data
         }
     }
@@ -110,8 +119,8 @@ class RecommendedPlaceAdapter(
     override fun onViewRecycled(holder: PlaceViewHolder) {
         super.onViewRecycled(holder)
         Glide.with(holder.placeImage.context).clear(holder.placeImage) // Cancel any pending requests for this ImageView
+        Log.d("RecommendedPlaceAdapter", "View recycled for place: ${holder.placeName.text}")
     }
-
 
     override fun getItemCount() = places.size
 
@@ -127,6 +136,7 @@ class RecommendedPlaceAdapter(
                 val bitmap = response.bitmap
                 // Check if the activity is still valid
                 if (imageView.context is Activity && !(imageView.context as Activity).isDestroyed) {
+                    Log.d("RecommendedPlaceAdapter", "Successfully fetched photo for place")
                     Glide.with(imageView.context)
                         .load(bitmap)
                         .placeholder(R.drawable.placeholder_viewpager_photos)
@@ -144,6 +154,4 @@ class RecommendedPlaceAdapter(
                 }
             }
     }
-
-
 }

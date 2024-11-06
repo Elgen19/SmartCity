@@ -27,6 +27,7 @@ import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
+import com.elgenium.smartcity.contextuals.ActivityRecommendations
 import com.elgenium.smartcity.contextuals.EventRecommendation
 import com.elgenium.smartcity.contextuals.MealPlaceRecommendationManager
 import com.elgenium.smartcity.contextuals.PopularPlaceRecommendationManager
@@ -37,12 +38,14 @@ import com.elgenium.smartcity.models.RecommendedPlace
 import com.elgenium.smartcity.network.OpenWeatherAPIService
 import com.elgenium.smartcity.network.RoadsApiService
 import com.elgenium.smartcity.network.TomTomApiService
+import com.elgenium.smartcity.network_reponses.GeocodingResponse
 import com.elgenium.smartcity.network_reponses.RoadLocation
 import com.elgenium.smartcity.network_reponses.RoadsResponse
 import com.elgenium.smartcity.network_reponses.TrafficResponse
 import com.elgenium.smartcity.network_reponses.WeatherResponse
 import com.elgenium.smartcity.recyclerview_adapter.LeaderboardAdapter
 import com.elgenium.smartcity.singletons.BottomNavigationManager
+import com.elgenium.smartcity.singletons.GeocodingServiceSingleton
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.singletons.PlacesNewClientSingleton
 import com.google.android.gms.ads.AdLoader
@@ -87,6 +90,9 @@ class DashboardActivity : AppCompatActivity() {
     private val COOLDOWN_TIME_MS: Long = 60 * 1000 // 1 minute in milliseconds
     private var lastActiveUpdateTime: Long = 0 // To track the last update time
     private val ACTIVE_TIMEFRAME_MS: Long = 2 * 60 * 1000 // 5 minutes in milliseconds
+    private val sharedPreferencesBottomSheet by lazy {
+        getSharedPreferences("app_preferences", Context.MODE_PRIVATE)
+    }
     private var recommendedPlaces: List<RecommendedPlace> = emptyList()
     private lateinit var popularPlaceRecommendationManager: PopularPlaceRecommendationManager
     private lateinit var mealRecommendationManager: MealPlaceRecommendationManager
@@ -96,6 +102,7 @@ class DashboardActivity : AppCompatActivity() {
     private lateinit var sharedPreferences: SharedPreferences
     private lateinit var mealPlaceRecommender: MealPlaceRecommendationManager
     private lateinit var eventRecommendation: EventRecommendation
+    private lateinit var activityRecommendations: ActivityRecommendations
 
 
 
@@ -155,6 +162,7 @@ class DashboardActivity : AppCompatActivity() {
         popularPlaceRecommendationManager = PopularPlaceRecommendationManager(this, userId )
         mealRecommendationManager = MealPlaceRecommendationManager(this)
         weatherRecommendation = WeatherBasedPlaceRecommendation(this)
+        activityRecommendations = ActivityRecommendations(this)
 
         binding.notificationButton.setOnClickListener {
             val intent = Intent(this, NotificationHistoryActivity::class.java)
@@ -176,7 +184,29 @@ class DashboardActivity : AppCompatActivity() {
         fetchNearestRoad(apiServiceForRoads, apiServiceForTraffic)
         fetchLeaderboardData()
         handleViewVisibilityBasedOnSettings()
+//        if (!hasRecommendationsBeenShown()) {
+//            recommendActivityPlaces()
+//            setRecommendationsShown()
+//        }
 
+    }
+
+    private fun recommendActivityPlaces(){
+        activityRecommendations.fetchWeather(this)
+        activityRecommendations.performTextSearch(placesClient, this) { recommendedPlaces ->
+            // Handle the list of recommended places
+            activityRecommendations.showRecommendationBottomsheet(this, recommendedPlaces, placesClient)
+        }
+    }
+
+    private fun hasRecommendationsBeenShown(): Boolean {
+        // Check SharedPreferences to see if recommendations have been shown
+        return sharedPreferencesBottomSheet.getBoolean("recommendations_shown", false)
+    }
+
+    private fun setRecommendationsShown() {
+        // Save the flag to SharedPreferences to indicate recommendations have been shown
+        sharedPreferencesBottomSheet.edit().putBoolean("recommendations_shown", true).apply()
     }
 
     private fun loadNativeAd() {
@@ -467,10 +497,11 @@ class DashboardActivity : AppCompatActivity() {
                                             fetchTrafficData(trafficApiService, roadLocation)
 
                                             // Use these coordinates to get the address
-                                            val address =
-                                                getStreetNameFromCoordinates(latitude, longitude)
-                                            binding.roadName.text = address
-                                            Log.d("DashboardActivity", "Address: $address")
+                                            getStreetNameFromCoordinates(latitude, longitude) { address ->
+                                                binding.roadName.text = address
+                                                Log.d("DashboardActivity", "Address: $address")
+                                            }
+
 
                                             // Stop location updates once you have the location
                                             fusedLocationClient.removeLocationUpdates(
@@ -536,31 +567,52 @@ class DashboardActivity : AppCompatActivity() {
     }
 
 
-    private fun getStreetNameFromCoordinates(latitude: Double, longitude: Double): String? {
-        val geocoder = Geocoder(this, Locale.getDefault())
-        Log.d(
-            "DashboardActivity",
-            "Starting geocoding for coordinates: Latitude = $latitude, Longitude = $longitude"
-        )
+    private fun getStreetNameFromCoordinates(latitude: Double, longitude: Double, callback: (String?) -> Unit) {
+        val latLng = "$latitude,$longitude"
+        val geocodingService = GeocodingServiceSingleton.geocodingService
 
-        return try {
-            val addresses = geocoder.getFromLocation(latitude, longitude, 1)
-            if (!addresses.isNullOrEmpty()) {
-                val address = addresses[0]
-                val streetName =
-                    address.thoroughfare ?: "Street name not found" // Get the street name
+        // Asynchronous call using enqueue
+        geocodingService.getPlace(latLng, BuildConfig.MAPS_API_KEY).enqueue(object : retrofit2.Callback<GeocodingResponse> {
+            override fun onResponse(call: Call<GeocodingResponse>, response: Response<GeocodingResponse>) {
+                if (response.isSuccessful) {
+                    val url = "https://maps.googleapis.com/maps/api/geocode/json?latlng=$latLng&key=${BuildConfig.MAPS_API_KEY}"
+                    Log.d("GeocodingRequest", url)
 
-                Log.d("DashboardActivity", "Street name found: $streetName")
-                streetName
-            } else {
-                Log.w("DashboardActivity", "No address found for the given coordinates.")
-                "No address found"
+                    val body = response.body()
+                    Log.d("GeocodingResponse", "Response Body: $body")
+
+                    if (body?.status == "OK" && !body.results.isNullOrEmpty()) {
+                        val addressComponents = body.results[0].address_components
+                        val streetNumber = addressComponents.find { "street_number" in it.types }?.long_name
+                        val route = addressComponents.find { "route" in it.types }?.long_name
+                        val streetName = if (streetNumber != null && route != null) {
+                            "$streetNumber $route"
+                        } else {
+                            route ?: "Street name not found"
+                        }
+                        callback(streetName)
+                    } else {
+                        Log.e("GeocodingResponse", "No results or status not OK. Status: ${body?.status}")
+                        callback("No address found")
+                    }
+                } else {
+                    Log.e("GeocodingResponse", "Response not successful: ${response.errorBody()?.string()}")
+                    callback("No address found")
+                }
             }
-        } catch (e: Exception) {
-            Log.e("DashboardActivity", "Geocoding failed due to an exception: ${e.message}", e)
-            "Geocoder failed"
-        }
+
+            override fun onFailure(call: Call<GeocodingResponse>, t: Throwable) {
+                Log.e("DashboardActivity", "Geocoding failed due to an exception: ${t.message}", t)
+                callback("Geocoder failed")
+
+                val url = "https://maps.googleapis.com/maps/api/geocode/json?latlng=$latLng&key=${BuildConfig.MAPS_API_KEY}"
+                Log.d("GeocodingRequest", url)
+
+            }
+        })
     }
+
+
 
     private fun fetchTrafficData(trafficApiService: TomTomApiService, roadLocation: RoadLocation) {
         val point = "${roadLocation.latitude},${roadLocation.longitude}"
@@ -638,18 +690,11 @@ class DashboardActivity : AppCompatActivity() {
                                 // Update UI with the traffic data
                                 binding.currentSpeedValue.text =
                                     getString(R.string.current_speed_format, currentSpeed)
-                                binding.freeFlowSpeedValue.text =
-                                    getString(R.string.free_flow_speed_format, freeFlowSpeed)
-                                binding.freeFlowTravelTimeValue.text = getString(
-                                    R.string.free_flow_travel_time_format,
-                                    freeFlowTravelTime
-                                )
-                                binding.currentTravelTimeValue.text = getString(
-                                    R.string.current_travel_time_format,
-                                    currentTravelTime
-                                )
-                                binding.roadClosureValue.text =
-                                    if (roadClosure == true) "Closed" else "Open"
+
+                                val minutes = currentTravelTime?.div(60)
+                                binding.currentTravelTimeValue.text = "$minutes minute(s)"
+
+
                             }
                         }
                     } else {

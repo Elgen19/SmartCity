@@ -11,6 +11,7 @@ import com.elgenium.smartcity.databinding.ActivityNotificationHistoryBinding
 import com.elgenium.smartcity.models.Notification
 import com.elgenium.smartcity.recyclerview_adapter.NotificationAdapter
 import com.elgenium.smartcity.singletons.ActivityNavigationUtils
+import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -28,9 +29,12 @@ class NotificationHistoryActivity : AppCompatActivity() {
         binding = ActivityNotificationHistoryBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.primary_color)
+
         // Initialize RecyclerView
         setupRecyclerView()
         loadNotifications()
+
 
         // Set up back button
         binding.backButton.setOnClickListener {
@@ -70,7 +74,7 @@ class NotificationHistoryActivity : AppCompatActivity() {
                 adapter.notifyDataSetChanged()
                 binding.lotifyAnimation.visibility = if (notifications.isEmpty()) View.VISIBLE else View.GONE
                 binding.emptyDataLabel.visibility = if (notifications.isEmpty()) View.VISIBLE else View.GONE
-                binding.btnClearAll.visibility = if (notifications.isNotEmpty()) View.VISIBLE else View.GONE
+                binding.labels.visibility = if (notifications.isNotEmpty()) View.VISIBLE else View.GONE
                 binding.notificationRecyclerView.visibility = if (notifications.isNotEmpty()) View.VISIBLE else View.GONE
             }
 

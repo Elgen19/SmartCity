@@ -38,19 +38,38 @@
  </LinearLayout>
 
 
-    <Button
-        android:id="@+id/btnClearAll"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/labels"
+        android:layout_below="@id/topComponents"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/notificationRecyclerView"
-        android:layout_alignParentEnd="true"
-        android:text="Clear All"
-        android:layout_marginTop="8dp"
-        android:textColor="@color/gray"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:backgroundTint="@color/primary_color"
-        android:paddingEnd="0dp" />
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textColor="@color/secondary_color"
+            android:layout_gravity="center_vertical"
+            android:textSize="18sp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:text="Recent"
+            android:visibility="visible"/>
+
+        <Button
+            android:id="@+id/btnClearAll"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Clear All"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/red"
+            android:layout_marginStart="16dp"
+            android:backgroundTint="@color/primary_color"
+            android:layout_marginEnd="16dp"
+            android:paddingEnd="0dp" />
+    </LinearLayout>
 
     <!-- LottieAnimationView for the empty state -->
     <com.airbnb.lottie.LottieAnimationView
@@ -87,8 +106,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:layout_marginStart="16dp"
-        android:visibility="gone"
-        android:layout_below="@id/topComponents"
+        android:layout_below="@id/labels"
         android:layout_marginEnd="16dp" />
 
 </RelativeLayout>

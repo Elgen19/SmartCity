@@ -43,6 +43,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/searchBoxLayout"
+        android:textStyle="bold"
         android:layout_marginStart="16dp"
         android:layout_marginTop="8dp"
         android:textColor="@color/secondary_color"
@@ -55,15 +56,15 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/categoryLabel"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
         android:layout_marginTop="8dp"
         android:scrollbars="none">
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp">
+            android:orientation="horizontal">
 
             <!-- Material Buttons -->
             <com.google.android.material.button.MaterialButton
@@ -159,6 +160,8 @@
         </LinearLayout>
     </HorizontalScrollView>
 
+
+
   <LinearLayout
       android:id="@+id/labels"
       android:layout_below="@id/categoryScrollView"
@@ -175,17 +178,17 @@
           android:layout_marginStart="16dp"
           android:layout_marginBottom="8dp"
           android:layout_marginTop="16dp"
+          android:textStyle="bold"
           android:textColor="@color/secondary_color"
           android:textSize="16sp"
           android:text="Recent Searches"/>
 
-      <TextView
+      <com.google.android.material.textview.MaterialTextView
           android:id="@+id/clearAll"
           android:layout_width="wrap_content"
           android:layout_height="wrap_content"
           android:layout_marginStart="16dp"
           android:layout_marginBottom="8dp"
-          android:textStyle="bold"
           android:layout_marginEnd="16dp"
           android:layout_marginTop="16dp"
           android:textSize="16sp"
@@ -202,7 +205,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/labels"
-        android:layout_marginBottom="16dp"
+        android:layout_above="@+id/ad_card_view"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:visibility="visible"/>
@@ -264,5 +267,65 @@
         app:lottie_autoPlay="true"
         app:lottie_loop="true"
         android:visibility="gone"/>
+
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/ad_card_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_margin="16dp"
+        app:cardCornerRadius="8dp"
+        app:strokeWidth="0dp"
+        android:background="@color/primary_color"
+        android:elevation="12dp">
+
+        <!-- NativeAdView containing ad components -->
+        <com.google.android.gms.ads.nativead.NativeAdView
+            android:id="@+id/native_ad_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:background="@color/white"
+                android:layout_height="wrap_content"
+                android:padding="16dp"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/ad_icon"
+                        android:layout_width="32dp"
+                        android:layout_gravity="center_vertical"
+                        android:layout_height="32dp"
+                        android:src="@drawable/smartcity_mobile"
+                        android:paddingEnd="16dp"
+                        />
+
+                    <TextView
+                        android:id="@+id/ad_headline"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:text="Loading advertisements"
+                        android:textColor="@color/gray" />
+
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/ad_body"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="An add will be added shortly."
+                    android:textColor="@color/sub_support_text"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </com.google.android.gms.ads.nativead.NativeAdView>
+    </com.google.android.material.card.MaterialCardView>
 
 </RelativeLayout>

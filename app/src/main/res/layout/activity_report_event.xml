@@ -379,9 +379,12 @@
                         app:spanCount="3" />
 
                     <!-- Submit Button -->
-                    <Button
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnSubmit"
                         android:layout_width="match_parent"
+                        app:cornerRadius="8dp"
+                        android:paddingTop="16dp"
+                        android:paddingBottom="16dp"
                         android:layout_height="wrap_content"
                         android:backgroundTint="@color/secondary_color"
                         android:text="Submit"

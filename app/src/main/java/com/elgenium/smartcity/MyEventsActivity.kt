@@ -8,7 +8,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.EditText
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -20,12 +19,14 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.elgenium.smartcity.databinding.ActivityMyEventsBinding
 import com.elgenium.smartcity.databinding.BottomSheetEventDetailsBinding
+import com.elgenium.smartcity.databinding.BottomSheetOptionsBinding
 import com.elgenium.smartcity.intelligence.ReportVerifier
 import com.elgenium.smartcity.models.Event
 import com.elgenium.smartcity.network.PlaceDistanceService
 import com.elgenium.smartcity.recyclerview_adapter.EventAdapter
 import com.elgenium.smartcity.recyclerview_adapter.MyEventsAdapter
 import com.elgenium.smartcity.singletons.LayoutStateManager
+import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.viewpager_adapter.EventImageAdapter
 import com.elgenium.smartcity.work_managers.VerifyEventsWorker
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -67,6 +68,8 @@ class MyEventsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMyEventsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.primary_color)
 
         database = FirebaseDatabase.getInstance().getReference("Events")
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
@@ -364,29 +367,32 @@ class MyEventsActivity : AppCompatActivity() {
     }
 
     private fun showOptionsBottomSheet(checker: String) {
-        val bottomSheetView = LayoutInflater.from(this).inflate(R.layout.bottom_sheet_options, binding.root, false)
+        // Inflate the bottom sheet binding
+        val bottomSheetBinding = BottomSheetOptionsBinding.inflate(layoutInflater)
 
         // Create BottomSheetDialog and set the inflated view
         val bottomSheetDialog = BottomSheetDialog(this)
-        bottomSheetDialog.setContentView(bottomSheetView)
+        bottomSheetDialog.setContentView(bottomSheetBinding.root)
 
-        val optionEdit = bottomSheetView.findViewById<LinearLayout>(R.id.optionEdit)
-        val optionDelete = bottomSheetView.findViewById<LinearLayout>(R.id.optionDelete)
+        bottomSheetBinding.editText.text = "Edit event"
+        bottomSheetBinding.deleteText.text = "Edit delete"
 
-        optionEdit.setOnClickListener {
+
+        bottomSheetBinding.optionEdit.setOnClickListener {
             bottomSheetDialog.dismiss()
             val intent = Intent(this, ReportEventActivity::class.java)
             intent.putExtra("FROM_EVENTS_ACTIVITY", checker)
             startActivity(intent)
         }
 
-        optionDelete.setOnClickListener {
+        bottomSheetBinding.optionDelete.setOnClickListener {
             bottomSheetDialog.dismiss()
             confirmDeleteEvent(checker)
         }
 
         bottomSheetDialog.show()
     }
+
 
     private fun confirmDeleteEvent(checker: String) {
         // Create a custom alert dialog layout for confirmation

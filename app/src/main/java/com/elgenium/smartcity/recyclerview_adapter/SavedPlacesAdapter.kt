@@ -4,8 +4,10 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.elgenium.smartcity.R
 import com.elgenium.smartcity.models.SavedPlace
 
@@ -49,11 +51,24 @@ class SavedPlacesAdapter(
     inner class PlaceViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val placeName: TextView = itemView.findViewById(R.id.placeName)
         private val placeAddress: TextView = itemView.findViewById(R.id.placeAddress)
+        private val placeImage: ImageView = itemView.findViewById(R.id.placeImage)
 
         fun bind(place: SavedPlace) {
             Log.d(TAG, "bind: Binding place ${place.name}")
             placeName.text = place.name
             placeAddress.text = place.address
+
+            // Load the first image from the imageUrls list, if available
+            val imageUrl = place.imageUrls.firstOrNull()
+            if (imageUrl != null) {
+                Glide.with(itemView.context)
+                    .load(imageUrl)
+                    .placeholder(R.drawable.placeholder_viewpager_photos) // Fallback placeholder
+                    .into(placeImage)
+            } else {
+                // Set placeholder if no image is available
+                placeImage.setImageResource(R.drawable.placeholder_viewpager_photos)
+            }
         }
     }
 }

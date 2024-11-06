@@ -1,0 +1,5 @@
+<!-- res/drawable/ic_home_selector.xml -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/active_tab_event" android:state_selected="true"/>
+    <item android:drawable="@drawable/inactive_tab_event" android:state_selected="false"/>
+</selector>

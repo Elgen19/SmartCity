@@ -155,6 +155,7 @@ class ReportEventActivity : AppCompatActivity() {
 
         if (intent.hasExtra("FROM_EVENTS_ACTIVITY")) {
             val checkerValue = intent.getStringExtra("FROM_EVENTS_ACTIVITY")
+            binding.tvTitle.text = "Edit an Event"
             fromEventsActivityChecker = checkerValue ?: "NO CHECKER FOUND"
             isAdding = false
         } else {
