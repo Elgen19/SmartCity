@@ -6,9 +6,11 @@ import android.content.res.ColorStateList
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -27,11 +29,15 @@ import com.elgenium.smartcity.singletons.BottomNavigationManager
 import com.elgenium.smartcity.singletons.LayoutStateManager
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.viewpager_adapter.EventImageAdapter
+import com.google.android.gms.ads.AdLoader
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.nativead.NativeAdView
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.card.MaterialCardView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -101,10 +107,55 @@ class EventsActivity : AppCompatActivity() {
 
         setupFilterButton()
 
+
         BottomNavigationManager.setupBottomNavigation(this, binding.bottomNavigation, EventsActivity::class.java)
         NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
     }
 
+    private fun loadNativeAd() {
+        // Log the event list size
+        Log.d("AdLoading", "Event list size: ${eventList.size}")
+
+        // Check if eventList has more than 1 event
+        if (eventList.size > 1) {
+            Log.d("AdLoading", "Event list size is greater than 1, attempting to load ad.")
+
+            // Make the CardView visible before loading the ad
+            binding.adCardView.visibility = View.VISIBLE
+
+            val adLoader = AdLoader.Builder(this, "ca-app-pub-3940256099942544/2247696110")
+                .forNativeAd { nativeAd ->
+                    Log.d("AdLoading", "Ad loaded successfully.")
+
+                    val adView = findViewById<NativeAdView>(R.id.native_ad_view)
+
+                    adView.headlineView = findViewById(R.id.ad_headline)
+                    adView.bodyView = findViewById(R.id.ad_body)
+                    adView.iconView = findViewById(R.id.ad_icon)
+
+                    // Populate ad views with data
+                    (adView.headlineView as TextView).text = nativeAd.headline
+                    (adView.bodyView as TextView).text = nativeAd.body
+                    (adView.iconView as ImageView).setImageDrawable(nativeAd.icon?.drawable)
+
+                    // Log ad view population
+                    Log.d("AdLoading", "Ad headline: ${nativeAd.headline}, body: ${nativeAd.body}")
+
+                    // Ensure CardView is visible after loading ad
+                    findViewById<MaterialCardView>(R.id.ad_card_view).visibility = View.VISIBLE
+                }
+                .build()
+
+            // Log if the ad fails to load
+            adLoader.loadAd(AdRequest.Builder().build()).apply {
+                Log.d("AdLoading", "Ad request sent.")
+            }
+        } else {
+            // Hide the CardView if there is not more than one event
+            Log.d("AdLoading", "Event list size is not greater than 1, hiding ad.")
+            findViewById<MaterialCardView>(R.id.ad_card_view).visibility = View.GONE
+        }
+    }
 
 
     private fun showEventDetailsBottomSheetDialog(event: Event) {
@@ -739,7 +790,7 @@ class EventsActivity : AppCompatActivity() {
 
                     eventAdapter.updateEvents(eventList)
                     eventAdapter.notifyDataSetChanged() // Notify adapter about data changes
-
+                    loadNativeAd()
                     Log.e("EventsActivity", "ALL VERIFIED EVENTS: $eventList")
                 }
 

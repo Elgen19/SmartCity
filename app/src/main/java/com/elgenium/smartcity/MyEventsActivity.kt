@@ -118,7 +118,6 @@ class MyEventsActivity : AppCompatActivity() {
         binding.myEventsRecyclerview.adapter = myEventsAdapter
 
         loadUserEvents()
-
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 // Define the behavior when the back button is pressed
@@ -128,6 +127,9 @@ class MyEventsActivity : AppCompatActivity() {
             }
         })
     }
+
+
+
 
     private fun showFilterBottomSheet() {
         val bottomSheetDialog = BottomSheetDialog(this)

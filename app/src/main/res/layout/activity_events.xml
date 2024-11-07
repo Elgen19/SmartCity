@@ -5,215 +5,283 @@
     android:layout_height="match_parent"
     android:background="@color/primary_color">
 
-    <!-- Search SearchView with drawable icon and filter ImageButton -->
-    <RelativeLayout
-        android:id="@+id/search_layout"
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/secondary_color"
-        android:padding="16dp">
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:layout_above="@id/bottom_navigation">
 
-        <androidx.appcompat.widget.SearchView
-            android:id="@+id/search_event"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_alignParentStart="true"
-            android:layout_marginEnd="8dp"
-            android:layout_toStartOf="@id/filter_button"
-            android:background="@drawable/search_bar_bg"
-            app:iconifiedByDefault="false"
-            app:queryHint="Search for an event" />
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-        <ImageButton
-            android:id="@+id/filter_button"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Filter Events"
-            android:scaleType="fitCenter"
-            android:src="@drawable/more_vertical"
-            app:tint="@color/primary_color" />
-    </RelativeLayout>
+            <!-- Search SearchView with drawable icon and filter ImageButton -->
+            <RelativeLayout
+                android:id="@+id/search_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/secondary_color"
+                android:padding="16dp">
 
+                <androidx.appcompat.widget.SearchView
+                    android:id="@+id/search_event"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_alignParentStart="true"
+                    android:layout_marginEnd="8dp"
+                    android:layout_toStartOf="@id/filter_button"
+                    android:background="@drawable/search_bar_bg"
+                    app:iconifiedByDefault="false"
+                    app:queryHint="Search for an event" />
 
-    <!-- Horizontal ScrollView for event categories -->
-    <HorizontalScrollView
-        android:id="@+id/scrollViewButtons"
-        android:layout_below="@+id/search_layout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:scrollbars="none"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginTop="8dp">
+                <ImageButton
+                    android:id="@+id/filter_button"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Filter Events"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/more_vertical"
+                    app:tint="@color/primary_color" />
+            </RelativeLayout>
 
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            <!-- Horizontal ScrollView for event categories -->
+            <HorizontalScrollView
+                android:id="@+id/scrollViewButtons"
+                android:layout_below="@+id/search_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginTop="8dp">
 
-            <!-- Event Type Buttons -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnFestival"
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <!-- Event Type Buttons -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnFestival"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Festival"
+                        app:icon="@drawable/festival"
+                        app:iconTint="@color/secondary_color"
+                        app:iconGravity="textStart"
+                        android:textAllCaps="false"
+                        android:textColor="@color/gray"
+                        app:strokeColor="@color/gray"
+                        app:cornerRadius="8dp"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSales"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Sales"
+                        app:icon="@drawable/fare"
+                        app:iconTint="@color/secondary_color"
+                        android:textAllCaps="false"
+                        app:iconGravity="textStart"
+                        android:layout_marginStart="8dp"
+                        android:textColor="@color/gray"
+                        app:strokeColor="@color/gray"
+                        app:cornerRadius="8dp"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnWorkShop"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Workshop"
+                        app:icon="@drawable/workshop"
+                        app:iconTint="@color/secondary_color"
+                        app:iconGravity="textStart"
+                        android:textAllCaps="false"
+                        android:layout_marginStart="8dp"
+                        android:textColor="@color/gray"
+                        app:strokeColor="@color/gray"
+                        app:cornerRadius="8dp"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnConcert"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Concert"
+                        app:icon="@drawable/concert"
+                        app:iconTint="@color/secondary_color"
+                        android:textAllCaps="false"
+                        app:iconGravity="textStart"
+                        android:layout_marginStart="8dp"
+                        android:textColor="@color/gray"
+                        app:strokeColor="@color/gray"
+                        app:cornerRadius="8dp"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnOutdoor"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Outdoor Events"
+                        app:icon="@drawable/outdoor"
+                        app:iconTint="@color/secondary_color"
+                        android:textAllCaps="false"
+                        app:iconGravity="textStart"
+                        android:layout_marginStart="8dp"
+                        android:textColor="@color/gray"
+                        app:strokeColor="@color/gray"
+                        app:cornerRadius="8dp"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnOthers"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Others"
+                        app:iconTint="@color/secondary_color"
+                        app:icon="@drawable/more"
+                        android:textAllCaps="false"
+                        app:iconGravity="textStart"
+                        android:layout_marginStart="8dp"
+                        android:textColor="@color/gray"
+                        app:strokeColor="@color/gray"
+                        app:cornerRadius="8dp"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+                </LinearLayout>
+            </HorizontalScrollView>
+
+            <TextView
+                android:id="@+id/eventLabelTitle"
+                android:layout_width="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
+                android:layout_height="wrap_content"
+                android:textColor="@color/brand_color"
+                android:layout_below="@+id/scrollViewButtons"
+                android:text="All Events"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <!-- RecyclerView for list of events -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/events_recycler_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/eventLabelTitle"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="16dp" />
+
+            <!-- RecyclerView for my events -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/my_events_recyclerview"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/eventLabelTitle"
+                android:layout_marginTop="16dp"
+                android:visibility="gone"
+                android:layout_marginBottom="16dp" />
+
+            <!-- LottieAnimationView for loading indicator -->
+            <com.airbnb.lottie.LottieAnimationView
+                android:id="@+id/lottieAnimation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/scrollViewButtons"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="40dp"
+                android:visibility="visible"
+                app:lottie_autoPlay="true"
+                app:lottie_cacheComposition="true"
+                app:lottie_loop="true"
+                app:lottie_rawRes="@raw/no_data" />
+
+            <TextView
+                android:id="@+id/emptyDataLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Festival"
-                app:icon="@drawable/festival"
-                app:iconTint="@color/secondary_color"
-                app:iconGravity="textStart"
-                android:textAllCaps="false"
+                android:layout_below="@+id/lottieAnimation"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="-56dp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:text="There are no events in this category"
+                android:textAlignment="center"
                 android:textColor="@color/gray"
-                app:strokeColor="@color/gray"
-                app:cornerRadius="8dp"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+                android:textSize="14sp"
+                android:visibility="visible" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSales"
-                android:layout_width="wrap_content"
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/ad_card_view"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Sales"
-                app:icon="@drawable/fare"
-                app:iconTint="@color/secondary_color"
-                android:textAllCaps="false"
-                app:iconGravity="textStart"
-                android:layout_marginStart="8dp"
-                android:textColor="@color/gray"
-                app:strokeColor="@color/gray"
-                app:cornerRadius="8dp"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+                android:layout_below="@+id/events_recycler_view"
+                android:layout_marginStart="16dp"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone"
+                android:layout_marginEnd="16dp"
+                app:cardCornerRadius="8dp"
+                app:strokeWidth="0dp"
+                android:background="@color/primary_color"
+                android:elevation="6dp">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnWorkShop"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Workshop"
-                app:icon="@drawable/workshop"
-                app:iconTint="@color/secondary_color"
-                app:iconGravity="textStart"
-                android:textAllCaps="false"
-                android:layout_marginStart="8dp"
-                android:textColor="@color/gray"
-                app:strokeColor="@color/gray"
-                app:cornerRadius="8dp"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+                <!-- NativeAdView containing ad components -->
+                <com.google.android.gms.ads.nativead.NativeAdView
+                    android:id="@+id/native_ad_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnConcert"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Concert"
-                app:icon="@drawable/concert"
-                app:iconTint="@color/secondary_color"
-                android:textAllCaps="false"
-                app:iconGravity="textStart"
-                android:layout_marginStart="8dp"
-                android:textColor="@color/gray"
-                app:strokeColor="@color/gray"
-                app:cornerRadius="8dp"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:background="@color/white"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp"
+                        android:orientation="vertical">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnOutdoor"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Outdoor Events"
-                app:icon="@drawable/outdoor"
-                app:iconTint="@color/secondary_color"
-                android:textAllCaps="false"
-                app:iconGravity="textStart"
-                android:layout_marginStart="8dp"
-                android:textColor="@color/gray"
-                app:strokeColor="@color/gray"
-                app:cornerRadius="8dp"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnOthers"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Others"
-                app:iconTint="@color/secondary_color"
-                app:icon="@drawable/more"
-                android:textAllCaps="false"
-                app:iconGravity="textStart"
-                android:layout_marginStart="8dp"
-                android:textColor="@color/gray"
-                app:strokeColor="@color/gray"
-                app:cornerRadius="8dp"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
-        </LinearLayout>
-    </HorizontalScrollView>
+                            <ImageView
+                                android:id="@+id/ad_icon"
+                                android:layout_width="32dp"
+                                android:layout_gravity="center_vertical"
+                                android:layout_height="32dp"
+                                android:src="@drawable/smartcity_mobile"
+                                android:paddingEnd="16dp"
+                                />
 
-    <TextView
-        android:id="@+id/eventLabelTitle"
-        android:layout_width="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="8dp"
-        android:layout_height="wrap_content"
-        android:textColor="@color/brand_color"
-        android:layout_below="@+id/scrollViewButtons"
-        android:text="All Events"
-        android:textSize="20sp"
-        android:textStyle="bold" />
+                            <TextView
+                                android:id="@+id/ad_headline"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_vertical"
+                                android:text="Loading advertisements"
+                                android:textColor="@color/gray" />
 
+                        </LinearLayout>
 
-    <!-- RecyclerView for list of events -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/events_recycler_view"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_above="@id/bottom_navigation"
-        android:layout_below="@id/eventLabelTitle"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp" />
-
-
-    <!-- RecyclerView for my events -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/my_events_recyclerview"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_above="@id/bottom_navigation"
-        android:layout_below="@id/eventLabelTitle"
-        android:layout_marginTop="16dp"
-        android:visibility="gone"
-        android:layout_marginBottom="16dp" />
-
-
-
-    <!-- LottieAnimationView for loading indicator -->
-    <com.airbnb.lottie.LottieAnimationView
-        android:id="@+id/lottieAnimation"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/scrollViewButtons"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="40dp"
-        android:visibility="visible"
-        app:lottie_autoPlay="true"
-        app:lottie_cacheComposition="true"
-        app:lottie_loop="true"
-        app:lottie_rawRes="@raw/no_data" />
-
-    <TextView
-        android:id="@+id/emptyDataLabel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/lottieAnimation"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="-56dp"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:text="There are no events in this category"
-        android:textAlignment="center"
-        android:textColor="@color/gray"
-        android:textSize="14sp"
-        android:visibility="visible" />
+                        <TextView
+                            android:id="@+id/ad_body"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="An add will be added shortly."
+                            android:textColor="@color/sub_support_text"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </com.google.android.gms.ads.nativead.NativeAdView>
+            </com.google.android.material.card.MaterialCardView>
+        </RelativeLayout>
+    </androidx.core.widget.NestedScrollView>
 
 
     <!-- Bottom Navigation View -->

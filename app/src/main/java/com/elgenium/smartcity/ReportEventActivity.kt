@@ -755,31 +755,7 @@ class ReportEventActivity : AppCompatActivity() {
 
                 if (fromEventsActivityChecker != "NO CHECKER FOUND") {
 
-//                    // Prepare data for WorkManager
-//                    val eventDataJson = Gson().toJson(eventData)
-//                    val newImageUris = imageList.filter { it.uri != null }.map { it.uri.toString() }
-//
-//                    val newChecker = "${eventName}_${location}"
-//                    val workData = workDataOf(
-//                        "oldChecker" to fromEventsActivityChecker,
-//                        "newChecker" to newChecker,
-//                        "eventData" to eventDataJson,
-//                        "newImageUris" to newImageUris.map { it.toString() }.toTypedArray()
-//                    )
-//
-//                    val updateEventWork = OneTimeWorkRequestBuilder<UpdateEventWorker>()
-//                        .setInputData(workData)
-//                        .build()
-//
-//                    WorkManager.getInstance(this).enqueue(updateEventWork)
-//
-//                    // Success Layout after enqueuing the worker
-//                    LayoutStateManager.showSuccessLayout(
-//                        this@ReportEventActivity,
-//                        "Event updated successfully!",
-//                        "Updated events will still undergo verification procedures. You will receive a notification regarding the results of the verification.",
-//                        MyEventsActivity::class.java
-//                    )
+
 
                     LayoutStateManager.showLoadingLayout(
                         this,
