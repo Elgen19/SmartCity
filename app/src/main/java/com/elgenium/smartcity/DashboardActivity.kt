@@ -99,6 +99,7 @@ class DashboardActivity : AppCompatActivity() {
     private lateinit var weatherRecommendation: WeatherBasedPlaceRecommendation
     private var contextRecommender: Boolean = false
     private var eventRecommender: Boolean = false
+    private var isActivityRecommendationEnabled: Boolean = false
     private lateinit var sharedPreferences: SharedPreferences
     private lateinit var mealPlaceRecommender: MealPlaceRecommendationManager
     private lateinit var eventRecommendation: EventRecommendation
@@ -184,10 +185,11 @@ class DashboardActivity : AppCompatActivity() {
         fetchNearestRoad(apiServiceForRoads, apiServiceForTraffic)
         fetchLeaderboardData()
         handleViewVisibilityBasedOnSettings()
-//        if (!hasRecommendationsBeenShown()) {
-//            recommendActivityPlaces()
-//            setRecommendationsShown()
-//        }
+
+        if (!hasRecommendationsBeenShown() && isActivityRecommendationEnabled) {
+            recommendActivityPlaces()
+            setRecommendationsShown()
+        }
 
     }
 
@@ -250,9 +252,6 @@ class DashboardActivity : AppCompatActivity() {
             binding.weatherUpdatesTitle.layoutParams = layoutParams
         }
 
-
-
-
         eventRecommendation.fetchUserPreferencesAndEvents(binding)
     }
 
@@ -260,9 +259,11 @@ class DashboardActivity : AppCompatActivity() {
         val sharedPreferences = getSharedPreferences("user_settings", MODE_PRIVATE)
         contextRecommender = sharedPreferences.getBoolean("context_recommender", false)
         eventRecommender = sharedPreferences.getBoolean("event_recommender", false)
+        isActivityRecommendationEnabled = sharedPreferences.getBoolean("key_activity", false)
         // Optionally log the retrieved value
         Log.e("Preferences", "contextRecommender at retrievePreferences: $contextRecommender")
         Log.e("Preferences", "eventRecommender at retrievePreferences: $eventRecommender")
+        Log.e("Preferences", "isActivityRecommendationEnabled at retrievePreferences: $isActivityRecommendationEnabled")
 
     }
 

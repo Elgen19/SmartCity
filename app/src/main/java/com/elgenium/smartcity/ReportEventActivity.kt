@@ -22,39 +22,42 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.FileProvider
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.bumptech.glide.Glide
 import com.elgenium.smartcity.databinding.ActivityReportEventBinding
 import com.elgenium.smartcity.models.Event
 import com.elgenium.smartcity.models.ReportImages
-import com.elgenium.smartcity.network.GeocodingService
 import com.elgenium.smartcity.network_reponses.GeocodingResponse
 import com.elgenium.smartcity.recyclerview_adapter.ImageAdapter
+import com.elgenium.smartcity.singletons.GeocodingServiceSingleton
 import com.elgenium.smartcity.singletons.LayoutStateManager
+import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
+import com.elgenium.smartcity.work_managers.SaveEventWorker
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
+import com.google.gson.Gson
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 import retrofit2.Call
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
@@ -140,6 +143,8 @@ class ReportEventActivity : AppCompatActivity() {
         binding = ActivityReportEventBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.primary_color)
+
         placeName = intent.getStringExtra("PLACE_NAME") ?: ""
         placeAddress = intent.getStringExtra("PLACE_ADDRESS") ?: ""
         placeLatLng = intent.getStringExtra("PLACE_LATLNG") ?: ""
@@ -190,6 +195,15 @@ class ReportEventActivity : AppCompatActivity() {
                 }
             }
         }
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // Define the behavior when the back button is pressed
+                val intent = Intent(this@ReportEventActivity, EventsActivity::class.java)
+                startActivity(intent)
+                finish() // This will finish the current activity
+            }
+        })
 
     }
 
@@ -740,21 +754,62 @@ class ReportEventActivity : AppCompatActivity() {
 
 
                 if (fromEventsActivityChecker != "NO CHECKER FOUND") {
+
+//                    // Prepare data for WorkManager
+//                    val eventDataJson = Gson().toJson(eventData)
+//                    val newImageUris = imageList.filter { it.uri != null }.map { it.uri.toString() }
+//
+//                    val newChecker = "${eventName}_${location}"
+//                    val workData = workDataOf(
+//                        "oldChecker" to fromEventsActivityChecker,
+//                        "newChecker" to newChecker,
+//                        "eventData" to eventDataJson,
+//                        "newImageUris" to newImageUris.map { it.toString() }.toTypedArray()
+//                    )
+//
+//                    val updateEventWork = OneTimeWorkRequestBuilder<UpdateEventWorker>()
+//                        .setInputData(workData)
+//                        .build()
+//
+//                    WorkManager.getInstance(this).enqueue(updateEventWork)
+//
+//                    // Success Layout after enqueuing the worker
+//                    LayoutStateManager.showSuccessLayout(
+//                        this@ReportEventActivity,
+//                        "Event updated successfully!",
+//                        "Updated events will still undergo verification procedures. You will receive a notification regarding the results of the verification.",
+//                        MyEventsActivity::class.java
+//                    )
+
                     LayoutStateManager.showLoadingLayout(
                         this,
                         "Please wait while we are updating your events"
                     )
                     updateEvent(eventData)
                 } else {
-                    LayoutStateManager.showLoadingLayout(
-                        this,
-                        "Please wait while we are saving your events"
+                    val eventDataJson = Gson().toJson(eventData)
+                    val imageUris = imageList.map { it.uri.toString() }
+
+                    // Create input data for WorkManager
+                    val inputData = workDataOf(
+                        "eventName" to eventName,
+                        "images" to imageUris.toTypedArray(),
+                        "eventData" to eventDataJson
                     )
-                    uploadImagesAndSaveEvent(
-                        eventName,
-                        imageList.map { it.uri ?: Uri.parse("defaultUri") },
-                        eventData
-                    )
+
+                    // Enqueue the work
+                    val saveEventRequest = OneTimeWorkRequestBuilder<SaveEventWorker>()
+                        .setInputData(inputData)
+                        .build()
+
+                    WorkManager.getInstance(this).enqueue(saveEventRequest)
+
+                    LayoutStateManager.showSuccessLayout(
+                                            this@ReportEventActivity,
+                                            "Event successfully saved!",
+                                            "Your reported event will undergo event validation in the background. It will not be publicly visible at the moment. You will receive a notification once the validation has finished.",
+                                            EventsActivity::class.java
+                                        )
                 }
 
             }
@@ -804,7 +859,7 @@ class ReportEventActivity : AppCompatActivity() {
                                             this@ReportEventActivity,
                                             "Event updated successfully!",
                                             "Updated events will still undergo verification procedures. You will receive a notification regarding the results of the verification.",
-                                            MyEventsActivity::class.java
+                                            EventsActivity::class.java
                                         )
                                         Log.e("ReportEventActivity", "Event data updated successfully")
                                     }
@@ -851,159 +906,136 @@ class ReportEventActivity : AppCompatActivity() {
                 onFailure(e)
             }
     }
+//
+//    private fun uploadImagesAndSaveEvent(
+//        eventName: String,
+//        images: List<Uri>,
+//        eventData: Map<String, Any?>
+//    ) {
+//        val uploadTasks = images.map { uri ->
+//            val promise = CompletableDeferred<String>()
+//            uploadImageToFirebaseStorage(eventName, uri,
+//                onSuccess = { url ->
+//                    promise.complete(url)
+//                    LayoutStateManager.showSuccessLayout(
+//                        this,
+//                        "Event saved successfully and on pending verification!",
+//                        "The event you reported is currently undergoing verification. In the meantime, it will not be posted publicly and can only be viewed on the My Events screen until we confirm your report. You will receive a notification regarding the result of the verification.",
+//                        MyEventsActivity::class.java
+//                    )
+//                },
+//                onFailure = { e ->
+//                    promise.completeExceptionally(e)
+//                    LayoutStateManager.showFailureLayout(
+//                        this,
+//                        "Something went wrong. Please check your connection or try again.",
+//                        "Return to Events",
+//                        EventsActivity::class.java
+//                    )
+//                }
+//            )
+//            promise
+//        }
+//
+//        // Wait for all image uploads to complete
+//        CoroutineScope(Dispatchers.IO).launch {
+//            try {
+//                val urls = uploadTasks.awaitAll()
+//                val updatedEventData = eventData.toMutableMap().apply {
+//                    put("images", urls)
+//                }
+//                saveEventToDatabase(updatedEventData)
+//            } catch (e: Exception) {
+//                Log.e("ReportEventActivity", "Image upload failed", e)
+//                Toast.makeText(
+//                    this@ReportEventActivity,
+//                    "Failed to upload images",
+//                    Toast.LENGTH_SHORT
+//                ).show()
+//            }
+//        }
+//    }
+//
+//    private fun saveEventToDatabase(eventData: Map<String, Any?>) {
+//        val database = FirebaseDatabase.getInstance()
+//        val eventsRef = database.getReference("Events")
+//        val usersRef = database.getReference("Users")
+//
+//        // Get the current user's UID
+//        val userId = FirebaseAuth.getInstance().currentUser?.uid
+//        if (userId == null) {
+//            Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show()
+//            return
+//        }
+//
+//        // Fetch the current user's full name
+//        usersRef.child(userId).child("fullName").get()
+//            .addOnSuccessListener { snapshot ->
+//                val fullName = snapshot.getValue(String::class.java) ?: "Unknown User"
+//
+//                // Get the current date and time for event submission
+//                val currentDateTime = SimpleDateFormat(
+//                    "yyyy-MM-dd HH:mm:ss",
+//                    Locale.getDefault()
+//                ).format(System.currentTimeMillis())
+//
+//                // Add user information and submission time to the event data
+//                val updatedEventData = eventData.toMutableMap().apply {
+//                    put("submittedBy", fullName)
+//                    put("submittedAt", currentDateTime)
+//                    put("userId", userId)
+//                }
+//
+//                // Generate a unique key for the new event
+//                val newEventRef = eventsRef.push()
+//
+//                // Set the event data
+//                newEventRef.setValue(updatedEventData)
+//                    .addOnSuccessListener {
+//                        Log.d("ReportEventActivity", "Event data saved successfully")
+//                        // Update the user's points
+//                        updateUserPoints(usersRef, userId)
+//                    }
+//                    .addOnFailureListener { e ->
+//                        Log.e("ReportEventActivity", "Failed to save event data", e)
+//                        Toast.makeText(this, "Failed to save event", Toast.LENGTH_SHORT).show()
+//                    }
+//            }
+//            .addOnFailureListener { e ->
+//                Log.e("ReportEventActivity", "Failed to retrieve user information", e)
+//                Toast.makeText(this, "Failed to retrieve user information", Toast.LENGTH_SHORT)
+//                    .show()
+//            }
+//    }
+//
+//    private fun updateUserPoints(usersRef: DatabaseReference, userId: String) {
+//        val userPointsRef = usersRef.child(userId).child("points")
+//
+//        // Fetch the current points from the Users node
+//        userPointsRef.get().addOnSuccessListener { snapshot ->
+//            val currentPoints = snapshot.getValue(Int::class.java) ?: 0
+//            val newPoints = currentPoints + 5
+//
+//            // Update the points in the Users node
+//            userPointsRef.setValue(newPoints)
+//                .addOnSuccessListener {
+//                    Log.d("ReportEventActivity", "User points updated successfully")
+//                    // Update the Leaderboard node after successfully updating user points
+//                    Toast.makeText(
+//                        this,
+//                        "You've earned a total of $newPoints points!",
+//                        Toast.LENGTH_SHORT
+//                    ).show()
+//                }
+//                .addOnFailureListener { e ->
+//                    Log.e("ReportEventActivity", "Failed to update user points", e)
+//                }
+//        }.addOnFailureListener { e ->
+//            Log.e("ReportEventActivity", "Failed to retrieve current points", e)
+//        }
+//    }
 
-    private fun uploadImagesAndSaveEvent(
-        eventName: String,
-        images: List<Uri>,
-        eventData: Map<String, Any?>
-    ) {
-        val uploadTasks = images.map { uri ->
-            val promise = CompletableDeferred<String>()
-            uploadImageToFirebaseStorage(eventName, uri,
-                onSuccess = { url ->
-                    promise.complete(url)
-                    LayoutStateManager.showSuccessLayout(
-                        this,
-                        "Event saved successfully and on pending verification!",
-                        "The event you reported is currently undergoing verification. In the meantime, it will not be posted publicly and can only be viewed on the My Events screen until we confirm your report. You will receive a notification regarding the result of the verification.",
-                        MyEventsActivity::class.java
-                    )
-                },
-                onFailure = { e ->
-                    promise.completeExceptionally(e)
-                    LayoutStateManager.showFailureLayout(
-                        this,
-                        "Something went wrong. Please check your connection or try again.",
-                        "Return to Events",
-                        EventsActivity::class.java
-                    )
-                }
-            )
-            promise
-        }
 
-        // Wait for all image uploads to complete
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val urls = uploadTasks.awaitAll()
-                val updatedEventData = eventData.toMutableMap().apply {
-                    put("images", urls)
-                }
-                saveEventToDatabase(updatedEventData)
-            } catch (e: Exception) {
-                Log.e("ReportEventActivity", "Image upload failed", e)
-                Toast.makeText(
-                    this@ReportEventActivity,
-                    "Failed to upload images",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
-    }
-
-    private fun saveEventToDatabase(eventData: Map<String, Any?>) {
-        val database = FirebaseDatabase.getInstance()
-        val eventsRef = database.getReference("Events")
-        val usersRef = database.getReference("Users")
-
-        // Get the current user's UID
-        val userId = FirebaseAuth.getInstance().currentUser?.uid
-        if (userId == null) {
-            Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        // Fetch the current user's full name
-        usersRef.child(userId).child("fullName").get()
-            .addOnSuccessListener { snapshot ->
-                val fullName = snapshot.getValue(String::class.java) ?: "Unknown User"
-
-                // Get the current date and time for event submission
-                val currentDateTime = SimpleDateFormat(
-                    "yyyy-MM-dd HH:mm:ss",
-                    Locale.getDefault()
-                ).format(System.currentTimeMillis())
-
-                // Add user information and submission time to the event data
-                val updatedEventData = eventData.toMutableMap().apply {
-                    put("submittedBy", fullName)
-                    put("submittedAt", currentDateTime)
-                    put("userId", userId)
-                }
-
-                // Generate a unique key for the new event
-                val newEventRef = eventsRef.push()
-
-                // Set the event data
-                newEventRef.setValue(updatedEventData)
-                    .addOnSuccessListener {
-                        Log.d("ReportEventActivity", "Event data saved successfully")
-                        // Update the user's points
-                        updateUserPoints(usersRef, userId)
-                    }
-                    .addOnFailureListener { e ->
-                        Log.e("ReportEventActivity", "Failed to save event data", e)
-                        Toast.makeText(this, "Failed to save event", Toast.LENGTH_SHORT).show()
-                    }
-            }
-            .addOnFailureListener { e ->
-                Log.e("ReportEventActivity", "Failed to retrieve user information", e)
-                Toast.makeText(this, "Failed to retrieve user information", Toast.LENGTH_SHORT)
-                    .show()
-            }
-    }
-
-    private fun updateUserPoints(usersRef: DatabaseReference, userId: String) {
-        val userPointsRef = usersRef.child(userId).child("points")
-
-        // Fetch the current points from the Users node
-        userPointsRef.get().addOnSuccessListener { snapshot ->
-            val currentPoints = snapshot.getValue(Int::class.java) ?: 0
-            val newPoints = currentPoints + 5
-
-            // Update the points in the Users node
-            userPointsRef.setValue(newPoints)
-                .addOnSuccessListener {
-                    Log.d("ReportEventActivity", "User points updated successfully")
-                    // Update the Leaderboard node after successfully updating user points
-                    updateLeaderboard(userId, newPoints)
-                    Toast.makeText(
-                        this,
-                        "You've earned a total of $newPoints points!",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-                .addOnFailureListener { e ->
-                    Log.e("ReportEventActivity", "Failed to update user points", e)
-                }
-        }.addOnFailureListener { e ->
-            Log.e("ReportEventActivity", "Failed to retrieve current points", e)
-        }
-    }
-
-    private fun updateLeaderboard(userId: String, points: Int) {
-        val leaderboardRef = FirebaseDatabase.getInstance().getReference("Leaderboard")
-        val userRef = FirebaseDatabase.getInstance().getReference("Users").child(userId)
-
-        // Fetch the full name from the Users node
-        userRef.child("fullName").get().addOnSuccessListener { snapshot ->
-            val fullName = snapshot.getValue(String::class.java) ?: "Unknown User"
-
-            // Add or update the user's entry in the Leaderboard node
-            leaderboardRef.child(userId).setValue(
-                mapOf(
-                    "fullName" to fullName,
-                    "points" to points
-                )
-            ).addOnSuccessListener {
-                Log.d("Leaderboard", "Leaderboard updated successfully for user: $fullName")
-            }.addOnFailureListener { e ->
-                Log.e("Leaderboard", "Failed to update leaderboard", e)
-            }
-        }.addOnFailureListener { e ->
-            Log.e("Leaderboard", "Failed to fetch user full name", e)
-        }
-    }
 
     private fun getCurrentLocation() {
         Log.d("ReportEventActivity", "Getting current location")
@@ -1025,14 +1057,7 @@ class ReportEventActivity : AppCompatActivity() {
             .addOnSuccessListener { location: Location? ->
                 Log.d("ReportEventActivity", "Location received: $location")
                 if (location != null) {
-                    // Create Retrofit instance inside the method
-                    val retrofit = Retrofit.Builder()
-                        .baseUrl("https://maps.googleapis.com/")  // Google Maps API base URL
-                        .addConverterFactory(GsonConverterFactory.create())
-                        .build()
-
-                    // Get the service instance
-                    val geocodingService = retrofit.create(GeocodingService::class.java)
+                    val geocodingService = GeocodingServiceSingleton.geocodingService
 
                     // Latitude and longitude as a string
                     val latLng = "${location.latitude},${location.longitude}"
@@ -1168,18 +1193,4 @@ class ReportEventActivity : AppCompatActivity() {
         ).show()
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        Log.d("ReportEventActivity", "Request permissions result: $requestCode")
-        if (requestCode == 1 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            Log.d("ReportEventActivity", "Location permission granted")
-            getCurrentLocation()
-        } else {
-            Log.d("ReportEventActivity", "Location permission denied")
-        }
-    }
 }

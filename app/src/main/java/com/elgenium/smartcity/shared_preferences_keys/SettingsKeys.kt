@@ -17,6 +17,8 @@ object SettingsKeys {
     const val KEY_MEAL = "meal_notifications"
     const val KEY_CYCLONE = "cyclone_alert"
     const val KEY_TRAFFIC = "traffic_alert"
+    const val KEY_ACTIVITY_RECOMMENDATION = "key_activity"
+    const val KEY_SIMILAR_PLACE = "similar_place"
 
 
 

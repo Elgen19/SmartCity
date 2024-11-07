@@ -7,8 +7,20 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <androidx.core.widget.NestedScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fillViewport="true"
+                android:scrollbars="none">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+
                 <!-- Top Bar with Back Button and Title -->
                 <RelativeLayout
+                    android:layout_alignParentTop="true"
                     android:id="@+id/topComponents"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -48,7 +60,7 @@
                 android:text="Where is the event located?"
                 android:layout_below="@id/topComponents"
                 android:textColor="@color/secondary_color"
-                android:layout_marginTop="16dp" />
+                android:layout_marginTop="8dp" />
 
             <!-- CardView enclosing the location details -->
             <androidx.cardview.widget.CardView
@@ -113,22 +125,13 @@
             </androidx.cardview.widget.CardView>
 
 
-            <androidx.core.widget.NestedScrollView
-                android:layout_below="@+id/cardLocationSelection"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:fillViewport="true"
-                android:scrollbars="none">
 
-                <RelativeLayout
-                    android:layout_marginTop="16dp"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
 
                     <!-- Event Name Label -->
                     <TextView
                         android:id="@+id/tvEventNameLabel"
                         android:layout_width="wrap_content"
+                        android:layout_below="@id/cardLocationSelection"
                         android:textColor="@color/secondary_color"
                         android:layout_height="wrap_content"
                         android:text="What is the name of the event?"

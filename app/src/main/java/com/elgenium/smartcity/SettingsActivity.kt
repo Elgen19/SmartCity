@@ -79,6 +79,8 @@ class SettingsActivity : AppCompatActivity() {
             putBoolean(SettingsKeys.KEY_CYCLONE, binding.cycloneAlertSwitch.isChecked)
             putBoolean(SettingsKeys.KEY_TRAFFIC, binding.trafficUpdateSwitch.isChecked)
             putBoolean(SettingsKeys.KEY_MEAL, binding.mealNotificationSwitch.isChecked)
+            putBoolean(SettingsKeys.KEY_ACTIVITY_RECOMMENDATION, binding.activityPlaceRecommenderSwitch.isChecked)
+            putBoolean(SettingsKeys.KEY_SIMILAR_PLACE, binding.similarPlaceRecommenderSwitch.isChecked)
 
             apply()
         }
@@ -124,6 +126,8 @@ class SettingsActivity : AppCompatActivity() {
             "meal_notifications" to binding.weatherNotificationSwitch.isChecked,
             "cyclone_alert" to binding.cycloneAlertSwitch.isChecked,
             "traffic_alert" to binding.trafficUpdateSwitch.isChecked,
+            "key_activity" to binding.activityPlaceRecommenderSwitch.isChecked,
+            "similar_place" to binding.similarPlaceRecommenderSwitch.isChecked,
 
 
 
@@ -153,7 +157,8 @@ class SettingsActivity : AppCompatActivity() {
         binding.mealNotificationSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_MEAL, true)
         binding.cycloneAlertSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_CYCLONE, true)
         binding.trafficUpdateSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_TRAFFIC, true)
-
+        binding.activityPlaceRecommenderSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_ACTIVITY_RECOMMENDATION, false)
+        binding.similarPlaceRecommenderSwitch.isChecked = sharedPreferences.getBoolean(SettingsKeys.KEY_SIMILAR_PLACE, false)
 
 
 
@@ -214,6 +219,8 @@ class SettingsActivity : AppCompatActivity() {
         binding.adjustTrafficOverlaySwitch.setOnCheckedChangeListener { _, isChecked ->
             isTrafficOverlayEnabled = isChecked
         }
+
+
     }
 
 

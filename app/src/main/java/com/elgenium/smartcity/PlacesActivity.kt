@@ -126,6 +126,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
     private var savedPlace: SavedPlace = SavedPlace()
     private var placesList: MutableList<RecommendedPlace> = mutableListOf()
     private var isFewerLabels = false
+    private var isSimilarPlacesEnabled = false
     private var isFewerLandmarks = false
     private var mapTheme = "Aubergine"
     private var isTrafficOverlayEnabled = false
@@ -239,9 +240,6 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         Log.e("PlacesActivity", "Event latlngs: $eventLatlngs")
 
         loadEventsFromFirebase()
-
-
-
     }
 
     private fun loadEventsFromFirebase() {
@@ -259,14 +257,14 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
                     if (snapshot.exists()) {
                         for (eventSnapshot in snapshot.children) {
                             val event = eventSnapshot.getValue(Event::class.java)
-                            Log.d("EventsActivity", "Images type: ${event?.images?.javaClass?.simpleName}")
+                            Log.d("EventMarker", "Images type: ${event?.images?.javaClass?.simpleName}")
 
                             event?.let { eventList.add(it) }
                         }
 
-                        Log.e("EventsActivity", "ALL EVENTS AT LOADEVENTSFROM FIREBASE: $eventList")
+                        Log.e("EventMarker", "ALL EVENTS AT LOADEVENTSFROM FIREBASE: $eventList")
                     } else {
-                        Log.e("EventsActivity", "No events found in Firebase.")
+                        Log.e("EventMarker", "No events found in Firebase.")
                     }
 
                     // Only plot markers if the eventList is not empty
@@ -278,12 +276,12 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
                 }
 
                 override fun onCancelled(error: DatabaseError) {
-                    Log.e("EventsActivity", "Error loading data: ${error.message}")
+                    Log.e("EventMarker", "Error loading data: ${error.message}")
                 }
             })
         } else {
             // User is not authenticated
-            Log.e("EventsActivity", "User is not authenticated. Unable to load events.")
+            Log.e("EventMarker", "User is not authenticated. Unable to load events.")
             // Optionally handle the UI for non-authenticated state
         }
     }
@@ -291,8 +289,12 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
 
     @SuppressLint("PotentialBehaviorOverride")
     private fun plotMarkers() {
+        // Log start of the plotting process
+        Log.d("EventMarker", "Starting plotMarkers function")
+
         // Clear existing markers if necessary
         mMap.clear()
+        Log.d("EventMarker", "Cleared existing markers on the map")
 
         // Create a list to store the LatLng objects for the bounds
         val boundsBuilder = LatLngBounds.Builder()
@@ -305,22 +307,31 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
         }.time
+        Log.d("EventMarker", "Current date (no time): $currentDate")
 
         // Define a date format to parse the endedDateTime string
         val dateFormat = SimpleDateFormat("dd/MM/yyyy h:mm a", Locale.getDefault())
+        Log.d("EventMarker", "Date format initialized")
 
         // Iterate through the eventList to extract the LatLng from placeLatLng
-        for (event in eventList) {
+        for ((index, event) in eventList.withIndex()) {
+            Log.d("EventMarker", "Processing event at index $index: ${event.eventName}")
+
             // Parse the event's endedDateTime string to a Date object
             val eventDate = try {
                 event.endedDateTime?.let { dateFormat.parse(it) }
             } catch (e: Exception) {
+                Log.e("EventMarker", "Failed to parse endedDateTime for event ${event.eventName}: ${event.endedDateTime}", e)
                 null
             }
 
-            // If parsing was successful, check if the event's date is the same as the current date
+            // Check if eventDate is the same as currentDate
             if (eventDate != null && isSameDay(eventDate, currentDate)) {
+                Log.d("EventMarker", "Event ${event.eventName} is on the current date")
+
                 event.placeLatLng?.let { latLngString ->
+                    Log.d("EventMarker", "Attempting to parse LatLng from: $latLngString")
+
                     // Use regex to extract latitude and longitude
                     val regex = """lat/lng: \(([^,]+),([^)]+)\)""".toRegex()
                     val matchResult = regex.find(latLngString)
@@ -330,15 +341,18 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
                         val longitude = it.groups[2]?.value?.toDoubleOrNull()
 
                         if (latitude != null && longitude != null) {
+                            Log.d("EventMarker", "Parsed LatLng for event ${event.eventName}: Lat=$latitude, Lng=$longitude")
+
                             // Create LatLng object
                             val latLng = LatLng(latitude, longitude)
 
                             // Determine the icon for the event based on its category or other properties
                             val iconId = getIconResourceForEventCategory(event.eventCategory)
-                            Log.e("PlacesActivity", "Event category: ${event.eventCategory}")
+                            Log.d("EventMarker", "Icon resource ID for ${event.eventCategory}: $iconId")
 
                             // Create a custom marker using the iconId
                             val customMarker = createCustomMarker(iconId)
+                            Log.d("EventMarker", "Custom marker created")
 
                             // Add a marker for each event and set the event as a tag
                             val marker = mMap.addMarker(
@@ -349,38 +363,45 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
                                     .icon(customMarker) // Use the custom marker
                             )
                             marker?.tag = event // Set the event object as a tag
+                            Log.d("EventMarker", "Marker added for ${event.eventName} at Lat: $latitude, Lng: $longitude")
 
                             // Include the LatLng in the bounds builder
                             boundsBuilder.include(latLng)
                             hasMarkers = true // Set flag to true as we have added a marker
-
-                            // Log for debugging
-                            Log.e("PlacesActivity", "Custom Marker added for: ${event.eventName} at Lat: $latitude, Lng: $longitude")
+                        } else {
+                            Log.e("EventMarker", "Failed to parse latitude/longitude for event ${event.eventName}")
                         }
-                    }
-                }
+                    } ?: Log.e("EventMarker", "Regex did not match for LatLng string: $latLngString")
+                } ?: Log.d("EventMarker", "Event ${event.eventName} has no placeLatLng value")
+            } else {
+                Log.d("EventMarker", "Event ${event.eventName} is not on the current date, skipping")
             }
         }
 
         // Check if we have added any markers before building bounds
         if (hasMarkers) {
-            // Create bounds from the LatLngs and move the camera to fit the markers
+            Log.d("EventMarker", "Building bounds and moving camera")
             val bounds = boundsBuilder.build()
             mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 100)) // Add padding as needed
         } else {
-            Log.e("PlacesActivity", "No markers to display for the current date.")
-            // Optionally, handle the case when no markers are available
+            Log.e("EventMarker", "No markers to display for the current date.")
         }
 
         // Set marker click listener
         mMap.setOnMarkerClickListener { marker ->
             val event = marker.tag as? Event
-            event?.let {
-                showEventDetailsBottomSheetDialog(it) // Show bottom sheet with event details
+            if (event != null) {
+                Log.d("EventMarker", "Marker clicked for event: ${event.eventName}")
+                showEventDetailsBottomSheetDialog(event) // Show bottom sheet with event details
+            } else {
+                Log.e("EventMarker", "Marker has no event tag")
             }
             true // Return true to indicate that the event was consumed
         }
+
+        Log.d("EventMarker", "plotMarkers function completed")
     }
+
 
 
     // Helper function to check if two dates are on the same day
@@ -474,7 +495,7 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         bottomSheetBinding.btnGetDirections.setOnClickListener{
             bottomSheetDialog.dismiss()
 
-            Log.e("EventsActivity", "Start Navigate button clicked")
+            Log.e("EventMarker", "Start Navigate button clicked")
             val intent =
                 Intent(this@PlacesActivity, StartNavigationsActivity::class.java)
             intent.putExtra("TRAVEL_MODE", "DRIVE")
@@ -787,20 +808,29 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         }
     }
 
-     private fun retrievePreferences() {
+    private fun retrievePreferences() {
         val sharedPreferences = getSharedPreferences("user_settings", MODE_PRIVATE)
         mapTheme = sharedPreferences.getString("map_theme", "Aubergine").toString()
         isFewerLabels = sharedPreferences.getBoolean("map_labels", false)
-         isFewerLandmarks = sharedPreferences.getBoolean("map_landmarks", false)
-         isTrafficOverlayEnabled = sharedPreferences.getBoolean("map_overlay", false)
+        isFewerLandmarks = sharedPreferences.getBoolean("map_landmarks", false)
+        isTrafficOverlayEnabled = sharedPreferences.getBoolean("map_overlay", false)
+        isSimilarPlacesEnabled = sharedPreferences.getBoolean("similar_place", false)
 
-         // Optionally log the retrieved value
-        Log.e("Preferences", "contextRecommender at retrievePreferences theme: $mapTheme")
-        Log.e("Preferences", "eventRecommender at retrievePreferences labels: $isFewerLabels")
-         Log.e("Preferences", "eventRecommender at retrievePreferences landmarks: $isFewerLandmarks")
-         Log.e("Preferences", "eventRecommender at retrievePreferences traffic overlay: $isTrafficOverlayEnabled")
+        // Optionally log the retrieved value
+        Log.e("Preferences", "mapTheme at retrievePreferences theme: $mapTheme")
+        Log.e("Preferences", "isFewerLabels at retrievePreferences labels: $isFewerLabels")
+        Log.e("Preferences", "isFewerLandmarks at retrievePreferences landmarks: $isFewerLandmarks")
+        Log.e(
+            "Preferences",
+            "isTrafficOverlayEnabled at retrievePreferences traffic overlay: $isTrafficOverlayEnabled"
+        )
+        Log.e(
+            "Preferences",
+            "isSimilarPlacesEnabled at retrievePreferences traffic overlay: $isSimilarPlacesEnabled"
+        )
 
-     }
+
+    }
 
     private fun getUserLocation(onLocationReceived: (LatLng) -> Unit) {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -1003,7 +1033,6 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         }
     }
 
-
     private fun setMapStyle() {
         try {
             // Determine the appropriate style based on conditions
@@ -1089,11 +1118,9 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         }
     }
 
-    // Helper function to show Toast messages
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
-
 
     private fun setupMoreButton(bottomSheetView: View, bottomSheetDialog: BottomSheetDialog) {
         val btnMore: MaterialButton = bottomSheetView.findViewById(R.id.btnMore)
@@ -1208,8 +1235,6 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
             }
         })
     }
-
-
 
     private fun enqueueImageUpload(photoBitmap: Bitmap, placeName: String, savedPlaceId: String?) {
         // Save the bitmap to a temporary file
@@ -1374,8 +1399,8 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
     }
 
     private fun createCustomMarker(iconId: Int): BitmapDescriptor {
-        val markerWidth = 50 // Desired width of the marker in pixels
-        val markerHeight = 50 // Desired height of the marker in pixels
+        val markerWidth = 80 // Desired width of the marker in pixels
+        val markerHeight = 80 // Desired height of the marker in pixels
         val iconSize = 40 // Desired size of the icon in pixels
 
         // Create the base marker bitmap with desired size
@@ -1475,14 +1500,14 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
             val intent = Intent(this, ReportEventActivity::class.java)
             intent.putExtra("PLACE_NAME", savedPlace.name)
             intent.putExtra("PLACE_ADDRESS", savedPlace.address)
-            val regex = """lat/lng: \((-?\d+\.\d+),(-?\d+\.\d+)\)""".toRegex()
-            val destinationLatLng =
-                savedPlace.latLngString?.let {
-                    regex.find(it)?.let { matchResult ->
-                        "${matchResult.groupValues[1]},${matchResult.groupValues[2]}"
-                    }
-                }
-            intent.putExtra("PLACE_LATLNG",destinationLatLng)
+//            val regex = """lat/lng: \((-?\d+\.\d+),(-?\d+\.\d+)\)""".toRegex()
+//            val destinationLatLng =
+//                savedPlace.latLngString?.let {
+//                    regex.find(it)?.let { matchResult ->
+//                        "${matchResult.groupValues[1]},${matchResult.groupValues[2]}"
+//                    }
+//                }
+            intent.putExtra("PLACE_LATLNG",savedPlace.latLngString)
             intent.putExtra("PLACE_ID", savedPlace.id)
             val options = ActivityOptions.makeCustomAnimation(
                 this,
@@ -1580,37 +1605,43 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
         bottomSheetDialog.setContentView(bottomSheetView)
 
 
-        val similarPlacesHelper = SimilarPlacesRecommendationHelper(
-            placesClient = placesClient,
-            fusedLocationClient = fusedLocationClient,
-            context = this
-        )
+        if (isSimilarPlacesEnabled) {
+            val recommendationRecyclerView: RecyclerView = bottomSheetView.findViewById(R.id.recommendationRecyclerView)
+            val recommendationTitle: TextView = bottomSheetView.findViewById(R.id.recommendationTitle)
+            recommendationRecyclerView.visibility = View.VISIBLE
+            recommendationTitle.visibility = View.VISIBLE
 
-        place.types?.let { savedPlaceType ->
-            similarPlacesHelper.getFilteredPlacesForRecommendationBasedOnType(
-                savedPlaceType,
-            ) { top10 ->
-                // Set up the RecyclerView
-                val recommendationRecyclerView: RecyclerView = bottomSheetView.findViewById(R.id.recommendationRecyclerView)
-                recommendationRecyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+            val similarPlacesHelper = SimilarPlacesRecommendationHelper(
+                placesClient = placesClient,
+                fusedLocationClient = fusedLocationClient,
+                context = this
+            )
 
-                // Set up the adapter with the top 10 places
-                val adapter = RecommendedPlaceAdapter(top10, false, placesClient) { place ->
-                    // Handle click events or other interactions with the places
-                    fetchPlaceDetailsFromAPI(place.placeId) { savedPlace ->
-                        savedPlace?.let {
-                            this.savedPlace = it
-                            bottomSheetDialog.dismiss()
-                            plotMarkerOnMap(place.placeId, savedPlace)
-                            showPlaceDetailsInBottomSheet(savedPlace)
-                        } ?: run {
-                            Log.e("PlacesActivity", "Failed to fetch place details")
+            place.types?.let { savedPlaceType ->
+                similarPlacesHelper.getFilteredPlacesForRecommendationBasedOnType(
+                    savedPlaceType,
+                ) { top10 ->
+                    // Set up the RecyclerView
+                    recommendationRecyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+
+                    // Set up the adapter with the top 10 places
+                    val adapter = RecommendedPlaceAdapter(top10, false, placesClient) { place ->
+                        // Handle click events or other interactions with the places
+                        fetchPlaceDetailsFromAPI(place.placeId) { savedPlace ->
+                            savedPlace?.let {
+                                this.savedPlace = it
+                                bottomSheetDialog.dismiss()
+                                plotMarkerOnMap(place.placeId, savedPlace)
+                                showPlaceDetailsInBottomSheet(savedPlace)
+                            } ?: run {
+                                Log.e("PlacesActivity", "Failed to fetch place details")
+                            }
                         }
                     }
-                }
 
-                // Attach the adapter to the RecyclerView
-                recommendationRecyclerView.adapter = adapter
+                    // Attach the adapter to the RecyclerView
+                    recommendationRecyclerView.adapter = adapter
+                }
             }
         }
 

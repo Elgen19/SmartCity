@@ -9,6 +9,7 @@ import android.view.View
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
@@ -19,6 +20,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.elgenium.smartcity.databinding.ActivityMyEventsBinding
 import com.elgenium.smartcity.databinding.BottomSheetEventDetailsBinding
+import com.elgenium.smartcity.databinding.BottomSheetMyEventsFilterBinding
 import com.elgenium.smartcity.databinding.BottomSheetOptionsBinding
 import com.elgenium.smartcity.intelligence.ReportVerifier
 import com.elgenium.smartcity.models.Event
@@ -96,6 +98,10 @@ class MyEventsActivity : AppCompatActivity() {
             }
         }
 
+        binding.filterButton.setOnClickListener {
+            showFilterBottomSheet()
+        }
+
         myEventsAdapter = MyEventsAdapter(
             events = eventList,
             onItemLongClick = { event ->
@@ -112,8 +118,57 @@ class MyEventsActivity : AppCompatActivity() {
         binding.myEventsRecyclerview.adapter = myEventsAdapter
 
         loadUserEvents()
-        startEventVerification()
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // Define the behavior when the back button is pressed
+                val intent = Intent(this@MyEventsActivity, EventsActivity::class.java)
+                startActivity(intent)
+                finish() // This will finish the current activity
+            }
+        })
     }
+
+    private fun showFilterBottomSheet() {
+        val bottomSheetDialog = BottomSheetDialog(this)
+        val bottomsheetBinding = BottomSheetMyEventsFilterBinding.inflate(LayoutInflater.from(this))
+        bottomSheetDialog.setContentView(bottomsheetBinding.root)
+
+        bottomsheetBinding.verifiedEventsLayout.setOnClickListener {
+            binding.eventLabelTitle.text = "Verified Events"
+            filterEventsByStatus("Verified")
+            bottomSheetDialog.dismiss()
+        }
+
+        bottomsheetBinding.unverifedLayout.setOnClickListener {
+            binding.eventLabelTitle.text = "Unverified Events"
+            filterEventsByStatus("Unverified")
+            bottomSheetDialog.dismiss()
+        }
+
+        bottomsheetBinding.showAllOptionLayout.setOnClickListener {
+            binding.eventLabelTitle.text = "My Events"
+            showAllEvents()
+            bottomSheetDialog.dismiss()
+        }
+
+        bottomSheetDialog.show()
+    }
+
+    private fun filterEventsByStatus(status: String) {
+        val filteredList = when (status) {
+            "Unverified" -> eventList.filter { it.status == "Unverified" || it.status == "Verification_Failed" }
+            else -> eventList.filter { it.status == status }
+        }
+        myEventsAdapter.updateEventsList(filteredList)
+    }
+
+
+    private fun showAllEvents() {
+        // Show all events without filtering
+        myEventsAdapter.updateEventsList(eventList)
+    }
+
 
     private fun startEventVerification() {
         val workRequest = OneTimeWorkRequestBuilder<VerifyEventsWorker>().build()
@@ -375,7 +430,7 @@ class MyEventsActivity : AppCompatActivity() {
         bottomSheetDialog.setContentView(bottomSheetBinding.root)
 
         bottomSheetBinding.editText.text = "Edit event"
-        bottomSheetBinding.deleteText.text = "Edit delete"
+        bottomSheetBinding.deleteText.text = "Delete event "
 
 
         bottomSheetBinding.optionEdit.setOnClickListener {

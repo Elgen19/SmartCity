@@ -26,8 +26,8 @@
 
         <ImageButton
             android:id="@+id/filter_button"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:background="?attr/selectableItemBackgroundBorderless"
@@ -157,7 +157,7 @@
         android:textColor="@color/brand_color"
         android:layout_below="@+id/scrollViewButtons"
         android:text="All Events"
-        android:textSize="16sp"
+        android:textSize="20sp"
         android:textStyle="bold" />
 
 

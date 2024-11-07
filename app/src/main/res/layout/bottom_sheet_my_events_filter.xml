@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/primary_color"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+
+
+    <!-- Past Option -->
+    <LinearLayout
+        android:id="@+id/verifiedEventsLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:clickable="true"
+        android:focusable="true"
+        android:padding="16dp"
+        tools:ignore="UseCompoundDrawables">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/verified"
+            app:tint="@color/secondary_color" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Verified events"
+            android:textColor="@color/secondary_color"
+            android:textSize="18sp"
+            android:layout_marginStart="16dp"
+            android:gravity="center_vertical" />
+    </LinearLayout>
+
+
+
+    <!-- Separator -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/dark_gray"
+        android:layout_marginVertical="8dp" />
+
+    <!-- Nearby Events Option -->
+    <LinearLayout
+        android:id="@+id/unverifedLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:clickable="true"
+        android:focusable="true"
+        android:padding="16dp"
+        tools:ignore="UseCompoundDrawables">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/unverified"
+            app:tint="@color/secondary_color" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Unverified Events"
+            android:textColor="@color/secondary_color"
+            android:textSize="18sp"
+            android:layout_marginStart="16dp"
+            android:gravity="center_vertical" />
+    </LinearLayout>
+
+
+    <!-- Separator -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/dark_gray"
+        android:layout_marginVertical="8dp" />
+
+    <!-- Show All Events Option -->
+    <LinearLayout
+        android:id="@+id/showAllOptionLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:clickable="true"
+        android:focusable="true"
+        android:padding="16dp"
+        tools:ignore="UseCompoundDrawables">
+
+        <ImageView
+            android:id="@+id/showAllIcon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/events"
+            app:tint="@color/secondary_color" />
+
+        <TextView
+            android:id="@+id/showAllText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Show all events"
+            android:textColor="@color/secondary_color"
+            android:textSize="18sp"
+            android:layout_marginStart="16dp"
+            android:gravity="center_vertical" />
+    </LinearLayout>
+</LinearLayout>

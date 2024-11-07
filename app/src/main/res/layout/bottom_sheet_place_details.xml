@@ -300,6 +300,7 @@
             android:layout_below="@+id/placeHoursCard"
             android:text="Explore Similar Places"
             android:textColor="@color/gray"
+            android:visibility="gone"
             android:textStyle="bold"
             android:textSize="16sp" />
 
@@ -312,6 +313,7 @@
             android:layout_below="@+id/recommendationTitle"
             android:orientation="horizontal"
             android:layout_marginBottom="16dp"
+            android:visibility="gone"
             android:clipToPadding="false"
             android:scrollIndicators="none"
             android:scrollbars="horizontal"

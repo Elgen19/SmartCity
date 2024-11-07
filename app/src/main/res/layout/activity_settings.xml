@@ -727,6 +727,86 @@
                         android:textSize="12sp" />
 
 
+                    <LinearLayout
+                        android:id="@+id/similarPlaceRecommendationLayout"
+                        android:layout_below="@+id/eventRecommendationDescription"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/similarPlaceRecommendationCarouselLabel"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:layout_marginEnd="16dp"
+                            android:layout_weight="1"
+                            android:text="Similar places carousel"
+                            android:textColor="@color/gray"
+                            android:textSize="16sp" />
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/similarPlaceRecommenderSwitch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            app:thumbTint="@color/switch_thumb_color_state_list"
+                            app:trackTint="@color/switch_track_color_state_list"
+                            tools:ignore="TouchTargetSizeCheck" />
+                    </LinearLayout>
+
+                    <!-- Additional text below the contextual recommendation layout -->
+                    <TextView
+                        android:id="@+id/similarRecommendationDescription"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/similarPlaceRecommendationLayout"
+                        android:layout_marginTop="4dp"
+                        android:text="Enable or disable similar places recommendation carousel on place details bottomsheet."
+                        android:textColor="@color/sub_support_text"
+                        android:textSize="12sp" />
+
+
+                    <LinearLayout
+                        android:id="@+id/activityPlaceRecommendationLayout"
+                        android:layout_below="@+id/similarRecommendationDescription"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/activityPlaceRecommendationCarouselLabel"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:layout_marginEnd="16dp"
+                            android:layout_weight="1"
+                            android:text="Activity place recommendation"
+                            android:textColor="@color/gray"
+                            android:textSize="16sp" />
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/activityPlaceRecommenderSwitch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            app:thumbTint="@color/switch_thumb_color_state_list"
+                            app:trackTint="@color/switch_track_color_state_list"
+                            tools:ignore="TouchTargetSizeCheck" />
+                    </LinearLayout>
+
+                    <!-- Additional text below the contextual recommendation layout -->
+                    <TextView
+                        android:id="@+id/activityRecommendationDescription"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/activityPlaceRecommendationLayout"
+                        android:layout_marginTop="4dp"
+                        android:text="Enable or disable activiyt place recommendation bottomsheet on Dashboard."
+                        android:textColor="@color/sub_support_text"
+                        android:textSize="12sp" />
+
+
 
                 </RelativeLayout>
             </androidx.cardview.widget.CardView>

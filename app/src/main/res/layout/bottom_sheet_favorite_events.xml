@@ -20,7 +20,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="Event Name"
-            android:textColor="@color/gray"
+            android:textColor="@color/brand_color"
             android:textStyle="bold"
             android:textSize="20sp"
             android:layout_weight="1"
@@ -38,16 +38,32 @@
             android:layout_gravity="center_vertical" />
     </LinearLayout>
 
-    <!-- Place Name TextView -->
-    <TextView
-        android:id="@+id/placeName"
+    <LinearLayout
+        android:layout_below="@+id/topComponents"
+        android:id="@+id/placeLabels"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Place Name"
-        android:textColor="@color/gray"
-        android:textSize="14sp"
-        android:layout_below="@id/topComponents"
-        android:layout_marginTop="8dp" />
+        android:layout_gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginEnd="8dp"
+            android:src="@drawable/active_tab_place"
+            android:scaleType="centerCrop"
+            app:tint="@color/secondary_color" />
+
+
+        <!-- Place Name TextView -->
+        <TextView
+            android:id="@+id/placeName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Place Name"
+            android:textColor="@color/secondary_color"
+            android:textSize="16sp" />
+    </LinearLayout>
 
     <!-- Address TextView -->
     <TextView
@@ -55,10 +71,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Place Address"
-        android:textColor="@color/gray"
+        android:textColor="@color/sub_support_text"
         android:textSize="14sp"
-        android:textStyle="italic"
-        android:layout_below="@id/placeName"
+        android:layout_below="@id/placeLabels"
         android:layout_marginTop="4dp" />
 
     <!-- Event Category and Distance Row -->

@@ -13,7 +13,7 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 class MyEventsAdapter(
-    private val events: List<Event>,
+    private var events: List<Event>, // Make this a mutable list
     private val onItemClick: (Event) -> Unit,
     private val onItemLongClick: (Event) -> Unit // Lambda for handling long-clicks
 ) : RecyclerView.Adapter<MyEventsAdapter.EventViewHolder>() {
@@ -73,4 +73,10 @@ class MyEventsAdapter(
     }
 
     override fun getItemCount(): Int = events.size
+
+    // Method to update the events list with filtered data
+    fun updateEventsList(newEvents: List<Event>) {
+        this.events = newEvents
+        notifyDataSetChanged() // Notify the adapter that the data has changed
+    }
 }
