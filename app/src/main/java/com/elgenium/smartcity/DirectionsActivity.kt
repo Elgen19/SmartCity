@@ -1194,7 +1194,13 @@ class DirectionsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Retrieve the BottomSheetBehavior and configure it
         val behavior = BottomSheetBehavior.from(bottomSheet)
-        behavior.peekHeight = 550  // Set the desired peek height
+        val displayMetrics = resources.displayMetrics
+        val screenHeight = displayMetrics.heightPixels
+
+        // Calculate 20% of the screen height for peekHeight
+        val peekHeight = (screenHeight * 0.38).toInt()  // 10% of the screen height
+
+        behavior.peekHeight = peekHeight  // Set the dynamic peek height
         behavior.isHideable = false  // Prevent it from being fully dismissed
         behavior.state = BottomSheetBehavior.STATE_COLLAPSED
 

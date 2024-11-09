@@ -41,6 +41,7 @@ import com.elgenium.smartcity.routes_network_request.RouteMatrixRequest
 import com.elgenium.smartcity.routes_network_request.WaypointMatrix
 import com.elgenium.smartcity.shared_preferences_keys.SettingsKeys
 import com.elgenium.smartcity.singletons.ActivityNavigationUtils
+import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.singletons.RoutesMatrixClientSingleton
 import com.elgenium.smartcity.speech.SpeechRecognitionHelper
 import com.elgenium.smartcity.speech.TextToSpeechHelper
@@ -149,6 +150,9 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         mealPlaceRecommender = MealContextuals(this)
         fuelStopsRecommendation = FuelStopsRecommendation(this)
         rainLikelihoodCalculator = RainLikelihoodCalculator(this)
+
+
+        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.primary_color)
 
 
         travelMode = intent.getStringExtra("TRAVEL_MODE") ?: ""
@@ -528,7 +532,14 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
 
         // Retrieve the BottomSheetBehavior and configure it
         val behavior = BottomSheetBehavior.from(bottomSheet)
-        behavior.peekHeight = 160  // Set the desired peek height
+        // Get the screen height in pixels
+        val displayMetrics = resources.displayMetrics
+        val screenHeight = displayMetrics.heightPixels
+
+        // Calculate 20% of the screen height for peekHeight
+        val peekHeight = (screenHeight * 0.10).toInt()  // 10% of the screen height
+
+        behavior.peekHeight = peekHeight  // Set the dynamic peek height
         behavior.isHideable = false  // Prevent it from being fully dismissed
         behavior.state = BottomSheetBehavior.STATE_COLLAPSED
 
@@ -822,8 +833,6 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
                     navFragment.setTripProgressBarEnabled(true)
                     navFragment.setSpeedometerEnabled(true)
                     navFragment.setSpeedLimitIconEnabled(true)
-                    navFragment.setTrafficIncidentCardsEnabled(true)
-                    navFragment.setTrafficPromptsEnabled(true)
                     navFragment.setEtaCardEnabled(true)
                     navFragment.setStylingOptions(StylingOptions()
                         .headerGuidanceRecommendedLaneColor(resources.getColor(R.color.brand_color))
@@ -951,7 +960,7 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
             showTrafficLights(true)
         }
 
-        val pendingRoute = if (IS_ADDING_STOP == true && routeToken == "NO ROUTE TOKEN") {
+        val pendingRoute = if (IS_ADDING_STOP == true || routeToken == "NO ROUTE TOKEN") {
             val routingOptions = RoutingOptions().apply {
                 travelMode(if (travelMode == "WALK") TravelMode.WALKING else if (travelMode == "TWO_WHEELER")  TravelMode.TWO_WHEELER else TravelMode.DRIVING)
                 avoidFerries(true)
@@ -992,7 +1001,7 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
                                 cleanup()
                                 Handler(Looper.getMainLooper()).postDelayed({
                                     ActivityNavigationUtils.navigateToActivity(this, PlacesActivity::class.java, true)
-                                }, 300)
+                                }, 500)
                             },
                             onProceed = {
                                 isPlaceOpenNowClassifierFinished = true
