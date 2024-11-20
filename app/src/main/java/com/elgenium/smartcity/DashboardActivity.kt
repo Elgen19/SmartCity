@@ -39,8 +39,6 @@ import com.elgenium.smartcity.network.OpenWeatherAPIService
 import com.elgenium.smartcity.network.RoadsApiService
 import com.elgenium.smartcity.network.TomTomApiService
 import com.elgenium.smartcity.network_reponses.GeocodingResponse
-import com.elgenium.smartcity.network_reponses.RoadLocation
-import com.elgenium.smartcity.network_reponses.RoadsResponse
 import com.elgenium.smartcity.network_reponses.TrafficResponse
 import com.elgenium.smartcity.network_reponses.WeatherResponse
 import com.elgenium.smartcity.recyclerview_adapter.LeaderboardAdapter
@@ -182,7 +180,7 @@ class DashboardActivity : AppCompatActivity() {
         updateGreeting()
         loadProfileImage()
         setupListeners()
-        fetchNearestRoad(apiServiceForRoads, apiServiceForTraffic)
+        fetchNearestRoad(apiServiceForTraffic)
         fetchLeaderboardData()
         handleViewVisibilityBasedOnSettings()
 
@@ -452,7 +450,6 @@ class DashboardActivity : AppCompatActivity() {
 
 
     private fun fetchNearestRoad(
-        roadsApiService: RoadsApiService,
         trafficApiService: TomTomApiService
     ) {
         if (ContextCompat.checkSelfPermission(
@@ -467,80 +464,23 @@ class DashboardActivity : AppCompatActivity() {
                     if (location != null) {
                         val latitude = location.latitude
                         val longitude = location.longitude
-                        val path = "$latitude,$longitude"
 
                         Log.d(
                             "DashboardActivity",
                             "Location retrieved: Lat $latitude, Long $longitude"
                         )
 
-                        roadsApiService.getSnappedRoads(path, BuildConfig.MAPS_API_KEY)
-                            .enqueue(object : Callback<RoadsResponse> {
-                                override fun onResponse(
-                                    call: Call<RoadsResponse>,
-                                    response: Response<RoadsResponse>
-                                ) {
-                                    if (response.isSuccessful) {
-                                        val snappedPoints =
-                                            response.body()?.snappedPoints ?: emptyList()
-                                        Log.d(
-                                            "DashboardActivity",
-                                            "Roads response: ${response.body()}"
-                                        )
-                                        if (snappedPoints.isNotEmpty()) {
-                                            val roadLocation = snappedPoints.first().location
-                                            Log.d(
-                                                "DashboardActivity",
-                                                "Road location: $roadLocation"
-                                            )
+                        // Fetch traffic data directly using the obtained coordinates
+                        fetchTrafficData(trafficApiService, latitude, longitude)
 
-                                            // Fetch traffic data using the obtained road location
-                                            fetchTrafficData(trafficApiService, roadLocation)
+                        // Use these coordinates to get the address
+                        getStreetNameFromCoordinates(latitude, longitude) { address ->
+                            binding.roadName.text = address
+                            Log.d("DashboardActivity", "Address: $address")
+                        }
 
-                                            // Use these coordinates to get the address
-                                            getStreetNameFromCoordinates(latitude, longitude) { address ->
-                                                binding.roadName.text = address
-                                                Log.d("DashboardActivity", "Address: $address")
-                                            }
-
-
-                                            // Stop location updates once you have the location
-                                            fusedLocationClient.removeLocationUpdates(
-                                                locationCallback
-                                            )
-                                        } else {
-                                            Log.e(
-                                                "DashboardActivity",
-                                                "No snapped points found in response"
-                                            )
-                                            Toast.makeText(
-                                                this@DashboardActivity,
-                                                "No roads found near your location",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        }
-                                    } else {
-                                        Log.e(
-                                            "DashboardActivity",
-                                            "Failed to get roads data: ${response.message()}"
-                                        )
-                                        Toast.makeText(
-                                            this@DashboardActivity,
-                                            "Failed to get roads data",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    }
-                                }
-
-                                override fun onFailure(call: Call<RoadsResponse>, t: Throwable) {
-                                    Log.e("DashboardActivity", "Error fetching roads data", t)
-                                    Toast.makeText(
-                                        this@DashboardActivity,
-                                        "Error: ${t.message}",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            })
+                        // Stop location updates once you have the location
+                        fusedLocationClient.removeLocationUpdates(locationCallback)
                     } else {
                         Log.e("DashboardActivity", "Location is null in LocationCallback")
                         Toast.makeText(
@@ -568,12 +508,13 @@ class DashboardActivity : AppCompatActivity() {
     }
 
 
+
     private fun getStreetNameFromCoordinates(latitude: Double, longitude: Double, callback: (String?) -> Unit) {
         val latLng = "$latitude,$longitude"
         val geocodingService = GeocodingServiceSingleton.geocodingService
 
         // Asynchronous call using enqueue
-        geocodingService.getPlace(latLng, BuildConfig.MAPS_API_KEY).enqueue(object : retrofit2.Callback<GeocodingResponse> {
+        geocodingService.getPlace(latLng, BuildConfig.MAPS_API_KEY).enqueue(object : Callback<GeocodingResponse> {
             override fun onResponse(call: Call<GeocodingResponse>, response: Response<GeocodingResponse>) {
                 if (response.isSuccessful) {
                     val url = "https://maps.googleapis.com/maps/api/geocode/json?latlng=$latLng&key=${BuildConfig.MAPS_API_KEY}"
@@ -589,7 +530,7 @@ class DashboardActivity : AppCompatActivity() {
                         val streetName = if (streetNumber != null && route != null) {
                             "$streetNumber $route"
                         } else {
-                            route ?: "Street name not found"
+                            route ?: "Unknown road"
                         }
                         callback(streetName)
                     } else {
@@ -615,8 +556,8 @@ class DashboardActivity : AppCompatActivity() {
 
 
 
-    private fun fetchTrafficData(trafficApiService: TomTomApiService, roadLocation: RoadLocation) {
-        val point = "${roadLocation.latitude},${roadLocation.longitude}"
+    private fun fetchTrafficData(trafficApiService: TomTomApiService, latitude: Double, longitude: Double) {
+        val point = "$latitude,$longitude"
         trafficApiService.getTrafficData(BuildConfig.TOM_TOM_TRAFFIC_API, point)
             .enqueue(object : Callback<TrafficResponse> {
                 override fun onResponse(
@@ -924,7 +865,7 @@ class DashboardActivity : AppCompatActivity() {
         if (requestCode == locationRequestCode) {
             if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
                 fetchWeather()
-                fetchNearestRoad(apiServiceForRoads, apiServiceForTraffic)
+                fetchNearestRoad(apiServiceForTraffic)
             } else {
                 Toast.makeText(
                     this,

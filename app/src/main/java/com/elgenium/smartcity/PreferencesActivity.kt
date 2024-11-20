@@ -3,9 +3,7 @@ package com.elgenium.smartcity
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
-import android.view.View
 import android.widget.CheckBox
-import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.elgenium.smartcity.databinding.ActivityPreferencesBinding
@@ -31,23 +29,9 @@ class PreferencesActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         // Set the color of the navigation bar
-        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
+        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.primary_color)
 
         isNewUser = intent.getBooleanExtra("IS_NEW_USER", true)
-
-        // Configure back button visibility
-        binding.backButton.visibility = if (!isNewUser) View.VISIBLE else View.GONE
-
-        // Adjust layout parameters for the title if needed
-        Log.e("PreferencesActivity", "IS NEW USER before if: $isNewUser")
-
-        if (isNewUser) {
-            Log.e("PreferencesActivity", "IS NEW USER inside if: $isNewUser")
-            val layoutParams = binding.preferencesTitle.layoutParams as LinearLayout.LayoutParams
-            layoutParams.marginStart = 0
-            binding.preferencesTitle.layoutParams = layoutParams
-            setDefaultPreferences()
-        }
 
         val user = FirebaseAuth.getInstance().currentUser
         if (user == null) {
@@ -56,11 +40,6 @@ class PreferencesActivity : AppCompatActivity() {
         } else {
             userRef = FirebaseDatabase.getInstance().getReference("Users").child(user.uid)
             loadPreferences()
-        }
-
-        // Set click listener for back button
-        binding.backButton.setOnClickListener {
-            ActivityNavigationUtils.navigateToActivity(this, SettingsActivity::class.java, true)
         }
 
         // Set click listener for save button
@@ -76,18 +55,17 @@ class PreferencesActivity : AppCompatActivity() {
     private fun loadPreferences() {
         userRef.get().addOnSuccessListener { dataSnapshot ->
             // Pre-fill checkboxes with saved preferences
-            val preferredPlaces = dataSnapshot.child("preferredPlaces").children.map { it.value.toString() }
-            binding.checkboxDiscoverPlaces.isChecked = preferredPlaces.contains("Discover new places (Restaurants, Cafes, Parks, etc.)")
-            binding.checkboxFindEvents.isChecked = preferredPlaces.contains("Find events happening around me (Concerts, Festivals, etc.)")
-            binding.checkboxExploreThingsToDo.isChecked = preferredPlaces.contains("Explore things to do in a new location (for tourists or travelers)")
-            binding.checkboxKeepUpWithLocalHappenings.isChecked = preferredPlaces.contains("Keep up with local happenings and activities")
 
             val dailyActivities = dataSnapshot.child("dailyActivities").children.map { it.value.toString() }
-            binding.checkboxWork.isChecked = dailyActivities.contains("Work")
-            binding.checkboxSchool.isChecked = dailyActivities.contains("School")
-            binding.checkboxSocializing.isChecked = dailyActivities.contains("Socializing")
-            binding.checkboxOutdoorActivities.isChecked = dailyActivities.contains("Outdoor activities")
-            binding.checkboxHobbies.isChecked = dailyActivities.contains("Hobbies (e.g., sports, arts)")
+            binding.checkboxShopping.isChecked = dailyActivities.contains("Shopping at a Mall")
+            binding.checkboxDining.isChecked = dailyActivities.contains("Dining at a Restaurant")
+            binding.checkboxCoffee.isChecked = dailyActivities.contains("Enjoying Coffee at a Cafe")
+            binding.checkboxDrinks.isChecked = dailyActivities.contains("Grabbing Drinks at a Bar")
+            binding.checkboxTourist.isChecked = dailyActivities.contains("Exploring Tourist Attractions")
+            binding.checkboxMovie.isChecked = dailyActivities.contains("Watching a Movie")
+            binding.checkboxGym.isChecked = dailyActivities.contains("Working Out at the Gym")
+            binding.checkboxBeach.isChecked = dailyActivities.contains("Relaxing at the Beach")
+
 
             val preferredVisitPlaces = dataSnapshot.child("preferredVisitPlaces").children.map { it.value.toString() }
             binding.checkboxCafesRestaurants.isChecked = preferredVisitPlaces.contains("Cafes and restaurants")
@@ -106,9 +84,6 @@ class PreferencesActivity : AppCompatActivity() {
             binding.checkboxCommunity.isChecked = preferredEvents.contains("Community Events")
             binding.checkboxOutdoorEvents.isChecked = preferredEvents.contains("Outdoor & Adventure Events")
 
-            val preferredEventSize = dataSnapshot.child("preferredEventSize").children.map { it.value.toString() }
-            binding.checkboxLargeEvents.isChecked = preferredEventSize.contains("Large events (e.g., concerts, festivals)")
-            binding.checkboxSmallerEvents.isChecked = preferredEventSize.contains("Smaller, intimate gatherings")
         }
     }
 
@@ -128,6 +103,8 @@ class PreferencesActivity : AppCompatActivity() {
             putBoolean(SettingsKeys.KEY_MEAL, false)
             putBoolean(SettingsKeys.KEY_CYCLONE, false)
             putBoolean(SettingsKeys.KEY_TRAFFIC, false)
+            putBoolean(SettingsKeys.KEY_ACTIVITY_RECOMMENDATION, false)
+            putBoolean(SettingsKeys.KEY_SIMILAR_PLACE, false)
 
 
 
@@ -151,6 +128,9 @@ class PreferencesActivity : AppCompatActivity() {
         val mealNotifications = sharedPreferences.getBoolean("meal_notifications", false)
         val cyclones = sharedPreferences.getBoolean("cyclone_alert", false)
         val traffic = sharedPreferences.getBoolean("traffic_alert", false)
+        val keyActivity = sharedPreferences.getBoolean("key_activity", false)
+        val similarPlace = sharedPreferences.getBoolean("similar_place", false)
+
 
 
         Log.e("PreferencesActivity", "context_recommender: $contextRecommender")
@@ -164,19 +144,14 @@ class PreferencesActivity : AppCompatActivity() {
         Log.e("PreferencesActivity", "meal_notifications: $mealNotifications")
         Log.e("PreferencesActivity", "cyclones: $cyclones")
         Log.e("PreferencesActivity", "traffic: $traffic")
+        Log.e("PreferencesActivity", "keyActivity: $keyActivity")
+        Log.e("PreferencesActivity", "similarPlace: $similarPlace")
 
     }
 
 
     private fun collectPreferences(): Map<String, Any>? {
         // Collect selected options for preferences
-        val selectedPlaces = getSelectedOptions(
-            binding.checkboxDiscoverPlaces,
-            binding.checkboxFindEvents,
-            binding.checkboxExploreThingsToDo,
-            binding.checkboxKeepUpWithLocalHappenings,
-        )
-
         val placeToVisit = getSelectedOptions(
             binding.checkboxCafesRestaurants,
             binding.checkboxParksOutdoorSpaces,
@@ -187,11 +162,15 @@ class PreferencesActivity : AppCompatActivity() {
         )
 
         val selectedActivities = getSelectedOptions(
-            binding.checkboxWork,
-            binding.checkboxSchool,
-            binding.checkboxSocializing,
-            binding.checkboxOutdoorActivities,
-            binding.checkboxHobbies
+            binding.checkboxShopping,
+            binding.checkboxDining,
+            binding.checkboxCoffee,
+            binding.checkboxDrinks,
+            binding.checkboxTourist,
+            binding.checkboxMovie,
+            binding.checkboxGym,
+            binding.checkboxBeach
+
         )
 
         val selectedEvents = getSelectedOptions(
@@ -203,20 +182,14 @@ class PreferencesActivity : AppCompatActivity() {
             binding.checkboxOutdoorEvents,
         )
 
-        val eventSize = getSelectedOptions(
-            binding.checkboxLargeEvents,
-            binding.checkboxSmallerEvents
-        )
 
-        return if (selectedPlaces.isEmpty() || selectedActivities.isEmpty() || selectedEvents.isEmpty()) {
+        return if (selectedActivities.isEmpty() || selectedEvents.isEmpty() ) {
             null
         } else {
             mapOf(
-                "preferredPlaces" to selectedPlaces,
                 "dailyActivities" to selectedActivities,
                 "preferredVisitPlaces" to placeToVisit,
                 "preferredEvents" to selectedEvents,
-                "preferredEventSize" to eventSize,
             )
         }
     }

@@ -3,6 +3,7 @@ package com.elgenium.smartcity
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.elgenium.smartcity.databinding.ActivityProfileBinding
@@ -33,7 +34,7 @@ class ProfileActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         // Sets the color of the navigation bar making it more personalized
-        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
+        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.primary_color)
 
         // Initialize Firebase Auth
         auth = FirebaseAuth.getInstance()
@@ -60,6 +61,15 @@ class ProfileActivity : AppCompatActivity() {
             startActivity(Intent(this, DashboardActivity::class.java))
             finish()
         }
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // Define the behavior when the back button is pressed
+                val intent = Intent(this@ProfileActivity, DashboardActivity::class.java)
+                startActivity(intent)
+                finish() // This will finish the current activity
+            }
+        })
     }
 
     override fun onStart() {

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/primary_color"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/error_animation"
+        android:layout_width="150dp"
+        app:lottie_autoPlay="true"
+        android:layout_alignParentTop="true"
+        android:layout_gravity="center_horizontal"
+        app:lottie_loop="true"
+        android:layout_height="150dp"
+        app:lottie_rawRes="@raw/oops" />
+
+    <TextView
+        android:id="@+id/dialog_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Time conflict"
+        android:textColor="@color/brand_color"
+        android:layout_marginTop="8dp"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:paddingBottom="8dp" />
+
+    <TextView
+        android:id="@+id/dialog_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/gray"
+        android:text="conflicting times"
+        android:textSize="16sp"
+        android:paddingBottom="16dp" />
+
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnAction"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Fix"
+        android:visibility="gone"
+        app:backgroundTint="@color/secondary_color"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        app:cornerRadius="8dp"
+        android:textColor="@color/primary_color"
+        android:layout_marginBottom="8dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnDismiss"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Dismiss"
+        app:backgroundTint="@color/primary_color"
+        android:paddingTop="16dp"
+        android:textSize="16sp"
+        android:paddingBottom="16dp"
+        app:cornerRadius="8dp"
+        android:textColor="@color/gray"
+        app:strokeWidth="1dp"
+
+        android:layout_marginBottom="8dp" />
+</LinearLayout>

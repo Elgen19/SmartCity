@@ -68,6 +68,15 @@ android {
         buildConfig = true
         viewBinding = true
     }
+
+    packagingOptions {
+        // Exclude conflicting files
+        exclude ("META-INF/DEPENDENCIES")
+        exclude ("META-INF/LICENSE")
+        exclude ("META-INF/LICENSE.txt")
+        exclude ("META-INF/NOTICE")
+        exclude ("META-INF/INDEX.LIST")
+    }
 }
 
 
@@ -114,8 +123,10 @@ dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.8.0"))
     implementation("com.google.ai.client.generativeai:generativeai:0.7.0")
     implementation("com.google.android.gms:play-services-ads:23.5.0")
-
-
+    implementation (platform("com.google.cloud:libraries-bom:26.50.0"))
+    implementation ("com.google.cloud:google-cloud-speech")
+    implementation ("com.google.auth:google-auth-library-oauth2-http:1.29.0")
+    implementation ("io.grpc:grpc-okhttp:1.57.2")
 
 
 

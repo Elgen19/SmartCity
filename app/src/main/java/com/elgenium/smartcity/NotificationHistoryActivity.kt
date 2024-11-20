@@ -1,8 +1,10 @@
 package com.elgenium.smartcity
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DividerItemDecoration
@@ -45,6 +47,15 @@ class NotificationHistoryActivity : AppCompatActivity() {
         binding.btnClearAll.setOnClickListener {
             clearAllNotifications()
         }
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // Define the behavior when the back button is pressed
+                val intent = Intent(this@NotificationHistoryActivity, DashboardActivity::class.java)
+                startActivity(intent)
+                finish() // This will finish the current activity
+            }
+        })
     }
 
     private fun setupRecyclerView() {

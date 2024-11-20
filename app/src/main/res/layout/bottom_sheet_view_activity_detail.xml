@@ -1,0 +1,172 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@color/primary_color"
+    android:gravity="center_horizontal">
+
+    <!-- Activity Name Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp"
+        android:layout_height="wrap_content">
+
+        <!-- Activity Name -->
+        <TextView
+            android:id="@+id/tvActivityName"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Activity Name"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/secondary_color" />
+
+        <ImageButton
+            android:id="@+id/btnClose"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/baseline_close_24"
+            android:contentDescription="@string/back"
+            app:tint="@color/red" />
+    </LinearLayout>
+
+    <!-- Place Details Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:orientation="horizontal">
+
+        <!-- Place Icon -->
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/address"
+            android:layout_gravity="start"
+            android:layout_marginEnd="12dp" />
+
+        <!-- Place Name -->
+        <TextView
+            android:id="@+id/tvPlaceName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Place Name"
+            android:layout_gravity="center_vertical"
+            android:textSize="14sp"
+            android:textColor="@color/gray" />
+
+    </LinearLayout>
+
+    <!-- Place Address Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:orientation="horizontal">
+
+        <!-- Place Address Icon -->
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/location"
+            android:layout_gravity="start"
+            android:layout_marginEnd="12dp"
+            app:tint="@color/secondary_color" />
+
+        <!-- Place Address -->
+        <TextView
+            android:id="@+id/tvPlaceAddress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Place Address"
+            android:layout_gravity="center_vertical"
+            android:textSize="14sp"
+            android:textColor="@color/gray" />
+
+    </LinearLayout>
+
+    <!-- Priority Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="8dp"
+        android:gravity="start|center_vertical">
+
+        <!-- Priority Icon -->
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/priority"
+            android:layout_marginEnd="12dp" />
+
+        <!-- Priority Level -->
+        <TextView
+            android:id="@+id/tvPriority"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Priority Level"
+            android:textSize="14sp"
+            android:textColor="@color/gray" />
+    </LinearLayout>
+
+    <!-- Time Range Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="start|center_vertical">
+
+        <!-- Time Icon -->
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/time_fill"
+            android:layout_marginEnd="12dp" />
+
+        <!-- Time Range -->
+        <TextView
+            android:id="@+id/tvTimeRange"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Time Range"
+            android:textSize="14sp"
+            android:textColor="@color/gray" />
+    </LinearLayout>
+
+    <!-- Edit and Delete Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="32dp">
+
+        <!-- Edit Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnEdit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Edit"
+            android:textColor="@color/gray"
+            app:strokeWidth="1dp"
+            android:backgroundTint="@color/primary_color"
+            app:backgroundTint="@color/primary_color"
+            app:cornerRadius="8dp" />
+
+        <!-- Delete Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDelete"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Delete"
+            android:textColor="@android:color/white"
+            app:backgroundTint="@color/red"
+            app:cornerRadius="8dp"/>
+    </LinearLayout>
+
+</LinearLayout>

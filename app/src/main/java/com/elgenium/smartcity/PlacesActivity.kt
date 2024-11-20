@@ -168,6 +168,10 @@ class PlacesActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPoiC
             navigateToActivity(this, SearchActivity::class.java, true)
         }
 
+        binding.fabActivityLauncher.setOnClickListener {
+            navigateToActivity(this, MyActivitiesActivity::class.java, true)
+        }
+
 
         // Setup map styles button listener
         binding.fabMapStyles.setOnClickListener {

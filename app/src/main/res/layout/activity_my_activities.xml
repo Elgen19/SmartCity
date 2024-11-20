@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:background="@color/primary_color"
+    android:layout_height="match_parent"
+    tools:context=".MyActivitiesActivity">
+
+    <!-- Title Section -->
+    <FrameLayout
+        android:id="@+id/top"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="8dp">
+
+        <!-- Lottie Background Animation -->
+        <com.airbnb.lottie.LottieAnimationView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:lottie_rawRes="@raw/navigation2"
+            app:lottie_cacheComposition="true"
+            android:layout_marginLeft="180dp"
+            app:lottie_autoPlay="true"
+            app:lottie_loop="true" />
+
+        <!-- Semi-Transparent Overlay -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#990E1550" />
+
+        <!-- Title Section Overlaying Lottie -->
+        <LinearLayout
+            android:id="@+id/titleSection"
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            android:orientation="vertical">
+
+            <!-- Title TextView -->
+            <TextView
+                android:id="@+id/signinTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="40dp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:text="My Activities"
+                android:textColor="@color/brand_color"
+                android:textSize="32sp"
+                android:textStyle="bold" />
+
+            <!-- Subtitle TextView -->
+            <TextView
+                android:id="@+id/signinSubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="16dp"
+                android:layout_marginTop="8dp"
+                android:paddingEnd="16dp"
+                android:text="Stay organized and make the most of your time with the SmartCity Activity Planner"
+                android:textColor="@color/white"
+                android:textSize="16sp" />
+        </LinearLayout>
+    </FrameLayout>
+
+
+    <!-- RecyclerView for displaying activity containers -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/top"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:padding="8dp"/>
+
+    <!-- Floating Action Button -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_add"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_margin="16dp"
+        app:srcCompat="@drawable/add"
+        app:backgroundTint="@color/secondary_color"
+        app:tint="@android:color/white" />
+
+    <!-- Lottie Animation (initially hidden) -->
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/lottieAnimation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="-70dp"
+        android:layout_below="@+id/top"
+        app:lottie_rawRes="@raw/no_data2"
+        app:lottie_cacheComposition="true"
+        app:lottie_autoPlay="true"
+        app:lottie_loop="true"
+        android:visibility="gone"
+        /> <!-- Initially hidden -->
+
+    <!-- Loading TextView (initially hidden) -->
+    <TextView
+        android:id="@+id/loadingText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="You do not have any activities. Click the plus button to get started."
+        android:layout_below="@+id/lottieAnimation"
+        android:layout_centerHorizontal="true"
+        android:visibility="gone"
+        android:textSize="16sp"
+        android:layout_marginTop="-60dp"
+        android:textAlignment="center"
+        android:textColor="@color/gray"
+        android:layout_marginBottom="120dp" />
+
+</RelativeLayout>

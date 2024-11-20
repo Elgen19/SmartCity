@@ -112,7 +112,9 @@ class SearchActivity : AppCompatActivity() {
 
         val fromStopManagementActivity = intent.getBooleanExtra("FROM_STOP_MANAGEMENT_ACTIVITY", false)
         val fromReportEventActivity = intent.getBooleanExtra("FROM_REPORT_EVENTS_ACTIVITY", false)
-
+        val fromActiveActivitiesActivity = intent.getBooleanExtra("FROM_ACTIVE_ACTIVITIES", false)
+        val activeActivitiesActivity = intent.getStringExtra("ACTIVITY")
+        Log.e("ActivityPlaceProcessor", "Activity at Search: $activeActivitiesActivity")
 
         textSearchAdapter = TextSearchAdapter(emptyList()) { selectedPlace ->
             // Save recent search
@@ -147,7 +149,20 @@ class SearchActivity : AppCompatActivity() {
                 }
                 setResult(Activity.RESULT_OK, resultIntent)
                 finish() // Close SearchActivity and return to StopManagementActivity
-            } else {
+            }
+            else if (fromActiveActivitiesActivity) {
+                val resultIntent = Intent().apply {
+                    putExtra("PLACE_ID", placeId)
+                    putExtra("PLACE_NAME", placeName)
+                    putExtra("PLACE_ADDRESS", placeAddress)
+                    putExtra("PLACE_LATLNG", placeLatlng)
+                    putExtra("ACTIVITY", activeActivitiesActivity)
+
+                }
+                setResult(Activity.RESULT_OK, resultIntent)
+                finish() // Close SearchActivity and return to StopManagementActivity
+            }
+            else {
                 val intent = Intent(this, PlacesActivity::class.java)
                 intent.putExtra("PLACE_ID", placeId)
                 startActivity(intent)
@@ -184,7 +199,20 @@ class SearchActivity : AppCompatActivity() {
                 }
                 setResult(Activity.RESULT_OK, resultIntent)
                 finish() // Close SearchActivity and return to StopManagementActivity
-            } else {
+            }
+            else if (fromActiveActivitiesActivity) {
+                val resultIntent = Intent().apply {
+                    putExtra("PLACE_ID", placeId)
+                    putExtra("PLACE_NAME", placeName)
+                    putExtra("PLACE_ADDRESS", placeAddress)
+                    putExtra("PLACE_LATLNG", placeLatlng)
+                    putExtra("ACTIVITY", activeActivitiesActivity)
+
+                }
+                setResult(Activity.RESULT_OK, resultIntent)
+                finish() // Close SearchActivity and return to StopManagementActivity
+            }
+            else {
                 val intent = Intent(this, PlacesActivity::class.java)
                 intent.putExtra("PLACE_ID" , placeId)
                 startActivity(intent)

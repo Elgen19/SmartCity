@@ -86,39 +86,50 @@ class MealContextuals(private val context: Context) {
     )
 
     fun showPlaceDialogIfNeeded(onProceedClicked: () -> Unit) {
-        val currentMealTime = getMealTime()
-        val currentDate = getCurrentDate()
+//        val currentMealTime = getMealTime()
+//        val currentDate = getCurrentDate()
+//
+//        val lastShownMealTime = sharedPreferences.getString("lastShownMealTime", null)
+//        val lastShownDate = sharedPreferences.getString("lastShownDate", null)
+//
+//        Log.d("MealContextuals", "Checking if dialog should be shown for meal time: $currentMealTime on $currentDate")
+//
+//        if (lastShownMealTime != currentMealTime || lastShownDate != currentDate) {
+//            Log.d("MealContextuals", "Conditions met to show dialog for $currentMealTime")
+//
+//            val dialog = showPlaceDialog(onProceedClicked)
+//
+//            // Automatically dismiss after 5 seconds
+//            Handler(Looper.getMainLooper()).postDelayed({
+//                if (dialog.isShowing) {
+//                    dialog.dismiss()
+//                    Log.d("MealContextuals", "Dialog dismissed automatically after 5 seconds.")
+//                }
+//            }, 5000)
+//
+//
+//
+//            with(sharedPreferences.edit()) {
+//                putString("lastShownMealTime", currentMealTime)
+//                putString("lastShownDate", currentDate)
+//                apply()
+//            }
+//
+//            Log.d("MealContextuals", "Dialog display status updated in SharedPreferences")
+//        } else {
+//            Log.d("MealContextuals", "Dialog already shown for this meal time today; not displaying again.")
+//        }
 
-        val lastShownMealTime = sharedPreferences.getString("lastShownMealTime", null)
-        val lastShownDate = sharedPreferences.getString("lastShownDate", null)
 
-        Log.d("MealContextuals", "Checking if dialog should be shown for meal time: $currentMealTime on $currentDate")
+        val dialog = showPlaceDialog(onProceedClicked)
 
-        if (lastShownMealTime != currentMealTime || lastShownDate != currentDate) {
-            Log.d("MealContextuals", "Conditions met to show dialog for $currentMealTime")
-
-            val dialog = showPlaceDialog(onProceedClicked)
-
-            // Automatically dismiss after 5 seconds
-            Handler(Looper.getMainLooper()).postDelayed({
-                if (dialog.isShowing) {
-                    dialog.dismiss()
-                    Log.d("MealContextuals", "Dialog dismissed automatically after 5 seconds.")
-                }
-            }, 5000)
-
-
-
-            with(sharedPreferences.edit()) {
-                putString("lastShownMealTime", currentMealTime)
-                putString("lastShownDate", currentDate)
-                apply()
+        // Automatically dismiss after 5 seconds
+        Handler(Looper.getMainLooper()).postDelayed({
+            if (dialog.isShowing) {
+                dialog.dismiss()
+                Log.d("MealContextuals", "Dialog dismissed automatically after 5 seconds.")
             }
-
-            Log.d("MealContextuals", "Dialog display status updated in SharedPreferences")
-        } else {
-            Log.d("MealContextuals", "Dialog already shown for this meal time today; not displaying again.")
-        }
+        }, 5000)
     }
 
     private fun showPlaceDialog(onProceedClicked: () -> Unit): AlertDialog {
@@ -184,6 +195,7 @@ class MealContextuals(private val context: Context) {
     fun performTextSearch(
         placesClient: PlacesClient,
         currentPlaceTypes: List<String>,
+        allLatLngs: List<LatLng>, // New parameter
         context: Context,
         callback: (List<Place>) -> Unit
     ) {
@@ -212,41 +224,53 @@ class MealContextuals(private val context: Context) {
 
                 Log.e("MealContextuals", "PLACE TYPE COUNT: $searchCount")
 
-                currentPlaceTypes.forEach { placeType ->
-                    val query = "$placeType near me"
-                    Log.e("MealContextuals", "Search query for places: $query")
+                // Sample every 5th point from allLatLngs to optimize searches
+                var sampledLatLngs = allLatLngs.filterIndexed { index, _ -> index % 5 == 0 }
 
-                    val searchByTextRequest = SearchByTextRequest.builder(query, placeFields)
-                        .setMaxResultCount(1)
-                        .setLocationBias(locationBias)
-                        .setOpenNow(true)
-                        .setRankPreference(SearchByTextRequest.RankPreference.DISTANCE)
-                        .build()
+                // If no latlngs are sampled, fall back to current location search
+                if (sampledLatLngs.isEmpty()) {
+                    sampledLatLngs = listOf(currentLatLng)
+                }
 
-                    // Perform the search using the PlacesClient
-                    placesClient.searchByText(searchByTextRequest)
-                        .addOnSuccessListener { response ->
-                            val places = response.places
-                            Log.e("MealContextuals", "NUMBER OF PLACES: ${places.size}")
-                            places.forEach { place ->
-                                Log.e("MealContextuals", "NAME OF PLACE: ${place.name}")
-                                placesList.add(place)
+                sampledLatLngs.forEachIndexed { index, latLng ->
+                    currentPlaceTypes.forEach { placeType ->
+                        val query = "$placeType near me"
+                        Log.e("MealContextuals", "Search query for places: $query")
+
+                        val locationBias = CircularBounds.newInstance(latLng, 3000.0) // 3 km radius per sampled point
+
+                        val searchByTextRequest = SearchByTextRequest.builder(query, placeFields)
+                            .setMaxResultCount(1)
+                            .setLocationBias(locationBias)
+                            .setOpenNow(true)
+                            .setRankPreference(SearchByTextRequest.RankPreference.DISTANCE)
+                            .build()
+
+                        // Perform the search using the PlacesClient
+                        placesClient.searchByText(searchByTextRequest)
+                            .addOnSuccessListener { response ->
+                                val places = response.places
+                                Log.e("MealContextuals", "NUMBER OF PLACES: ${places.size}")
+                                places.forEach { place ->
+                                    Log.e("MealContextuals", "NAME OF PLACE: ${place.name}")
+                                    placesList.add(place)
+                                }
                             }
-                        }
-                        .addOnCompleteListener {
-                            completedSearches++
-                            if (completedSearches == searchCount) {
-                                // All searches are complete, invoke the callback with the results
-                                callback(placesList)
+                            .addOnCompleteListener {
+                                completedSearches++
+                                if (completedSearches == sampledLatLngs.size * searchCount) {
+                                    // All searches are complete, invoke the callback with the results
+                                    callback(placesList)
+                                }
                             }
-                        }
-                        .addOnFailureListener { exception ->
-                            Log.e("MealContextuals", "Error during place search: ${exception.message}")
-                            completedSearches++
-                            if (completedSearches == searchCount) {
-                                callback(placesList)
+                            .addOnFailureListener { exception ->
+                                Log.e("MealContextuals", "Error during place search: ${exception.message}")
+                                completedSearches++
+                                if (completedSearches == sampledLatLngs.size * searchCount) {
+                                    callback(placesList)
+                                }
                             }
-                        }
+                    }
                 }
 
                 // If there are no place types to search, call the callback immediately
@@ -260,6 +284,7 @@ class MealContextuals(private val context: Context) {
             }
         }
     }
+
 
 
     private fun getCurrentLocation(context: Context, callback: (LatLng?) -> Unit) {

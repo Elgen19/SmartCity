@@ -1,35 +1,11 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/secondary_color"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".PlacesActivity">
-
-    <!-- Map Styles FAB -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_map_styles"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:layout_alignParentEnd="true"
-        android:src="@drawable/baseline_map_24"
-        app:backgroundTint="@color/secondary_color"
-        app:tint="@android:color/white" />
-
-
-    <!-- Search FAB -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_search"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:layout_alignParentEnd="true"
-        android:layout_above="@id/fab_current_location"
-        android:src="@drawable/search"
-        app:backgroundTint="@color/secondary_color"
-        app:tint="@android:color/white" />
-
 
     <!-- Map Fragment -->
     <fragment
@@ -39,31 +15,66 @@
         android:layout_height="match_parent"
         android:layout_above="@id/bottom_navigation" />
 
-    <!-- FloatingActionButton for Current Location -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_current_location"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentRight="true"
-        android:layout_margin="16dp"
-        android:layout_above="@id/bottom_navigation"
-        android:src="@drawable/baseline_my_location_24"
-        app:backgroundTint="@color/secondary_color"
-        app:tint="@android:color/white" />
-
     <!-- Bottom Navigation View -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        app:backgroundTint="@color/secondary_color"
-        app:itemIconTint="@color/bottom_nav_item_color"
         app:activeIndicatorLabelPadding="4dp"
-        app:itemTextColor="@color/bottom_nav_item_color"
+        app:backgroundTint="@color/secondary_color"
         app:itemActiveIndicatorStyle="@style/App.Custom.Indicator"
+        app:itemIconTint="@color/bottom_nav_item_color"
+        app:itemTextColor="@color/bottom_nav_item_color"
         app:labelVisibilityMode="labeled"
         app:menu="@menu/bottom_nav_menu" />
+
+    <!-- FloatingActionButton for Search -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabMapStyles"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:layout_alignParentEnd="true"
+        android:layout_above="@id/fab_search"
+        android:src="@drawable/map"
+        app:backgroundTint="@color/secondary_color"
+        app:tint="@android:color/white" />
+
+    <!-- FloatingActionButton for Search -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_search"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:layout_alignParentEnd="true"
+        android:layout_above="@id/fab_activity_launcher"
+        android:src="@drawable/search"
+        app:backgroundTint="@color/secondary_color"
+        app:tint="@android:color/white" />
+
+    <!-- FloatingActionButton for Activity Launcher -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_activity_launcher"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:layout_alignParentEnd="true"
+        android:layout_above="@id/fab_current_location"
+        android:src="@drawable/activity"
+        app:backgroundTint="@color/secondary_color"
+        app:tint="@android:color/white" />
+
+    <!-- FloatingActionButton for Current Location -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_current_location"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:layout_above="@id/bottom_navigation"
+        android:layout_alignParentEnd="true"
+        android:src="@drawable/baseline_my_location_24"
+        app:backgroundTint="@color/secondary_color"
+        app:tint="@android:color/white" />
 
 </RelativeLayout>

@@ -26,10 +26,11 @@ import kotlin.coroutines.suspendCoroutine
 
 class AIProcessor(context: Context) {
     private val placesClient by lazy { PlacesNewClientSingleton.getPlacesClient(context) }
-    private var placesList: List<Place>? = emptyList()
+    private var placesList: MutableList<Place>? = mutableListOf()
+    private var filteredList: MutableList<Place>? = mutableListOf()
+
     private val fusedLocationClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(context)
-    private val contextInClass = context
 
     companion object {
         private const val INTENT_SEARCHING_FOR_PLACE = "Searching for a place"
@@ -90,11 +91,11 @@ class AIProcessor(context: Context) {
         return UserQueryParams(intent, keywords, placeType, openNow, rating, priceLevels)
     }
 
-     suspend fun intentClassification(userQueryParams: UserQueryParams) {
+     suspend fun intentClassification(userQueryParams: UserQueryParams, allLatLngs: List<LatLng>) {
         when (userQueryParams.intent) {
             INTENT_SEARCHING_FOR_PLACE -> {
                 // Call a function to handle searching for a place
-                handleSearchPlace(userQueryParams)
+                handleSearchPlace(userQueryParams, allLatLngs)
             }
             INTENT_GET_DIRECTIONS -> {
                 // Call a function to handle getting directions
@@ -107,11 +108,74 @@ class AIProcessor(context: Context) {
     }
 
 
-    private suspend fun handleSearchPlace(userQueryParams: UserQueryParams): List<Place> {
+//    private suspend fun handleSearchPlace(userQueryParams: UserQueryParams): List<Place> {
+//        val openNow = userQueryParams.openNow
+//        val priceLevels = userQueryParams.priceLevels
+//        val ratings = userQueryParams.rating
+//
+//        val placeFields = listOf(
+//            Place.Field.ID,
+//            Place.Field.NAME,
+//            Place.Field.ADDRESS,
+//            Place.Field.TYPES,
+//            Place.Field.LAT_LNG,
+//            Place.Field.RATING,
+//            Place.Field.USER_RATINGS_TOTAL
+//        )
+//
+//        // Get current location using coroutine
+//        val currentLatLng = getCurrentLocationCoroutine(contextInClass)
+//
+//        return currentLatLng?.let { it ->
+//            val locationBias = CircularBounds.newInstance(it, 1000.0) // 1000 meters radius
+//
+//            val searchByTextRequest = SearchByTextRequest.builder(userQueryParams.keywords, placeFields)
+//                .setMaxResultCount(5)
+//                .setOpenNow(openNow)
+//                .setLocationBias(locationBias)
+//                .setRankPreference(SearchByTextRequest.RankPreference.DISTANCE)
+//                .apply {
+//                    if (priceLevels.isNotEmpty() && priceLevels.any { it > 0 }) {
+//                        setPriceLevels(priceLevels)
+//                    }
+//                    if (ratings != 0.0) {
+//                        minRating = ratings
+//                    }
+//                }
+//                .setPlaceFields(placeFields)
+//                .build()
+//
+//            Log.e("AIProcessor", "SEARCH TEXT IS: ${userQueryParams.keywords}")
+//
+//            return try {
+//                // Perform the search and wait for the result
+//                val response = placesClient.searchByText(searchByTextRequest).await()
+//                placesList = response.places // Set the placesList here
+//                placesList?.forEach { place ->
+//                    Log.e("AIProcessor", "Place Name: ${place.name ?: "Unknown Name"}")
+//                    Log.e("AIProcessor", "Place Address: ${place.address ?: "Unknown Address"}")
+//                    Log.e("AIProcessor", "Place Types: ${place.placeTypes?.joinToString() ?: "No Types"}")
+//                    Log.e("AIProcessor", "Place Rating: ${place.rating ?: "No Rating"}")
+//                    Log.e("AIProcessor", "Total User Ratings: ${place.userRatingsTotal ?: "No User Ratings"}")
+//                }
+//                placesList ?: emptyList()
+//            } catch (exception: Exception) {
+//                Log.e("AIProcessor", "Error retrieving places", exception)
+//                emptyList()
+//            }
+//        } ?: run {
+//            Log.e("AIProcessor", "Location not available")
+//            emptyList() // Return empty list if location is null
+//        }
+//    }
+
+
+    private suspend fun handleSearchPlace(userQueryParams: UserQueryParams, allLatLngs: List<LatLng>): List<Place> {
         val openNow = userQueryParams.openNow
         val priceLevels = userQueryParams.priceLevels
         val ratings = userQueryParams.rating
 
+        // Fields to request from the place search
         val placeFields = listOf(
             Place.Field.ID,
             Place.Field.NAME,
@@ -122,56 +186,93 @@ class AIProcessor(context: Context) {
             Place.Field.USER_RATINGS_TOTAL
         )
 
-        // Get current location using coroutine
-        val currentLatLng = getCurrentLocationCoroutine(contextInClass)
+        // Sample every 5th point from the route for optimization
+        val sampledLatLngs = allLatLngs.filterIndexed { index, _ -> index % 5 == 0 }
 
-        return currentLatLng?.let { it ->
-            val locationBias = CircularBounds.newInstance(it, 1000.0) // 1000 meters radius
+        // Log the number of sampled points
+        Log.e("AIProcessor", "Total points in route: ${allLatLngs.size}")
+        Log.e("AIProcessor", "Total sampled points for search: ${sampledLatLngs.size}")
 
+        // If no latLngs are sampled, return an empty list
+        if (sampledLatLngs.isEmpty()) {
+            Log.e("AIProcessor", "No sampled LatLngs available. Returning empty list.")
+            return emptyList()
+        }
+
+        // Iterate over each sampled point in the route
+        sampledLatLngs.forEachIndexed { index, latLng ->
+            // Log the current sampled LatLng point
+            Log.e("AIProcessor", "Searching at route point #$index: $latLng")
+
+            // Setup location bias for search (3km radius around the sampled point)
+            val locationBias = CircularBounds.newInstance(latLng, 1000.0)
+
+            // Build the search request with the user query parameters
             val searchByTextRequest = SearchByTextRequest.builder(userQueryParams.keywords, placeFields)
-                .setMaxResultCount(5)
+                .setMaxResultCount(3)
                 .setOpenNow(openNow)
                 .setLocationBias(locationBias)
                 .setRankPreference(SearchByTextRequest.RankPreference.DISTANCE)
                 .apply {
                     if (priceLevels.isNotEmpty() && priceLevels.any { it > 0 }) {
                         setPriceLevels(priceLevels)
+                        Log.e("AIProcessor", "Applying price levels filter: $priceLevels")
                     }
                     if (ratings != 0.0) {
                         minRating = ratings
+                        Log.e("AIProcessor", "Applying rating filter: minRating = $ratings")
                     }
                 }
                 .setPlaceFields(placeFields)
                 .build()
 
-            Log.e("AIProcessor", "SEARCH TEXT IS: ${userQueryParams.keywords}")
+            // Log the search request details
+            Log.e("AIProcessor", "Search Request: ${userQueryParams.keywords}, Location: $latLng, Price Levels: $priceLevels, Rating: $ratings")
 
-            return try {
-                // Perform the search and wait for the result
+            try {
+                // Perform the search and await the result
                 val response = placesClient.searchByText(searchByTextRequest).await()
-                placesList = response.places // Set the placesList here
-                placesList?.forEach { place ->
-                    Log.e("AIProcessor", "Place Name: ${place.name ?: "Unknown Name"}")
-                    Log.e("AIProcessor", "Place Address: ${place.address ?: "Unknown Address"}")
+
+                // Log the number of places found at this route point
+                Log.e("AIProcessor", "Found ${response.places.size} places at route point #$index: $latLng")
+
+                // For each place returned in the search, log its details and add it to the class-level placesList
+                response.places.forEach { place ->
+                    Log.e("AIProcessor", "Place found: ${place.name ?: "Unknown Name"}")
+                    Log.e("AIProcessor", "Address: ${place.address ?: "Unknown Address"}")
                     Log.e("AIProcessor", "Place Types: ${place.placeTypes?.joinToString() ?: "No Types"}")
-                    Log.e("AIProcessor", "Place Rating: ${place.rating ?: "No Rating"}")
+                    Log.e("AIProcessor", "Rating: ${place.rating ?: "No Rating"}")
                     Log.e("AIProcessor", "Total User Ratings: ${place.userRatingsTotal ?: "No User Ratings"}")
+
+                    // Add the place to the class-level placesList
+                    placesList?.add(place)
                 }
-                placesList ?: emptyList()
+
             } catch (exception: Exception) {
-                Log.e("AIProcessor", "Error retrieving places", exception)
-                emptyList()
+                // Log any exceptions that occur during the search
+                Log.e("AIProcessor", "Error retrieving places at route point #$index: $latLng", exception)
             }
-        } ?: run {
-            Log.e("AIProcessor", "Location not available")
-            emptyList() // Return empty list if location is null
         }
+
+        // After all search requests, log the total number of places found
+        Log.e("AIProcessor", "Total places found: ${placesList?.size ?: 0}")
+
+        filteredList =
+            placesList?.distinctBy { it.id } as MutableList<Place>? // Or use any other property
+
+        Log.e("AIProcessor", "filtered places found: ${filteredList?.size ?: 0}")
+
+        // Return the list of places found along the route
+        return filteredList ?: emptyList()
     }
 
 
+
+
+
     fun extractPlaceInfo(): List<Map<String, Any>> {
-        Log.e("AIProcessor", "Extracting place info, total places: ${placesList?.size}")
-        return placesList?.mapNotNull { place ->
+        Log.e("AIProcessor", "Extracting place info, total places: ${filteredList?.size}")
+        return filteredList?.mapNotNull { place ->
             place.latLng?.let { latLng ->
                 mapOf(
                     "name" to (place.name ?: "Unknown Name"),
@@ -185,7 +286,7 @@ class AIProcessor(context: Context) {
 
     fun hasPlaceIdAndIsValidPlace(): Boolean {
         // Check if the placesList is not null and contains at least one place with a valid placeId
-        val hasValidPlaceId = placesList?.any { place ->
+        val hasValidPlaceId = filteredList?.any { place ->
             !place.id.isNullOrEmpty()  // Ensure placeId is not null or empty
         } ?: false  // Return false if placesList is null
 

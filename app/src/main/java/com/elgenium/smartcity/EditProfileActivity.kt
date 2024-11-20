@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -43,7 +44,7 @@ class EditProfileActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         // sets the color of the navigation bar making it more personalized
-        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.secondary_color)
+        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.primary_color)
 
         auth = FirebaseAuth.getInstance()
         databaseReference = FirebaseDatabase.getInstance().getReference("Users")
@@ -86,6 +87,15 @@ class EditProfileActivity : AppCompatActivity() {
                 requestStoragePermission()
             }
         }
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // Define the behavior when the back button is pressed
+                val intent = Intent(this@EditProfileActivity, ProfileActivity::class.java)
+                startActivity(intent)
+                finish() // This will finish the current activity
+            }
+        })
     }
 
     private fun loadUserData() {

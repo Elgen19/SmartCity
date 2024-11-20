@@ -3,6 +3,8 @@ package com.elgenium.smartcity.contextuals
 import android.animation.ValueAnimator
 import android.app.AlertDialog
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import com.elgenium.smartcity.R
@@ -23,13 +25,12 @@ class FuelStopsRecommendation(contextInActivity: Context) {
         textToSpeechHelper.initializeTTS(context)
     }
 
-     fun showPlaceDialog(onProceedClicked: () -> Unit): AlertDialog {
+    fun showPlaceDialog(onProceedClicked: () -> Unit): AlertDialog {
         val binding = BottomSheetPlaceOpennowBinding.inflate(LayoutInflater.from(context))
         val dialog = AlertDialog.Builder(context)
             .setView(binding.root)
             .setCancelable(true)
             .create()
-
 
         val progressAnimator = ValueAnimator.ofInt(0, 100)
         progressAnimator.duration = 5000 // 5 seconds
@@ -38,7 +39,7 @@ class FuelStopsRecommendation(contextInActivity: Context) {
         }
         progressAnimator.start()
 
-         binding.lottieAnimation.setAnimation(R.raw.gas)
+        binding.lottieAnimation.setAnimation(R.raw.gas)
         binding.textViewTitle.text = "Fuel check!"
         binding.textViewBody.text = "Here are some fuel stations along your route to help you refuel."
         textToSpeechHelper.speakResponse("Would you like to make a fuel stop? Here are some fuel stations along your route that you can check out.")
@@ -57,6 +58,14 @@ class FuelStopsRecommendation(contextInActivity: Context) {
             onProceedClicked()  // Execute the callback function
         }
 
+        // Auto dismiss after 5 seconds
+        Handler(Looper.getMainLooper()).postDelayed({
+            if (dialog.isShowing) {
+                Log.d("FuelStopsRecommendation", "Auto-dismissing the dialog after 5 seconds.")
+                dialog.dismiss()
+            }
+        }, 5000) // 5 seconds delay
+
         dialog.show()
         return dialog
     }
@@ -65,7 +74,6 @@ class FuelStopsRecommendation(contextInActivity: Context) {
     fun performOptimizedTextSearch(
         placesClient: PlacesClient,
         allLatlngs: List<LatLng>,
-        context: Context,
         callback: (List<Place>) -> Unit
     ) {
         val placeFields = listOf(

@@ -54,7 +54,7 @@
     <string name="public_transits">Public Transits</string>
     <string name="setup_preferences">Setup Preferences</string>
     <string name="supporting_text_pref">Choose your preferred modes of transport and event types for tailored recommendations.</string>
-    <string name="personalize_your_experience">Personalize Your Experience</string>
+    <string name="personalize_your_experience">Personalize Your\nExperience</string>
     <string name="mapbox_access_token" translatable="false" tools:ignore="UnusedResources">pk.eyJ1IjoiZWxnZW5pdW0iLCJhIjoiY2x6c2hqdjJ1MjkwYTJrcTdjZXYyMHEzcyJ9.tC0_B-TVQtekgrT0Ebb4jQ</string>
     <string name="notification_history">Notification History</string>
     <string name="notification">Notification</string>
@@ -113,8 +113,10 @@
     <string name="location_not_available">Location not available</string>
     <string name="no_data_available">No data available</string>
     <string name="your_location">Your location</string>
+    <string name="no_places_found_please_try_again">No places found. Please try again.</string>
 
     <string-array name="feedback_type_options">
+        <item>Select feedback type</item>
         <item>Bug Report</item>
         <item>Feature Suggestion</item>
         <item>General Feedback</item>

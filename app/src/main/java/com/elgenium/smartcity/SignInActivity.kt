@@ -158,6 +158,8 @@ class SignInActivity : AppCompatActivity() {
                         val cycloneAlerts = dataSnapshot.child("cyclone_alert").getValue(Boolean::class.java) ?: true
                         val trafficAlerts = dataSnapshot.child("traffic_alert").getValue(Boolean::class.java) ?: true
                         val contextRecomender = dataSnapshot.child("context_recommender").getValue(Boolean::class.java) ?: true
+                        val keyActivity = dataSnapshot.child("key_activity").getValue(Boolean::class.java) ?: false
+                        val similarPlace = dataSnapshot.child("similar_place").getValue(Boolean::class.java) ?: false
 
 
                         // Save values to SharedPreferences
@@ -174,6 +176,8 @@ class SignInActivity : AppCompatActivity() {
                             putBoolean("cyclone_alert", cycloneAlerts)
                             putBoolean("context_recommender", contextRecomender)
                             putBoolean("weather_notifications", weatherNotifications)
+                            putBoolean("key_activity", keyActivity)
+                            putBoolean("similar_place", similarPlace)
                             apply()  // Use apply() to save asynchronously
 
                             // Log the updated SharedPreferences

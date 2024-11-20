@@ -3,17 +3,16 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:padding="16dp"
-    android:background="@drawable/backdraft2">
+    android:background="@color/primary_color"
+    android:layout_height="match_parent">
 
     <LinearLayout
-        android:layout_alignParentTop="true"
-        android:id="@+id/headerComponent"
+        android:id="@+id/header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_centerVertical="true"
-        android:orientation="horizontal">
+        android:background="@color/secondary_color"
+        android:gravity="start"
+        android:padding="16dp">
 
         <!-- Back Button -->
         <ImageButton
@@ -30,22 +29,24 @@
             android:id="@+id/titleTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
             android:layout_marginStart="8dp"
             android:text="@string/edit_profile"
-            android:textStyle="bold"
             android:textColor="@color/primary_color"
-            android:textSize="20sp" />
+            android:textSize="32sp"
+            android:textStyle="bold" />
+
     </LinearLayout>
+
+
 
     <!-- Profile Picture -->
     <de.hdodenhof.circleimageview.CircleImageView
         android:id="@+id/profileImageView"
         android:layout_width="150dp"
         android:layout_height="150dp"
-        android:layout_below="@id/headerComponent"
+        android:layout_below="@id/header"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="64dp"
+        android:layout_marginTop="16dp"
         android:clickable="true"
         android:focusable="true"
         android:src="@drawable/male"
@@ -60,6 +61,8 @@
         android:layout_marginTop="24dp"
         android:text="@string/personal_information"
         android:textColor="@color/brand_color"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
         android:textSize="20sp"
         android:textStyle="bold"
         tools:ignore="TextContrastCheck" />
@@ -72,6 +75,8 @@
         android:layout_below="@id/personalInfoTitle"
         android:backgroundTint="@color/white"
         android:layout_marginTop="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
         app:cardCornerRadius="8dp"
         app:cardElevation="4dp">
 
@@ -200,6 +205,8 @@
         android:layout_width="match_parent"
         android:layout_height="56dp"
         android:layout_alignParentBottom="true"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
         android:text="@string/edit"
         android:textColor="@color/primary_color"
         android:backgroundTint="@color/secondary_color"

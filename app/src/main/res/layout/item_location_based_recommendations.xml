@@ -1,0 +1,25 @@
+<!-- item_place.xml -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@color/primary_color"
+    android:padding="8dp"
+    android:layout_marginBottom="8dp">
+
+    <TextView
+        android:id="@+id/tvPlaceName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textStyle="bold"
+        android:text="Place Name"
+        android:textColor="@color/gray" />
+
+    <TextView
+        android:id="@+id/tvPlaceAddress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Place Address"
+        android:textSize="12sp"
+        android:textColor="@color/sub_support_text" />
+</LinearLayout>

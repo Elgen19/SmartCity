@@ -91,7 +91,7 @@ class EventsActivity : AppCompatActivity() {
         eventAdapter = EventAdapter(eventList, { event ->
             // Handle item click
             showEventDetailsBottomSheetDialog(event)
-        }, binding.lottieAnimation, binding.emptyDataLabel)
+        }, binding.lottieAnimation, binding.emptyDataLabel, binding.adCardView)
 
         binding.eventsRecyclerView.adapter = eventAdapter
 

@@ -1,4 +1,4 @@
-<ScrollView
+<androidx.core.widget.NestedScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -11,116 +11,71 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
+
         <!-- Title Section -->
-        <LinearLayout
-            android:id="@+id/titleSection"
+        <FrameLayout
+            android:id="@+id/top"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/secondary_color"
-            android:orientation="vertical"
-            android:paddingTop="16dp"
-            android:paddingBottom="16dp"
-            android:layout_marginBottom="8dp">
+            android:layout_height="200dp"
+            android:layout_marginBottom="32dp">
 
-            <!-- Row with Back Button and Title -->
-            <LinearLayout
+            <!-- Lottie Background Animation -->
+            <com.airbnb.lottie.LottieAnimationView
+                android:id="@+id/lottieAnimation"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp">
+                android:layout_height="match_parent"
+                app:lottie_rawRes="@raw/user_management"
+                android:layout_marginStart="250dp"
+                app:lottie_cacheComposition="true"
+                app:lottie_autoPlay="true"
+                app:lottie_loop="true" />
 
-                <!-- Back Image Button -->
-                <ImageButton
-                    android:id="@+id/backButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/baseline_arrow_back_24"
-                    android:layout_gravity="start"
-                    android:padding="8dp"
-                    android:visibility="gone"
-                    app:tint="@color/primary_color" />
+            <!-- Semi-Transparent Overlay -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#990E1550" />
+
+            <!-- Title Section Overlaying Lottie -->
+            <LinearLayout
+                android:id="@+id/titleSection"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
 
                 <!-- Title TextView -->
                 <TextView
-                    android:id="@+id/preferencesTitle"
+                    android:id="@+id/signinTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="32dp"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
                     android:text="@string/personalize_your_experience"
                     android:textColor="@color/brand_color"
                     android:textSize="32sp"
-                    android:textStyle="bold"
-                    android:layout_marginStart="16dp"/>
+                    android:textStyle="bold" />
+
+                <!-- Subtitle TextView -->
+                <TextView
+                    android:id="@+id/signinSubtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:text="To enhance your recommendations, please take a moment to answer the following questions."
+                    android:textColor="@color/white"
+                    android:textSize="16sp" />
             </LinearLayout>
+        </FrameLayout>
 
-            <!-- Subtitle TextView -->
-            <TextView
-                android:id="@+id/signinSubtitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@color/white"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:text="To enhance your recommendations, please take a moment to answer the following questions."
-                android:textSize="16sp" />
 
-        </LinearLayout>
 
         <!-- Question 1 -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="1. What’s your primary reason for using this app?"
-            android:textSize="16sp"
-            android:layout_marginBottom="8dp"
-            android:layout_marginTop="16dp" />
-
-        <CheckBox
-            android:id="@+id/checkbox_discover_places"
-            android:layout_width="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:layout_height="wrap_content"
-            android:text="Discover new places (Restaurants, Cafes, Parks, etc.)" />
-
-        <CheckBox
-            android:id="@+id/checkbox_find_events"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="Find events happening around me (Concerts, Festivals, etc.)" />
-
-        <CheckBox
-            android:id="@+id/checkbox_explore_things_to_do"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="Explore things to do in a new location (for tourists or travelers)" />
-
-        <CheckBox
-            android:id="@+id/checkbox_keep_up_with_local_happenings"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="Keep up with local happenings and activities" />
-
-        <!-- Question 2 -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="2. What activities do you engage in daily?"
+            android:text="1. What activities do you engage in daily?"
             android:textSize="16sp"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
@@ -129,58 +84,88 @@
             android:layout_marginTop="16dp" />
 
         <CheckBox
-            android:id="@+id/checkbox_work"
+            android:id="@+id/checkbox_shopping"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
             android:textColor="@color/gray"
-            android:text="Work" />
+            android:text="Shopping at a Mall" />
 
         <CheckBox
-            android:id="@+id/checkbox_school"
+            android:id="@+id/checkbox_dining"
             android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
             android:textColor="@color/gray"
-            android:layout_height="wrap_content"
-            android:text="School" />
+            android:text="Dining at a Restaurant" />
 
         <CheckBox
-            android:id="@+id/checkbox_socializing"
+            android:id="@+id/checkbox_coffee"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
             android:textColor="@color/gray"
-            android:text="Socializing" />
+            android:text="Enjoying Coffee at a Cafe" />
 
         <CheckBox
-            android:id="@+id/checkbox_outdoor_activities"
+            android:id="@+id/checkbox_drinks"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
             android:textColor="@color/gray"
-            android:text="Outdoor activities" />
+            android:text="Grabbing Drinks at a Bar" />
 
         <CheckBox
-            android:id="@+id/checkbox_hobbies"
+            android:id="@+id/checkbox_tourist"
             android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
             android:textColor="@color/gray"
-            android:layout_height="wrap_content"
-            android:text="Hobbies (e.g., sports, arts)" />
+            android:text="Exploring Tourist Attractions" />
 
-        <!-- Question 3 -->
+        <CheckBox
+            android:id="@+id/checkbox_movie"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:text="Watching a Movie" />
+
+        <CheckBox
+            android:id="@+id/checkbox_gym"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:text="Working Out at the Gym" />
+
+        <CheckBox
+            android:id="@+id/checkbox_beach"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:textColor="@color/gray"
+            android:text="Relaxing at the Beach" />
+
+
+
+
+        <!-- Question 2 -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
             android:textColor="@color/gray"
-            android:text="3. What type of places do you prefer to visit?"
+            android:text="2. What type of places do you prefer to visit?"
             android:textSize="16sp"
             android:layout_marginBottom="8dp"
             android:layout_marginTop="16dp" />
@@ -239,14 +224,14 @@
             android:textColor="@color/gray"
             android:text="Entertainment venues (theaters, clubs)" />
 
-        <!-- Question 4 -->
+        <!-- Question 3 -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
             android:textColor="@color/gray"
-            android:text="4. What types of events are you most interested in?"
+            android:text="3. What types of events are you most interested in?"
             android:textSize="16sp"
             android:layout_marginBottom="8dp"
             android:layout_marginTop="16dp" />
@@ -306,36 +291,6 @@
             android:text="Outdoor &amp; Adventure Events" />
 
 
-        <!-- Question 5 -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="5. Do you prefer large events or smaller, intimate gatherings?"
-            android:textSize="16sp"
-            android:layout_marginBottom="8dp"
-            android:layout_marginTop="16dp" />
-
-        <CheckBox
-            android:id="@+id/checkbox_large_events"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="Large events (e.g., concerts, festivals)" />
-
-        <CheckBox
-            android:id="@+id/checkbox_smaller_events"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="Smaller, intimate gatherings" />
-
         <!-- Submit Button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/submit_button"
@@ -351,4 +306,4 @@
             android:textColor="@color/white" />
 
     </LinearLayout>
-</ScrollView>
+</androidx.core.widget.NestedScrollView>

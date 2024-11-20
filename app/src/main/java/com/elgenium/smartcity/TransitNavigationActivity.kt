@@ -75,6 +75,7 @@ class TransitNavigationActivity : AppCompatActivity(){
     private var transitLatlng: ArrayList<String> = ArrayList()
     private var placeIds: ArrayList<String> = ArrayList()
     private var travelModeList: ArrayList<String> = ArrayList()
+    private val allLatLngs = mutableListOf<LatLng>()
     private var transitInstructions: ArrayList<String> = ArrayList()
     private var isSimulated = false
     private lateinit var speechRecognitionHelper: SpeechRecognitionHelper
@@ -207,7 +208,12 @@ class TransitNavigationActivity : AppCompatActivity(){
                 textToSpeech.speakResponse("Searching, please wait.")
                 val result = aiProcessor.processUserQuery(query)
                 displayMessage("RESULT VALUE: $result")
-                aiProcessor.intentClassification(aiProcessor.parseUserQuery(result))
+                allLatLngs.clear()
+                navigator.routeSegments.forEach { segment ->
+                    // Add all LatLngs from the current segment to the list
+                    allLatLngs.addAll(segment.latLngs)
+                }
+                aiProcessor.intentClassification(aiProcessor.parseUserQuery(result), allLatLngs)
 
                 val placesInfo = aiProcessor.extractPlaceInfo()
 

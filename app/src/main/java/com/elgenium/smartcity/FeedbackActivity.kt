@@ -2,13 +2,18 @@ package com.elgenium.smartcity
 
 import android.os.Bundle
 import android.util.Log
+import android.view.View
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.elgenium.smartcity.databinding.ActivityFeedbackBinding
 import com.elgenium.smartcity.singletons.LayoutStateManager
+import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.google.ai.client.generativeai.GenerativeModel
+import com.google.android.material.chip.Chip
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ServerValue
@@ -23,6 +28,8 @@ class FeedbackActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityFeedbackBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.primary_color)
+
 
         // Initialize the feedback form
         setupFeedbackForm()
@@ -39,23 +46,45 @@ class FeedbackActivity : AppCompatActivity() {
 
         binding.spFeedbackType.adapter = adapter
 
+        // Handle Feedback Type Selection
+        binding.spFeedbackType.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parentView: AdapterView<*>, selectedItemView: View?, position: Int, id: Long) {
+                val selectedFeedbackType = parentView.getItemAtPosition(position).toString()
+                updateChipsForFeedbackType(selectedFeedbackType)
+            }
+
+            override fun onNothingSelected(parentView: AdapterView<*>) {
+                // Handle when nothing is selected
+            }
+        }
 
 
         // Handle Submit Button Click
         binding.btnSubmitFeedback.setOnClickListener {
             val rating = binding.rbFeedbackRating.rating.toInt()
             val comment = binding.etFeedbackComment.text.toString()
-            val email = binding.etFeedbackEmail.text.toString()
             val feedbackType = binding.spFeedbackType.selectedItem.toString()
 
-            // Validate input (optional)
+            // Validate Spinner (Feedback Type)
+            if (feedbackType == "Select feedback type") {
+                Toast.makeText(this, "Please select a feedback type", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            // Validate EditText (Comment)
+            if (comment.isBlank()) {
+                Toast.makeText(this, "Please provide a comment", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            // Validate Rating (Optional but added for completeness)
             if (rating == 0) {
                 Toast.makeText(this, "Please provide a rating", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
             // Send the feedback data to Firebase or backend
-            submitFeedback(rating, feedbackType, comment, email)
+            submitFeedback(rating, feedbackType, comment)
         }
 
         // Handle Cancel Button Click
@@ -64,7 +93,59 @@ class FeedbackActivity : AppCompatActivity() {
         }
     }
 
-    private fun submitFeedback(rating: Int, feedbackType: String, comment: String, email: String) {
+    private fun updateChipsForFeedbackType(feedbackType: String) {
+        // Clear existing chips
+        binding.chipGroupFeedback.removeAllViews()
+
+        // Define chip texts for each feedback type
+        val chips = when (feedbackType) {
+            "Bug Report" -> arrayOf(
+                "The app crashes unexpectedly",
+                "There are UI issues that need fixing",
+                "Certain features are not working properly",
+                "The app is performing slowly"
+            )
+            "Feature Suggestion" -> arrayOf(
+                "A new UI design would improve user experience",
+                "Adding a dark mode would be great",
+                "Offline functionality would make the app more versatile",
+                "Add more personalization options"
+            )
+            "General Feedback" -> arrayOf(
+                "I love using the app",
+                "The app needs some improvements",
+                "It’s really easy to use",
+                "The app is great but it has some issues"
+            )
+            else -> emptyArray()
+        }
+
+
+        // Dynamically add chips to ChipGroup
+        chips.forEach { chipText ->
+            val chip = Chip(this).apply {
+                text = chipText
+                isCheckable = true
+                isClickable = true
+                isFocusable = true
+
+                setChipBackgroundColorResource(R.color.white)
+                setTextColor(ContextCompat.getColor(context, R.color.gray))
+                setOnClickListener {
+                    // When a chip is clicked, populate the comment EditText
+                    binding.etFeedbackComment.setText(chipText)
+                }
+            }
+
+
+
+            // Add the chip to the ChipGroup
+            binding.chipGroupFeedback.addView(chip)
+        }
+    }
+
+
+    private fun submitFeedback(rating: Int, feedbackType: String, comment: String) {
         // Use the GenerativeModel to determine the tone of the feedback
         val generativeModel = GenerativeModel(
             modelName = "gemini-1.5-flash",
@@ -91,7 +172,6 @@ class FeedbackActivity : AppCompatActivity() {
                     "rating" to rating, //from 1 to 5
                     "type" to feedbackType,
                     "comment" to comment,
-                    "email" to email,
                     "tone" to tone, // Determin if feedback is positive or negative
                     "timestamp" to ServerValue.TIMESTAMP,
                     "profilePic" to FirebaseAuth.getInstance().currentUser?.photoUrl.toString(),

@@ -44,6 +44,7 @@ import com.elgenium.smartcity.singletons.ActivityNavigationUtils
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.singletons.RoutesMatrixClientSingleton
 import com.elgenium.smartcity.speech.SpeechRecognitionHelper
+import com.elgenium.smartcity.speech.StreamingSpeechRecognition
 import com.elgenium.smartcity.speech.TextToSpeechHelper
 import com.google.ai.client.generativeai.type.ResponseStoppedException
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -117,7 +118,6 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
     private lateinit var sharedPreferences: SharedPreferences
     private var isAudioGuidanceEnabled = true
     private var isTrafficOverlayEnabled = false
-    private var isRecomputeWaypointEnabled = false
     private var hasAlreadyArrivedAtFinalDestination = false
     private var isNeedOptimization = false
     private var DEFAULT_STOPS = 0
@@ -130,8 +130,8 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
     private var hasExecutedSuggestions = false
     private lateinit var rainLikelihoodCalculator: RainLikelihoodCalculator
     private var isPlaceOpenNowClassifierFinished = false
-
-
+    private var hasMealDialogDisplayed = false
+    private var hasFuelStopDisplayed = false
 
 
 
@@ -145,7 +145,6 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         sharedPreferences = getSharedPreferences(SettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
         isAudioGuidanceEnabled = sharedPreferences.getBoolean("set_audio", true)
         isTrafficOverlayEnabled = sharedPreferences.getBoolean("map_overlay", false)
-        isRecomputeWaypointEnabled = sharedPreferences.getBoolean("recompute_waypoint", false)
         placeDetailsRelatedContextuals = PlaceOpeningHoursContextuals(this)
         mealPlaceRecommender = MealContextuals(this)
         fuelStopsRecommendation = FuelStopsRecommendation(this)
@@ -163,9 +162,10 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
 
         initializer()
 
+
+
         Log.e("StartNavigationsActivity", "audio guidance at oncreate: $isAudioGuidanceEnabled" )
         Log.e("StartNavigationsActivity", "traffic overlay at oncreate: $isTrafficOverlayEnabled" )
-        displayMessage("IS RECOMPUTE ENABLED: $isRecomputeWaypointEnabled")
         Log.e("StartNavigationsActivity", "Default stops is: $DEFAULT_STOPS")
         Log.e("StartNavigationsActivity", "Placeids size is: ${placeIds.size}")
         Log.e("StartNavigationsActivity", "TRAVEL MODE AT NAVIGATION: $travelMode" )
@@ -243,14 +243,24 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
                 textToSpeech.speakResponse("Searching, please wait.")
                 val result = aiProcessor.processUserQuery(query)
                 displayMessage("RESULT VALUE: $result")
-                aiProcessor.intentClassification(aiProcessor.parseUserQuery(result))
+                allLatLngs.clear()
+                navigator.routeSegments.forEach { segment ->
+                    // Add all LatLngs from the current segment to the list
+                    allLatLngs.addAll(segment.latLngs)
+                }
+                Log.e("StartNavigationsActivity", "SEARCH STOP LATLNGS: $allLatLngs")
+                Log.e("StartNavigationsActivity", "SEARCH STOP LATLNG SIZE: ${allLatLngs.size}")
+                aiProcessor.intentClassification(aiProcessor.parseUserQuery(result), allLatLngs)
 
                 val placesInfo = aiProcessor.extractPlaceInfo()
+                Log.e("StartNavigationsActivity", "PLACE INFO SIZE: ${placesInfo.size}")
+
 
                 if (aiProcessor.hasPlaceIdAndIsValidPlace()) {
                     textToSpeech.speakResponse("Here's what I've got.")
                     plotMarkers(placesInfo)
                 } else {
+                    displayMessage("No match for query: $query")
                     textToSpeech.speakResponse("Unfortunately, I couldn't find any information related to your query, '$query.' Please consider trying alternative keywords for your search.")
                 }
 
@@ -267,16 +277,18 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
     }
 
     private fun displayFuelStops(){
+        allLatLngs.clear()
         navigator.routeSegments.forEach { segment ->
             // Add all LatLngs from the current segment to the list
             allLatLngs.addAll(segment.latLngs)
         }
-        Log.e("StartNavigationsActivity", "all latlngs: $allLatLngs")
+        Log.e("StartNavigationsActivity", "FUEL STOP LATLNGS: $allLatLngs")
+        Log.e("StartNavigationsActivity", "FUEL STOP LATLNG SIZE: ${allLatLngs.size}")
+
 
         fuelStopsRecommendation.performOptimizedTextSearch(
             placesClient,
-            allLatLngs,
-            this
+            allLatLngs
         ) { places ->
             // Step 3: Log and check place details retrieved
             if (places.isEmpty()) {
@@ -311,7 +323,15 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         // Step 2: Retrieve appropriate place types for the meal time
         val placeTypes = mealPlaceRecommender.mealTimePlaceMappings[mealTime] ?: emptyList()
 
-        mealPlaceRecommender.performTextSearch(placesClient, placeTypes, this) { places ->
+        allLatLngs.clear()
+        navigator.routeSegments.forEach { segment ->
+            // Add all LatLngs from the current segment to the list
+            allLatLngs.addAll(segment.latLngs)
+        }
+        Log.e("StartNavigationsActivity", "MEAL STOP LATLNGS: $allLatLngs")
+        Log.e("StartNavigationsActivity", "MEAL STOP LATLNG SIZE: ${allLatLngs.size}")
+
+        mealPlaceRecommender.performTextSearch(placesClient, placeTypes, allLatLngs, this) { places ->
             // Step 3: Log and check place details retrieved
             if (places.isEmpty()) {
                 Log.e(TAG, "No places found for $mealTime")
@@ -376,6 +396,8 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
 
                 // Store the marker and placeId mapping
                 markerPlaceIdMap[marker] = placeId
+
+                marker.showInfoWindow()
             }
 
             mMap?.setOnMarkerClickListener { marker2 ->
@@ -468,38 +490,36 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
     }
 
     private fun showRecomputeStopsDialog() {
-        if (isRecomputeWaypointEnabled == true){
-            // Inflate the binding to get the custom layout
-            val binding = DialogRecomputeStopsBinding.inflate(layoutInflater)
+        // Inflate the binding to get the custom layout
+        val binding = DialogRecomputeStopsBinding.inflate(layoutInflater)
 
-            // Create an AlertDialog using AlertDialog.Builder
-            val dialogBuilder = AlertDialog.Builder(this)
-                .setView(binding.root) // Set the custom layout
-                .setCancelable(false) // Prevent closing by tapping outside
+        // Create an AlertDialog using AlertDialog.Builder
+        val dialogBuilder = AlertDialog.Builder(this)
+            .setView(binding.root) // Set the custom layout
+            .setCancelable(false) // Prevent closing by tapping outside
 
-            // Create the AlertDialog instance
-            val alertDialog = dialogBuilder.create()
+        // Create the AlertDialog instance
+        val alertDialog = dialogBuilder.create()
 
-            // Set button listeners
-            binding.buttonCancel.setOnClickListener {
-                Log.e("StartNavigationsActivity", "Cancel button fires" )
-                navigationConfig()
-                alertDialog.dismiss() // Dismiss the dialog when "Cancel" is clicked
-            }
-
-            binding.buttonConfirm.setOnClickListener {
-                // Handle confirmation logic here
-                replacePlaceIds()
-                navigationConfig()
-                Log.e("StartNavigationsActivity", "Confirm button fires" )
-                Log.e("StartNavigationsActivity", "PlaceIDs size at confirm: ${placeIds.size}" )
-
-                alertDialog.dismiss()
-            }
-
-            // Show the dialog
-            alertDialog.show()
+        // Set button listeners
+        binding.buttonCancel.setOnClickListener {
+            Log.e("StartNavigationsActivity", "Cancel button fires" )
+            navigationConfig()
+            alertDialog.dismiss() // Dismiss the dialog when "Cancel" is clicked
         }
+
+        binding.buttonConfirm.setOnClickListener {
+            // Handle confirmation logic here
+            replacePlaceIds()
+            navigationConfig()
+            Log.e("StartNavigationsActivity", "Confirm button fires" )
+            Log.e("StartNavigationsActivity", "PlaceIDs size at confirm: ${placeIds.size}" )
+
+            alertDialog.dismiss()
+        }
+
+        // Show the dialog
+        alertDialog.show()
     }
 
     private fun showNavigationTerminationDialog() {
@@ -510,12 +530,16 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
             .setCancelable(true) // Allows closing on back press or touch outside
             .create()
 
+        binding.dialogTitle.text = "Terminate Navigation"
+        binding.errorAnimation.setAnimation(R.raw.location)
+
         // Set button actions
         binding.buttonShutdown.setOnClickListener {
             cleanup()
             Handler(Looper.getMainLooper()).postDelayed({
                 ActivityNavigationUtils.navigateToActivity(this, PlacesActivity::class.java, true)
-            }, 300)
+            }, 500)
+            dialog.dismiss()
         }
 
         binding.buttonCancel.setOnClickListener {
@@ -548,11 +572,26 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         binding.continueToNextDestinationLayout.visibility = if (NUM_STOPS == 1) View.GONE else View.VISIBLE
         binding.spacer1.visibility = if (NUM_STOPS == 1 ) View.GONE else View.VISIBLE
         binding.voiceGuidanceSwitch.isChecked = isAudioGuidanceEnabled
-        binding.enableRecomputeSwitch.isChecked = isRecomputeWaypointEnabled
 
         // Set up click listeners for the actions
         binding.assistantButton.setOnClickListener {
-            speechRecognitionHelper.startListening()
+//            speechRecognitionHelper.startListening()
+            val streamingSpeechRecognition = StreamingSpeechRecognition(
+                languageCode = "en-US",
+                activity = this,
+                transcriptionCallback = { transcription ->
+                    if (transcription.isNotEmpty()){
+                        processUserQuery(transcription)
+                        Log.d("SpeechRecognizer", "Transcription received at START NAVIGATIONS: $transcription")
+                    } else {
+                        textToSpeech.speakResponse("Unfortunately, I did not get your query. Please try again.")
+                        displayMessage("Query is empty.")
+                    }
+                }
+            )
+
+            // Start streaming when the button is clicked
+            streamingSpeechRecognition.startStreaming()
         }
 
         binding.buttonShutdown.setOnClickListener {
@@ -583,21 +622,6 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
             }
         }
 
-        binding.enableRecomputeSwitch.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                with(sharedPreferences.edit()) {
-                    putBoolean(SettingsKeys.KEY_RECOMPUTE_WAYPOINTS, true)
-                    apply()
-                }
-                isRecomputeWaypointEnabled = true
-            } else {
-                with(sharedPreferences.edit()) {
-                    putBoolean(SettingsKeys.KEY_RECOMPUTE_WAYPOINTS, false)
-                    apply()
-                }
-                isRecomputeWaypointEnabled = false
-            }
-        }
 
         binding.continueToNextDestinationLayout.setOnClickListener {
            if (NUM_STOPS != 1) {
@@ -1084,23 +1108,29 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
 
         // Listener for remaining time or distance changes
         val totalRouteDistanceInMeters = navigator.currentTimeAndDistance.meters // Assume you retrieve this on route setup
-        val fuelStopTriggerDistance = totalRouteDistanceInMeters * 0.25
-        val mealStopTriggerDistance = 1000
+        val fuelStopTriggerDistance = 1000
+
+        val mealStopTriggerDistance = 500
 
         mRemainingTimeOrDistanceChangedListener = RemainingTimeOrDistanceChangedListener {
             val remainingDistanceInMeters = navigator.currentTimeAndDistance.meters
             val traveledDistance = totalRouteDistanceInMeters - remainingDistanceInMeters
+            Log.e("Contextuals", "TOTAL DISTANCE: $totalRouteDistanceInMeters")
+            Log.e("Contextuals", "REMAINING DISTANCE: $remainingDistanceInMeters")
+            Log.e("Contextuals", "TRAVELED DISTANCE: $traveledDistance")
 
-            if (totalRouteDistanceInMeters > 10000){
-                if (!hasExecutedSuggestions && traveledDistance >= fuelStopTriggerDistance) {
-                    hasExecutedSuggestions = true
+            if (totalRouteDistanceInMeters > 8000){
+                if (!hasFuelStopDisplayed && traveledDistance >= fuelStopTriggerDistance) {
+                    Log.e("Contextuals", "fuel stop executed")
+
+                    hasFuelStopDisplayed = true
                     fuelStopsRecommendation.showPlaceDialog {
                         displayFuelStops()
                     }
                 }
             }
 
-            if (totalRouteDistanceInMeters >= 5000 && traveledDistance >= mealStopTriggerDistance) {
+            if (!hasMealDialogDisplayed && totalRouteDistanceInMeters >= 5000 && traveledDistance >= mealStopTriggerDistance) {
                 // Silence the navigation audio guidance
                 navigator.setAudioGuidance(AudioGuidance.SILENT)
 
@@ -1111,6 +1141,7 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
                     }
                 )
                 navigator.setAudioGuidance(AudioGuidance.VOICE_ALERTS_AND_GUIDANCE)
+                hasMealDialogDisplayed = true
             }
 
 

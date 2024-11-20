@@ -10,6 +10,7 @@ import com.bumptech.glide.Glide
 import com.elgenium.smartcity.R
 import com.elgenium.smartcity.databinding.ItemEventDetailBinding
 import com.elgenium.smartcity.models.Event
+import com.google.android.material.card.MaterialCardView
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -19,7 +20,8 @@ class EventAdapter(
     private var events: List<Event>,
     private val onItemClick: (Event) -> Unit,
     private val lottieAnimation: LottieAnimationView,
-    private val emptyDataLabel: TextView
+    private val emptyDataLabel: TextView,
+    private val adViewCard: MaterialCardView
 ) :
     RecyclerView.Adapter<EventAdapter.EventViewHolder>() {
 
@@ -67,9 +69,12 @@ class EventAdapter(
         if (events.isEmpty()) {
             lottieAnimation.visibility = View.VISIBLE
             emptyDataLabel.visibility = View.VISIBLE
+            adViewCard.visibility = View.GONE
         } else {
             lottieAnimation.visibility = View.GONE
             emptyDataLabel.visibility = View.GONE
+            adViewCard.visibility = View.VISIBLE
+
         }
     }
 

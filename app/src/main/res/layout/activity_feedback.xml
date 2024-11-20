@@ -51,6 +51,7 @@
         android:id="@+id/tv_feedback_type_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:textStyle="bold"
         android:text="Feedback Type"
         android:textSize="16sp"
         android:textColor="@color/gray"
@@ -69,32 +70,50 @@
         android:layout_marginBottom="16dp"/>
 
 
+    <TextView
+        android:id="@+id/comment_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Feedback Details"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:textColor="@color/gray"
+        android:layout_marginTop="16dp"
+        android:layout_below="@id/sp_feedback_type"
+        android:layout_marginBottom="8dp"/>
+
+
     <!-- Comment Text Area -->
     <EditText
         android:id="@+id/et_feedback_comment"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Tell us more (Optional)"
+        android:hint="Tell us more"
+        android:background="@drawable/spinner_border"
         android:inputType="textMultiLine"
         android:textColorHint="@color/dark_gray"
+        android:textSize="14sp"
         android:minHeight="100dp"
         android:textColor="@color/gray"
         android:gravity="top"
         android:padding="8dp"
-        android:layout_below="@id/sp_feedback_type"
-        android:layout_marginBottom="16dp"/>
+        android:layout_below="@id/comment_label" />
 
-    <!-- Optional Email Input -->
-    <EditText
-        android:id="@+id/et_feedback_email"
+    <HorizontalScrollView
+        android:id="@+id/horizontal_scroll_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Your email (Optional)"
-        android:textColor="@color/gray"
-        android:textColorHint="@color/dark_gray"
-        android:inputType="textEmailAddress"
-        android:layout_below="@id/et_feedback_comment"
-        android:layout_marginBottom="16dp"/>
+        android:layout_below="@id/et_feedback_comment">
+
+        <!-- Chip Group -->
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chipGroupFeedback"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"/>
+
+    </HorizontalScrollView>
+
 
     <!-- Submit Button -->
     <Button
@@ -102,7 +121,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Submit Feedback"
-        android:layout_below="@id/et_feedback_email"
+        android:paddingBottom="16dp"
+        android:paddingTop="16dp"
+        android:layout_above="@id/btn_cancel_feedback"
         android:backgroundTint="@color/secondary_color"
         android:textColor="@color/primary_color"
         android:layout_centerHorizontal="true"
@@ -114,8 +135,10 @@
         android:id="@+id/btn_cancel_feedback"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/btn_submit_feedback"
         android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"
+        android:paddingBottom="16dp"
+        android:paddingTop="16dp"
         android:backgroundTint="@color/primary_color"
         android:text="Cancel"
         android:textColor="@color/gray"

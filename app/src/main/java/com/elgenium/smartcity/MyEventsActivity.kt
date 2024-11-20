@@ -162,14 +162,35 @@ class MyEventsActivity : AppCompatActivity() {
             "Unverified" -> eventList.filter { it.status == "Unverified" || it.status == "Verification_Failed" }
             else -> eventList.filter { it.status == status }
         }
+
+        // Update the adapter with the filtered list
         myEventsAdapter.updateEventsList(filteredList)
+
+        // Show "no data" message and animation if the filtered list is empty
+        if (filteredList.isEmpty()) {
+            binding.lottieAnimation.visibility = View.VISIBLE
+            binding.emptyDataLabel.visibility = View.VISIBLE
+        } else {
+            binding.lottieAnimation.visibility = View.GONE
+            binding.emptyDataLabel.visibility = View.GONE
+        }
     }
 
 
     private fun showAllEvents() {
         // Show all events without filtering
         myEventsAdapter.updateEventsList(eventList)
+
+        // Check if eventList is empty
+        if (eventList.isEmpty()) {
+            binding.lottieAnimation.visibility = View.VISIBLE
+            binding.emptyDataLabel.visibility = View.VISIBLE
+        } else {
+            binding.lottieAnimation.visibility = View.GONE
+            binding.emptyDataLabel.visibility = View.GONE
+        }
     }
+
 
 
     private fun startEventVerification() {
