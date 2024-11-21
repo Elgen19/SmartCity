@@ -5,6 +5,7 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.text.Html
 import android.util.Log
@@ -13,24 +14,29 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.elgenium.smartcity.contextuals.ActivityPlaceRecommendation
 import com.elgenium.smartcity.databinding.ActivityActiveActivitiesBinding
+import com.elgenium.smartcity.databinding.BottomSheetActivityTripSummaryBinding
 import com.elgenium.smartcity.databinding.BottomSheetAddActivityBinding
 import com.elgenium.smartcity.databinding.BottomSheetViewActivityDetailBinding
 import com.elgenium.smartcity.databinding.DialogActivitySuggestionsBinding
 import com.elgenium.smartcity.intelligence.ActivityPlaceProcessor
 import com.elgenium.smartcity.intelligence.ActivityPrioritizationOptimizer
 import com.elgenium.smartcity.models.ActivityDetails
+import com.elgenium.smartcity.models.LocationBasedPlaceRecommendationItems
 import com.elgenium.smartcity.recyclerview_adapter.ActivityDetailsAdapter
 import com.elgenium.smartcity.recyclerview_adapter.LocationBasedPlaceRecommendationAdapter
+import com.elgenium.smartcity.routing.RouteFetcher
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.singletons.PlacesNewClientSingleton
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.chip.Chip
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -52,8 +58,11 @@ class ActiveActivitiesActivity : AppCompatActivity() {
     private val placesClient by lazy { PlacesNewClientSingleton.getPlacesClient(this) }
     private lateinit var prioritizationOptimizer: ActivityPrioritizationOptimizer
     private var placeId = "No place id"
+    private var placeLatlng = "No latlng"
     private var containerId = ""
-
+    private val latLngList = mutableListOf<String>()
+    private val placeIdsList = mutableListOf<String>()
+    private lateinit var routeFetcher: RouteFetcher
 
     private val searchActivityLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
@@ -61,9 +70,12 @@ class ActiveActivitiesActivity : AppCompatActivity() {
             val placeName = data?.getStringExtra("PLACE_NAME") ?: "Place Name"
             val placeAddress = data?.getStringExtra("PLACE_ADDRESS") ?: "Address of the place here"
             val activity = data?.getStringExtra("ACTIVITY") ?: "No activity"
+            val tempLatlng = data?.getStringExtra("PLACE_LATLNG") ?: ""
+            placeLatlng = parseLatLng(tempLatlng) ?: "No latlng"
             placeId = data?.getStringExtra("PLACE_ID") ?: ""
 
             Log.e("ActivityPlaceProcessor", "ACTIVITY: $activity")
+            Log.e("ActivityPlaceProcessor", "placeLatlng: $placeLatlng")
 
             showBottomSheet()
 
@@ -74,6 +86,7 @@ class ActiveActivitiesActivity : AppCompatActivity() {
             bottomSheetBinding.tvAddressLabel.text = placeAddress
             bottomSheetBinding.mainContainer.visibility = View.VISIBLE
             bottomSheetBinding.btnConfirm.visibility = View.VISIBLE
+            bottomSheetBinding.recommendationPlaceLayout.visibility = View.VISIBLE
         }
     }
 
@@ -84,6 +97,7 @@ class ActiveActivitiesActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         prioritizationOptimizer = ActivityPrioritizationOptimizer(this)
+        routeFetcher = RouteFetcher(this, "DRIVE", latLngList)
 
 
 
@@ -98,6 +112,14 @@ class ActiveActivitiesActivity : AppCompatActivity() {
             adapter = activityAdapter
         }
 
+        binding.btnConfirm.setOnClickListener {
+            Log.d("ActiveActivitiesActivity", "LATLNG LIST SIZE: ${latLngList.size}" )
+            Log.d("ActiveActivitiesActivity", "LATLNG LIST: ${latLngList}" )
+
+            showTripSummaryBottomSheet()
+        }
+
+
         fetchAndDisplayActivities(containerId)
 
 
@@ -109,9 +131,30 @@ class ActiveActivitiesActivity : AppCompatActivity() {
     }
 
 
+    private fun fetchAndUseCurrentLocation() {
+        routeFetcher.getCurrentLocation(this) { latLng ->
+            if (latLng != null) {
+                Log.d("ActiveActivitiesActivity", "Current Location: ${latLng.latitude}, ${latLng.longitude}")
 
+                val tempLatlng = parseLatLng(latLng.toString())
+                if (tempLatlng != null) {
+                    latLngList.add(tempLatlng)
+                    Log.d("ActiveActivitiesActivity", "LATLNG LIST AT CURRENT LOCATION: $latLngList")
 
+                }
+            } else {
+                Log.e("ActiveActivitiesActivity", "Failed to fetch current location.")
+            }
+        }
+    }
 
+    private fun parseLatLng(latLngString: String): String? {
+        // Regular expression to match the latitude and longitude
+        val regex = Regex("""lat/lng: \(([^,]+),([^)]*)\)""")
+        val matchResult = regex.find(latLngString)
+        val (latitude, longitude) = matchResult?.destructured ?: return null
+        return "$latitude,$longitude"
+    }
 
     private fun showBottomSheet(clickedActivity: ActivityDetails? = null, position: Int? = null) {
         bottomSheetBinding = BottomSheetAddActivityBinding.inflate(layoutInflater)
@@ -124,7 +167,7 @@ class ActiveActivitiesActivity : AppCompatActivity() {
         // Handle startTime and endTime when they are empty or null
         val format = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()) // Initialize SimpleDateFormat
 
-// Handling startTime only if it is not empty or null
+        // Handling startTime only if it is not empty or null
         var startTime: Calendar? = if (!clickedActivity?.startTime.isNullOrBlank()) {
             val parsedStartTime =
                 clickedActivity?.startTime?.let { format.parse(it) } // Parse the startTime string only if it is not blank
@@ -135,7 +178,7 @@ class ActiveActivitiesActivity : AppCompatActivity() {
             null // Do nothing if startTime is empty or null
         }
 
-// Handling endTime only if it is not empty or null
+        // Handling endTime only if it is not empty or null
         var endTime: Calendar? = if (!clickedActivity?.endTime.isNullOrBlank()) {
             val parsedEndTime =
                 clickedActivity?.endTime?.let { format.parse(it) } // Parse the endTime string only if it is not blank
@@ -146,14 +189,11 @@ class ActiveActivitiesActivity : AppCompatActivity() {
             null // Do nothing if endTime is empty or null
         }
 
-        // Temporary copy of the activity to restore if canceled
-        val backupActivity = clickedActivity?.copy()
         if (clickedActivity != null && position != null) {
             Log.d("INDEX", "position: $position")
             Log.d("INDEX", "activity list size: ${activityList.size}")
 
-            activityList.removeAt(position)
-            activityAdapter.notifyItemRemoved(position)
+
             bottomSheetBinding.mainContainer.visibility = View.VISIBLE
             bottomSheetBinding.btnConfirm.visibility = View.VISIBLE
             bottomSheetBinding.etActivity.setText(clickedActivity.activityName)
@@ -184,6 +224,7 @@ class ActiveActivitiesActivity : AppCompatActivity() {
             bottomSheetBinding.mainContainer.visibility = View.GONE
             bottomSheetBinding.btnConfirm.visibility = View.GONE
             bottomSheetBinding.tvPlaceRecomLabel.visibility = View.GONE
+            bottomSheetBinding.activityPrompter.visibility = View.GONE
 
             val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
             imm.hideSoftInputFromWindow(bottomSheetBinding.root.windowToken, 0)
@@ -224,9 +265,6 @@ class ActiveActivitiesActivity : AppCompatActivity() {
 
         }
 
-
-
-
         // Handle priority button clicks
         bottomSheetBinding.btnHighPriority.setOnClickListener {
             togglePrioritySelection(
@@ -235,7 +273,6 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                 bottomSheetBinding.btnLowPriority
             )
             selectedPriority = if (bottomSheetBinding.btnHighPriority.isSelected) "High" else null
-            bottomSheetBinding.timeContraints.visibility = if (bottomSheetBinding.btnHighPriority.isSelected) View.VISIBLE else View.GONE
         }
 
         bottomSheetBinding.btnMediumPriority.setOnClickListener {
@@ -246,7 +283,6 @@ class ActiveActivitiesActivity : AppCompatActivity() {
             )
 
             selectedPriority = if (bottomSheetBinding.btnMediumPriority.isSelected) "Medium" else null
-            bottomSheetBinding.timeContraints.visibility = if (bottomSheetBinding.btnMediumPriority.isSelected) View.VISIBLE else View.GONE
         }
 
         bottomSheetBinding.btnLowPriority.setOnClickListener {
@@ -312,8 +348,6 @@ class ActiveActivitiesActivity : AppCompatActivity() {
             }
         }
 
-
-
         // Confirm button logic
         bottomSheetBinding.btnConfirm.setOnClickListener {
             val activityName = bottomSheetBinding.tvActivityName.text.toString().replaceFirstChar {
@@ -349,43 +383,34 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                 priorityLevel = priority,
                 startTime = startTimeFormatted,
                 endTime = endTimeFormatted,
-                placeId =  placeId
+                placeId =  placeId,
+                placeLatlng = placeLatlng,
 
             )
-            activityList.add(activityDetails)
-            activityAdapter.notifyItemInserted(activityList.size - 1)
-            checkRecyclerViewData()
 
-            val currentTime = System.currentTimeMillis()
-            prioritizationOptimizer.prioritizeActivities(activityList, currentTime) { prioritizedList ->
-                Log.d("ActiveActivitiesActivity", "Prioritized activities: $prioritizedList")
-
-                // Update the activityList with the prioritized list
-                activityList.clear()
-                activityList.addAll(prioritizedList)
-
-                // Notify the adapter about the changes
-                activityAdapter.notifyDataSetChanged()
+            if (clickedActivity != null && position != null) {
+                // Update the existing activity
+                activityList[position] = activityDetails
+                activityAdapter.notifyItemChanged(position)
+            } else {
+                // Add a new activity
+                activityList.add(activityDetails)
+                activityAdapter.notifyItemInserted(activityList.size - 1)
             }
 
+            // Update Firebase and dismiss the dialog
             saveAllActivitiesToFirebase(activityList, containerId)
-
+            latLngList.add(placeLatlng)
+            checkRecyclerViewData()
             bottomSheetDialog.dismiss()
         }
 
         // Cancel button logic
         bottomSheetBinding.btnCancel.setOnClickListener {
-            if (backupActivity != null && position != null) {
-                activityList.add(position, backupActivity)
-                activityAdapter.notifyItemInserted(position)
-            }
+            fetchAndDisplayActivities(containerId)
             bottomSheetDialog.dismiss()
         }
 
-        binding.btnConfirm.setOnClickListener {
-            Log.d("TAKER", "CONTAINER ID: $containerId" )
-
-        }
 
         bottomSheetDialog.show()
     }
@@ -454,6 +479,7 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                     }
             }
 
+            fetchAndDisplayActivities(containerId)
             // Dismiss the bottom sheet
             bottomSheetDialog.dismiss()
         }
@@ -470,61 +496,199 @@ class ActiveActivitiesActivity : AppCompatActivity() {
 
 
 
-    private fun fetchPlacesBasedOnActivity(places: List<String>) {
-        // Log the places being searched for
-        Log.d("ActiveActivitiesActivity", "Fetching places for the following: '$places'")
 
-        // Assume the ActivityPlaceRecommendation class is already set up
+//    private fun fetchPlacesBasedOnActivity(places: List<String>) {
+//        // Log the places being searched for
+//        Log.d("ActiveActivitiesActivity", "Fetching places for the following: '$places'")
+//        bottomSheetBinding.activityPrompter.visibility = View.GONE
+//        // Assume the ActivityPlaceRecommendation class is already set up
+//        ActivityPlaceRecommendation(this).performTextSearch(placesClient, places) { placeItems ->
+//            // Log the number of place items fetched
+//            Log.d("ActiveActivitiesActivity", "Fetched ${placeItems.size} place recommendations")
+//
+//            // Update the RecyclerView with the fetched place items
+//            // Set the LayoutManager
+//            bottomSheetBinding.recyclerViewRecommendations.layoutManager = LinearLayoutManager(this)
+//            bottomSheetBinding.tvPlaceRecomLabel.visibility = View.VISIBLE
+//            bottomSheetBinding.recommendationPlaceLayout.visibility = View.VISIBLE
+//
+//
+//            // Set the Adapter
+//            placeAdapter = LocationBasedPlaceRecommendationAdapter(placeItems) { selectedPlace ->
+//                Log.d("ActiveActivitiesActivity", "Clicked on place: ${selectedPlace.name}, ${selectedPlace.address}")
+//                // Perform additional actions
+//
+//                bottomSheetBinding.tvActivityName.text = bottomSheetBinding.etActivity.text
+//                bottomSheetBinding.tvPlaceLabel.text = selectedPlace.name
+//                bottomSheetBinding.tvAddressLabel.text = selectedPlace.address
+//                bottomSheetBinding.mainContainer.visibility = View.VISIBLE
+//                bottomSheetBinding.btnConfirm.visibility = View.VISIBLE
+//                bottomSheetBinding.recommendationPlaceLayout.visibility = View.GONE
+//                placeId = selectedPlace.placeId
+//
+//                placeLatlng = parseLatLng(selectedPlace.placeLatlng) ?: "No latlng"
+//
+//
+//            }
+//            bottomSheetBinding.recyclerViewRecommendations.adapter = placeAdapter
+//
+//
+//            Log.d("ActiveActivitiesActivity", "PLACE ITEMS SIZE: ${placeItems.size}")
+//
+//            // Log the visibility state of the RecyclerView
+//            if (placeItems.isNotEmpty()) {
+//                Log.d("ActiveActivitiesActivity", "Setting RecyclerView visibility to VISIBLE")
+//                bottomSheetBinding.recyclerViewRecommendations.visibility = View.VISIBLE
+//                // Hide loading animation and empty text
+//                bottomSheetBinding.lottieAnimation.visibility = View.GONE
+//                bottomSheetBinding.emptyDataLabel.visibility = View.GONE
+//            } else {
+//                Log.d("ActiveActivitiesActivity", "Setting RecyclerView visibility to GONE")
+//                bottomSheetBinding.recyclerViewRecommendations.visibility = View.GONE
+//                bottomSheetBinding.lottieAnimation.setAnimation(R.raw.no_data)
+//                bottomSheetBinding.emptyDataLabel.text =
+//                    getString(R.string.no_places_found_please_try_again)
+//            }
+//        }
+//    }
+
+    private fun fetchPlacesBasedOnActivity(places: List<String>) {
+        Log.d("ActiveActivitiesActivity", "Fetching places for: '$places'")
         ActivityPlaceRecommendation(this).performTextSearch(placesClient, places) { placeItems ->
-            // Log the number of place items fetched
             Log.d("ActiveActivitiesActivity", "Fetched ${placeItems.size} place recommendations")
 
-            // Update the RecyclerView with the fetched place items
-            // Set the LayoutManager
-            bottomSheetBinding.recyclerViewRecommendations.layoutManager = LinearLayoutManager(this)
-            bottomSheetBinding.tvPlaceRecomLabel.visibility = View.VISIBLE
+            // Initialize the RecyclerView with default visibility
+            setupRecyclerView(placeItems)
+
+            // Store the original list for filters
+            val originalPlaceItems = placeItems
+
+            // Set up filter logic
+            setupChipListeners(originalPlaceItems)
+
+        }
+    }
 
 
-            // Set the Adapter
-            placeAdapter = LocationBasedPlaceRecommendationAdapter(placeItems) { selectedPlace ->
-                Log.d("ActiveActivitiesActivity", "Clicked on place: ${selectedPlace.name}, ${selectedPlace.address}")
-                // Perform additional actions
-                bottomSheetBinding.tvActivityName.text = bottomSheetBinding.etActivity.text
-                bottomSheetBinding.tvPlaceLabel.text = selectedPlace.name
-                bottomSheetBinding.tvAddressLabel.text = selectedPlace.address
-                bottomSheetBinding.recyclerViewRecommendations.visibility = View.GONE
-                bottomSheetBinding.mainContainer.visibility = View.VISIBLE
-                bottomSheetBinding.btnConfirm.visibility = View.VISIBLE
-                bottomSheetBinding.tvPlaceRecomLabel.visibility = View.GONE
-                placeId = selectedPlace.placeId
+    private fun setupRecyclerView(placeItems: List<LocationBasedPlaceRecommendationItems>) {
+        bottomSheetBinding.recyclerViewRecommendations.layoutManager = LinearLayoutManager(this)
+        bottomSheetBinding.tvPlaceRecomLabel.visibility = View.VISIBLE
+        bottomSheetBinding.recommendationPlaceLayout.visibility = View.VISIBLE
+
+        updateRecyclerViewAdapter(placeItems)
+    }
 
 
-            }
-            bottomSheetBinding.recyclerViewRecommendations.adapter = placeAdapter
+    private fun updateRecyclerViewAdapter(filteredItems: List<LocationBasedPlaceRecommendationItems>) {
+        placeAdapter = LocationBasedPlaceRecommendationAdapter(filteredItems) { selectedPlace ->
+            Log.d("ActiveActivitiesActivity", "Clicked on place: ${selectedPlace.name}, ${selectedPlace.address}")
+            displaySelectedPlace(selectedPlace)
+        }
+        bottomSheetBinding.recyclerViewRecommendations.adapter = placeAdapter
+
+        // Manage empty state
+        if (filteredItems.isNotEmpty()) {
+            bottomSheetBinding.recyclerViewRecommendations.visibility = View.VISIBLE
+            bottomSheetBinding.lottieAnimation.visibility = View.GONE
+            bottomSheetBinding.emptyDataLabel.visibility = View.GONE
+        } else {
+            bottomSheetBinding.recyclerViewRecommendations.visibility = View.GONE
+            bottomSheetBinding.lottieAnimation.setAnimation(R.raw.no_data)
+            bottomSheetBinding.emptyDataLabel.text =
+                getString(R.string.no_places_found_please_try_again)
+        }
+    }
 
 
-            Log.d("ActiveActivitiesActivity", "PLACE ITEMS SIZE: ${placeItems.size}")
+    private fun filterPlacesByDistance(placeItems: List<LocationBasedPlaceRecommendationItems>, maxDistanceKm: Double) {
+        val filteredItems = placeItems.filter { place ->
+            val distanceInKm = place.distance.replace(" km", "").toDoubleOrNull()
+            distanceInKm != null && distanceInKm <= maxDistanceKm
+        }
+        Log.d("Filter", "Filtered places within $maxDistanceKm km: ${filteredItems.size}")
+        updateRecyclerViewAdapter(filteredItems)
+    }
 
-            // Log the visibility state of the RecyclerView
-            if (placeItems.isNotEmpty()) {
-                Log.d("ActiveActivitiesActivity", "Setting RecyclerView visibility to VISIBLE")
-                bottomSheetBinding.recyclerViewRecommendations.visibility = View.VISIBLE
-                // Hide loading animation and empty text
-                bottomSheetBinding.lottieAnimation.visibility = View.GONE
-                bottomSheetBinding.emptyDataLabel.visibility = View.GONE
-            } else {
-                Log.d("ActiveActivitiesActivity", "Setting RecyclerView visibility to GONE")
-                bottomSheetBinding.recyclerViewRecommendations.visibility = View.GONE
-                bottomSheetBinding.lottieAnimation.setAnimation(R.raw.no_data)
-                bottomSheetBinding.emptyDataLabel.text =
-                    getString(R.string.no_places_found_please_try_again)
-            }
+
+    private fun filterPlacesByRating(placeItems: List<LocationBasedPlaceRecommendationItems>, minRating: Double, maxRating: Double) {
+        val filteredItems = placeItems.filter { place ->
+            val rating = place.ratings.toDoubleOrNull()
+            rating != null && rating in minRating..maxRating
+        }
+        updateRecyclerViewAdapter(filteredItems)
+    }
+
+
+
+    private fun displaySelectedPlace(selectedPlace: LocationBasedPlaceRecommendationItems) {
+        bottomSheetBinding.tvActivityName.text = bottomSheetBinding.etActivity.text
+        bottomSheetBinding.tvPlaceLabel.text = selectedPlace.name
+        bottomSheetBinding.tvAddressLabel.text = selectedPlace.address
+        bottomSheetBinding.mainContainer.visibility = View.VISIBLE
+        bottomSheetBinding.btnConfirm.visibility = View.VISIBLE
+        bottomSheetBinding.recommendationPlaceLayout.visibility = View.GONE
+        placeId = selectedPlace.placeId
+        placeLatlng = parseLatLng(selectedPlace.placeLatlng) ?: "No latlng"
+    }
+
+
+    private fun setupChipListeners(
+        originalPlaceItems: List<LocationBasedPlaceRecommendationItems>
+    ) {
+        // Show All Chip
+        bottomSheetBinding.chipShowAll.setOnClickListener {
+            // Change the background color when clicked
+            bottomSheetBinding.chipShowAll.chipBackgroundColor =
+                ColorStateList.valueOf(ContextCompat.getColor(this, R.color.brand_color))
+
+            // Reset background color for other chips
+            resetChipBackground(bottomSheetBinding.chipUnder1Km, bottomSheetBinding.chipPopular)
+
+            updateRecyclerViewAdapter(originalPlaceItems)
+        }
+
+        // < 1km Chip
+        bottomSheetBinding.chipUnder1Km.setOnClickListener {
+            Log.d("ChipUnder1Km", "Clicked")
+            // Change the background color when clicked
+            bottomSheetBinding.chipUnder1Km.chipBackgroundColor =
+                ColorStateList.valueOf(ContextCompat.getColor(this, R.color.brand_color))
+
+            // Reset background color for other chips
+            resetChipBackground(bottomSheetBinding.chipShowAll, bottomSheetBinding.chipPopular)
+
+            filterPlacesByDistance(originalPlaceItems, 1.0)
+        }
+
+        // Popular Chip
+        bottomSheetBinding.chipPopular.setOnClickListener {
+            Log.d("ChipPopular", "Clicked")
+            // Change the background color when clicked
+            bottomSheetBinding.chipPopular.chipBackgroundColor =
+                ColorStateList.valueOf(ContextCompat.getColor(this, R.color.brand_color))
+
+            // Reset background color for other chips
+            resetChipBackground(bottomSheetBinding.chipShowAll, bottomSheetBinding.chipUnder1Km)
+
+            filterPlacesByRating(originalPlaceItems, 4.0, 5.0)
+        }
+    }
+
+    // Reset the background color of other chips
+    private fun resetChipBackground(vararg chips: Chip) {
+        chips.forEach { chip ->
+            chip.chipBackgroundColor =
+                ColorStateList.valueOf(ContextCompat.getColor(this, R.color.primary_color))
         }
     }
 
 
 
-    // Helper to toggle priority button selection
+
+
+
+
+
     private fun togglePrioritySelection(
         selectedButton: MaterialButton,
         vararg otherButtons: MaterialButton
@@ -543,14 +707,13 @@ class ActiveActivitiesActivity : AppCompatActivity() {
 
         // Toggle the selected button
         selectedButton.isSelected = !selectedButton.isSelected
+        bottomSheetBinding.timeContraints.visibility = if (selectedButton.isSelected) View.VISIBLE else View.GONE
         val defaultColor = defaultColorMap[selectedButton.id] ?: R.color.secondary_color
         selectedButton.setBackgroundColor(
             if (selectedButton.isSelected) getColor(R.color.brand_color) else getColor(defaultColor)
         )
     }
 
-
-    // Helper to show a date and time picker
     private fun showDateTimePicker(onDateTimeSelected: (Calendar) -> Unit) {
         val calendar = Calendar.getInstance()
         DatePickerDialog(this, { _, year, month, day ->
@@ -563,8 +726,6 @@ class ActiveActivitiesActivity : AppCompatActivity() {
         }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show()
     }
 
-
-    // Utility function to show a toast
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
@@ -580,7 +741,6 @@ class ActiveActivitiesActivity : AppCompatActivity() {
         return startTime.compareTo(endTime) == 0
     }
 
-    // Helper function to format time range
     private fun formatTimeRange(startTime: String?, endTime: String?): String {
         return when {
             startTime.isNullOrBlank() && endTime.isNullOrBlank() -> "No time constraints"
@@ -607,8 +767,6 @@ class ActiveActivitiesActivity : AppCompatActivity() {
             "Invalid time"
         }
     }
-
-
 
     private fun checkRecyclerViewData() {
         if (activityList.isEmpty()) {
@@ -702,7 +860,6 @@ class ActiveActivitiesActivity : AppCompatActivity() {
         return true
     }
 
-    // Helper to parse activity start/end time strings into Calendar objects
     private fun parseToCalendar(dateString: String): Calendar {
         val format = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
         return Calendar.getInstance().apply { time = format.parse(dateString)!! }
@@ -786,9 +943,6 @@ class ActiveActivitiesActivity : AppCompatActivity() {
         }
     }
 
-
-
-
     private fun fetchAndDisplayActivities(containerId: String) {
         val userId = FirebaseAuth.getInstance().currentUser?.uid
         if (userId == null) {
@@ -817,11 +971,26 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                     }
 
                     if (newActivityList.isNotEmpty()) {
-                        activityList.clear()
-                        activityList.addAll(newActivityList)
-                        activityAdapter.notifyDataSetChanged() // Notify changes to the adapter
+                        // Before updating the activityList, prioritize the activities
+                        val currentTime = System.currentTimeMillis()
+                        prioritizationOptimizer.prioritizeActivities(newActivityList, currentTime) { prioritizedList ->
+                            Log.d("ActiveActivitiesActivity", "Prioritized activities: $prioritizedList")
+
+                            // Update the activityList with the prioritized list
+                            activityList.clear()
+                            activityList.addAll(prioritizedList)
+
+                            // Notify the adapter about the changes
+                            activityAdapter.notifyDataSetChanged()
+
+                            // Update the LatLng list from activities after prioritization
+                            updateLatLngListFromActivities()
+                            updatePlaceIdsListFromActivities()
+                        }
                     } else {
                         checkRecyclerViewData()
+                        updateLatLngListFromActivities()
+                        updatePlaceIdsListFromActivities()
                     }
                 } else {
                     checkRecyclerViewData()
@@ -834,10 +1003,105 @@ class ActiveActivitiesActivity : AppCompatActivity() {
         })
     }
 
+    private fun updateLatLngListFromActivities() {
+        latLngList.clear()
+        fetchAndUseCurrentLocation()
+        for (activity in activityList) {
+            activity.placeLatlng.let { latLng ->
+                latLngList.add(latLng)
+            }
+        }
 
+        rearrangeLatLngList()
 
+        Log.e("ActiveActivitiesActivity", "Updated latLngList: $latLngList")
+    }
 
+    private fun updatePlaceIdsListFromActivities() {
+        placeIdsList.clear()
+        for (activity in activityList) {
+            activity.placeId.let { placeids ->
+                placeIdsList.add(placeids)
+            }
+        }
 
+        rearrangeLatLngList()
+
+        Log.e("ActiveActivitiesActivity", "PLACE IDS: $placeIdsList")
+    }
+
+    private fun rearrangeLatLngList() {
+        // Check if the list has at least two elements to rearrange
+        if (latLngList.size > 1) {
+            // Reverse the list to have the oldest location at the front
+            latLngList.reverse()
+
+            Log.e("ActiveActivitiesActivity", "Rearranged latLngList: $latLngList")
+        }
+    }
+
+    private fun showTripSummaryBottomSheet() {
+        // Initialize the View Binding
+        val binding = BottomSheetActivityTripSummaryBinding.inflate(layoutInflater)
+
+        // Initialize the BottomSheetDialog
+        val bottomSheetDialog = BottomSheetDialog(this)
+        bottomSheetDialog.setContentView(binding.root)
+
+        // Fetch route and update UI when ready
+        routeFetcher.fetchRoute {
+            binding.tvTotalActivities.text = "Total Activities: ${activityAdapter.itemCount}"
+            binding.tvTotalDistance.text = "Total Distance: ${routeFetcher.getTotalDistance()}"
+            binding.tvTotalDuration.text = "Duration: ${routeFetcher.getTotalDuration()}"
+            binding.tvTrafficCondition.text = "Traffic Condition: ${routeFetcher.determineOverallTrafficCondition()}"
+            val routeToken = routeFetcher.getCustomRouteToken()
+            // Handle Close button click
+            binding.btnClose.setOnClickListener {
+                bottomSheetDialog.dismiss()
+            }
+
+            // Handle Start Navigation button click
+            binding.btnStartNavigation.setOnClickListener {
+                val intent = Intent(
+                    this@ActiveActivitiesActivity,
+                    StartNavigationsActivity::class.java
+                ).apply {
+                    putExtra("IS_SIMULATED", false)
+                    putExtra("ROUTE_TOKEN", routeToken)
+                    putExtra("IS_SIMULATED", false)
+                    putExtra("TRAVEL_MODE", "DRIVE")
+                    putStringArrayListExtra("PLACE_IDS", ArrayList(placeIdsList))
+                }
+                // Log the intent before starting the activity
+                Log.e("ActiveActivitiesActivity", intent.extras.toString())
+
+                startActivity(intent)
+                bottomSheetDialog.dismiss()
+            }
+
+            // Handle Simulate button click
+            binding.btnSimulate.setOnClickListener {
+                val intent = Intent(
+                    this@ActiveActivitiesActivity,
+                    StartNavigationsActivity::class.java
+                ).apply {
+                    putExtra("IS_SIMULATED", false)
+                    putExtra("ROUTE_TOKEN", routeToken)
+                    putExtra("IS_SIMULATED", true)
+                    putExtra("TRAVEL_MODE", "DRIVE")
+                    putStringArrayListExtra("PLACE_IDS", ArrayList(placeIdsList))
+                }
+                // Log the intent before starting the activity
+                Log.e("ActiveActivitiesActivity", intent.extras.toString())
+
+                startActivity(intent)
+                bottomSheetDialog.dismiss()
+            }
+
+            // Show the BottomSheetDialog
+            bottomSheetDialog.show()
+        }
+    }
 
 
 }

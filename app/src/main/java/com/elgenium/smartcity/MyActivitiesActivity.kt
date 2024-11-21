@@ -6,11 +6,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.Toast
 import androidx.activity.addCallback
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.elgenium.smartcity.databinding.ActivityMyActivitiesBinding
 import com.elgenium.smartcity.databinding.BottomSheetAddContainerBinding
 import com.elgenium.smartcity.databinding.BottomSheetOptionsBinding
+import com.elgenium.smartcity.databinding.DialogConfirmDeleteBinding
 import com.elgenium.smartcity.models.MyActivityContainer
 import com.elgenium.smartcity.recyclerview_adapter.MyActivitiesAdapter
 import com.elgenium.smartcity.singletons.ActivityNavigationUtils
@@ -122,23 +124,7 @@ class MyActivitiesActivity : AppCompatActivity() {
 
         // Handle Delete option
         binding.optionDelete.setOnClickListener {
-            bottomSheetDialog.dismiss()
-
-            val databaseReference = FirebaseDatabase.getInstance().reference
-                .child("Users")
-                .child(userId!!)
-                .child("MyActivities")
-
-            // Delete the container from Firebase using its ID
-            databaseReference.child(container.containerId).removeValue()
-                .addOnSuccessListener {
-                    Toast.makeText(this, "${container.name} deleted successfully.", Toast.LENGTH_SHORT).show()
-                }
-                .addOnFailureListener { error ->
-                    Toast.makeText(this, "Failed to delete ${container.name}: ${error.message}", Toast.LENGTH_SHORT).show()
-                }
-            fetchActivityContainers()
-            checkIfRecyclerViewIsEmpty()
+            showConfirmDeleteDialog(container)
         }
 
 
@@ -156,7 +142,6 @@ class MyActivitiesActivity : AppCompatActivity() {
         startActivity(intent)
     }
 
-    // Function to show the BottomSheetDialog for adding a new container
     private fun showAddContainerBottomSheet(container: MyActivityContainer?) {
         // Inflate the layout using the binding class
         val bottomSheetBinding = BottomSheetAddContainerBinding.inflate(LayoutInflater.from(this))
@@ -224,8 +209,6 @@ class MyActivitiesActivity : AppCompatActivity() {
         }
     }
 
-
-
     private fun updateContainerInFirebase(containerId: String, updatedName: String) {
         // Reference to the Firebase database
         val databaseReference = userId?.let {
@@ -247,8 +230,6 @@ class MyActivitiesActivity : AppCompatActivity() {
         }
     }
 
-
-
     private fun checkIfRecyclerViewIsEmpty() {
         if (activityContainers.isEmpty()) {
             // Show Lottie animation and loading text
@@ -262,5 +243,46 @@ class MyActivitiesActivity : AppCompatActivity() {
             binding.recyclerView.visibility = View.VISIBLE
         }
     }
+
+    private fun showConfirmDeleteDialog(container: MyActivityContainer) {
+        // Inflate the dialog layout using binding
+        val binding = DialogConfirmDeleteBinding.inflate(LayoutInflater.from(this))
+        binding.textViewConfirmation.text = "Delete ${container.name}?"
+
+        // Create an AlertDialog and set the custom view
+        val dialog = AlertDialog.Builder(this)
+            .setView(binding.root)
+            .create()
+
+        // Handle button clicks
+        binding.buttonCancel.setOnClickListener {
+            // Dismiss the dialog when cancel is clicked
+            dialog.dismiss()
+        }
+
+        binding.buttonDelete.setOnClickListener {
+            // Perform delete action here
+            val databaseReference = FirebaseDatabase.getInstance().reference
+                .child("Users")
+                .child(userId!!)
+                .child("MyActivities")
+
+            // Delete the container from Firebase using its ID
+            databaseReference.child(container.containerId).removeValue()
+                .addOnSuccessListener {
+                    Toast.makeText(this, "${container.name} deleted successfully.", Toast.LENGTH_SHORT).show()
+                }
+                .addOnFailureListener { error ->
+                    Toast.makeText(this, "Failed to delete ${container.name}: ${error.message}", Toast.LENGTH_SHORT).show()
+                }
+            fetchActivityContainers()
+            checkIfRecyclerViewIsEmpty()
+            dialog.dismiss() // Dismiss the dialog after deletion
+        }
+
+        // Show the dialog
+        dialog.show()
+    }
+
 
 }

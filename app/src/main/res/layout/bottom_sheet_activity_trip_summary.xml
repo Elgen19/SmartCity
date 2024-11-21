@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:background="@color/primary_color"
+    android:padding="16dp">
+
+   <LinearLayout
+       android:layout_width="match_parent"
+       android:layout_height="wrap_content"
+       android:orientation="horizontal">
+       <!-- Title for the Bottom Sheet -->
+       <TextView
+           android:id="@+id/tvTitle"
+           android:layout_width="0dp"
+           android:layout_weight="1"
+           android:layout_height="wrap_content"
+           android:text="Trip Summary"
+           android:textSize="18sp"
+           android:textStyle="bold"
+           android:textColor="@color/brand_color" />
+
+       <ImageButton
+           android:id="@+id/btnClose"
+           android:layout_width="32dp"
+           android:layout_height="32dp"
+           android:src="@drawable/baseline_close_24"
+           android:backgroundTint="@color/primary_color"
+           app:tint="@color/red" />
+
+   </LinearLayout>
+
+    <!-- Subtitle for the Trip Summary -->
+    <TextView
+        android:id="@+id/tvSubtitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Review the route details and activity information to ensure the optimal planning of your trip."
+        android:textSize="14sp"
+        android:textColor="@android:color/darker_gray"
+        android:layout_marginBottom="16dp"/>
+
+
+    <!-- Subtitle for the Activity Card -->
+    <TextView
+        android:id="@+id/tvActivityCardTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Activity Details"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="@color/gray"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- CardView for the activity details -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardViewActivity"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:elevation="6dp"
+        android:radius="8dp"
+        android:backgroundTint="@android:color/white">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Total number of activities -->
+            <TextView
+                android:id="@+id/tvTotalActivities"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Total Activities: 0"
+                android:textSize="14sp"
+                android:textColor="@color/gray"
+                android:layout_marginBottom="8dp" />
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Subtitle for the Route Card -->
+    <TextView
+        android:id="@+id/tvRouteCardTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Route Details"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="@color/gray"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- CardView for the route-related details -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardViewRoute"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:elevation="6dp"
+        android:radius="8dp"
+        android:backgroundTint="@android:color/white">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Total route distance -->
+            <TextView
+                android:id="@+id/tvTotalDistance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Total Distance: 0 km"
+                android:textSize="14sp"
+                android:textColor="@color/gray"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Total duration -->
+            <TextView
+                android:id="@+id/tvTotalDuration"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Duration: 0 min"
+                android:textSize="14sp"
+                android:textColor="@color/gray"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Traffic Condition -->
+            <TextView
+                android:id="@+id/tvTrafficCondition"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Traffic Condition: Unknown"
+                android:textSize="14sp"
+                android:textColor="@color/gray" />
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Buttons for Start Navigation and Simulate -->
+    <LinearLayout
+        android:id="@+id/buttonRows"
+        android:layout_marginTop="16dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <!-- Start Navigation Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnStartNavigation"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            app:icon="@drawable/navigation"
+            app:iconTint="@color/primary_color"
+            android:layout_weight="1"
+            app:cornerRadius="8dp"
+            android:backgroundTint="@color/secondary_color"
+            app:rippleColor="@color/brand_color"
+            android:text="Start Navigation"
+            android:textColor="@android:color/white" />
+
+        <!-- Simulate Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSimulate"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Simulate"
+            app:cornerRadius="8dp"
+            android:backgroundTint="@color/primary_color"
+            app:rippleColor="@color/brand_color"
+            android:textColor="@color/gray" />
+
+    </LinearLayout>
+
+</LinearLayout>

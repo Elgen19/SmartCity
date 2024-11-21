@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="@color/primary_color"
+    android:background="@color/white"
     android:padding="8dp"
     android:layout_marginBottom="8dp">
 
@@ -11,6 +11,7 @@
         android:id="@+id/tvPlaceName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:textSize="16sp"
         android:textStyle="bold"
         android:text="Place Name"
         android:textColor="@color/gray" />
@@ -20,6 +21,55 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Place Address"
-        android:textSize="12sp"
+        android:textSize="14sp"
         android:textColor="@color/sub_support_text" />
+
+    <LinearLayout
+        android:layout_marginTop="16dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginEnd="8dp"
+                android:src="@drawable/rating"/>
+
+            <TextView
+                android:id="@+id/tvRatings"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:text="Place Address"
+                android:textSize="12sp"
+                android:textColor="@color/gray2" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginEnd="8dp"
+                android:src="@drawable/distance"/>
+
+            <TextView
+                android:id="@+id/tvDistance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:text="Place Address"
+                android:textSize="12sp"
+                android:textColor="@color/gray2" />
+        </LinearLayout>
+
+    </LinearLayout>
 </LinearLayout>

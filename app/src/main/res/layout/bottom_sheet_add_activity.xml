@@ -27,7 +27,7 @@
                 android:id="@+id/tvLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="What will you do today?"
+                android:text="What do you want to do today?"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="@color/gray"
@@ -43,7 +43,7 @@
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:hint="Enter activity"
+                    android:hint="Enter an activity"
                     android:background="@drawable/border_drawable"
                     android:padding="12dp"
                     android:textSize="14sp"
@@ -88,27 +88,81 @@
         </LinearLayout>
 
 
-        <TextView
-            android:id="@+id/tvPlaceRecomLabel"
+        <LinearLayout
+            android:id="@+id/recommendationPlaceLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Place Recommendations"
-            android:textSize="16sp"
+            android:orientation="vertical"
             android:visibility="gone"
-            android:textColor="@color/secondary_color"
-            android:layout_marginBottom="8dp"
-            android:textStyle="bold" />
+            android:layout_marginBottom="8dp">
 
-        <!-- Recommendations RecyclerView -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerViewRecommendations"
-            android:visibility="gone"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/rounded_background_white"
-            android:elevation="4dp"
-            android:padding="8dp"
-            android:layout_marginBottom="16dp" />
+            <TextView
+                android:id="@+id/tvPlaceRecomLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Place Recommendations"
+                android:textSize="18sp"
+                android:textColor="@color/secondary_color"
+                android:layout_marginBottom="8dp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvDescriptionRecommendation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Please select a place from the place suggestions below or filter a place."
+                android:textSize="12sp"
+                android:textColor="@color/dark_gray"
+                android:layout_marginBottom="8dp" />
+
+            <!-- ChipGroup for filtering options -->
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupFilters"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                app:singleSelection="true">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipShowAll"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Show All"
+                    app:rippleColor="@color/brand_color"
+                    android:textSize="12sp"
+                    android:textColor="@color/gray"
+                    app:chipBackgroundColor="@color/primary_color"
+                    app:checkedIconEnabled="false" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipUnder1Km"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="A kilometer away"
+                    app:rippleColor="@color/brand_color"
+                    android:textSize="12sp"
+                    app:chipBackgroundColor="@color/primary_color"
+                    android:textColor="@color/gray" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipPopular"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Popular"
+                    app:rippleColor="@color/brand_color"
+                    android:textSize="12sp"
+                    app:chipBackgroundColor="@color/primary_color"
+                    android:textColor="@color/gray" />
+            </com.google.android.material.chip.ChipGroup>
+
+            <!-- Recommendations RecyclerView -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewRecommendations"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:elevation="4dp"
+                android:layout_marginBottom="16dp" />
+        </LinearLayout>
 
 
 
@@ -120,7 +174,7 @@
             app:lottie_autoPlay="true"
             app:lottie_cacheComposition="true"
             app:lottie_loop="true"
-            app:lottie_rawRes="@raw/loading_lotify" />
+            app:lottie_rawRes="@raw/loading_animation2" />
 
         <TextView
             android:id="@+id/emptyDataLabel"

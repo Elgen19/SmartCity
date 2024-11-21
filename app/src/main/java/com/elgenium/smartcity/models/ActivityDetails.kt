@@ -8,5 +8,6 @@ data class ActivityDetails(
     val priorityLevel: String? = null,
     val startTime: String? = "" ,
     val endTime: String? = "",
-    val placeId: String = ""
+    val placeId: String = "",
+    val placeLatlng: String = "",
 )

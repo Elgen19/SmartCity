@@ -16,6 +16,9 @@ class LocationBasedPlaceRecommendationAdapter(
     class PlaceViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val placeName: TextView = view.findViewById(R.id.tvPlaceName)
         val placeAddress: TextView = view.findViewById(R.id.tvPlaceAddress)
+        val placeRatings: TextView = view.findViewById(R.id.tvRatings)
+        val placeDistance: TextView = view.findViewById(R.id.tvDistance)
+
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PlaceViewHolder {
@@ -28,6 +31,8 @@ class LocationBasedPlaceRecommendationAdapter(
         val place = placeList[position]
         holder.placeName.text = place.name
         holder.placeAddress.text = place.address
+        holder.placeRatings.text = place.ratings
+        holder.placeDistance.text = place.distance
 
         // Set an onClick listener to invoke the lambda
         holder.itemView.setOnClickListener {

@@ -144,19 +144,21 @@ class ActivityPrioritizationOptimizer(activityContext: Context) {
                 // Log: Current location as origin
                 Log.d(TAG, "Current location: Lat: ${currentLocation.latitude}, Lng: ${currentLocation.longitude}")
 
+                // Log each activity and its associated destination (place)
+                activityList.forEach { activity ->
+                    Log.d(TAG, "Preparing destination for activity: ${activity.activityName}, Place: ${activity.placeName}")
+                }
+
                 // Current location as origin
                 val currentWaypoint = WaypointMatrix(
                     location = LocationMatrix(latLng = LatLngMatrix(currentLocation.latitude, currentLocation.longitude))
                 )
                 waypointOrigins.add(RouteMatrixOrigin(waypoint = currentWaypoint))
 
-                // Log: Preparing destinations for all activities
-                Log.d(TAG, "Preparing destinations for activities")
-
                 // Prepare destinations for all activities
-                for (activity in activityList) {
+                activityList.forEach { activity ->
                     Log.d(TAG, "Adding destination for activity: ${activity.activityName}, Place: ${activity.placeName}")
-                    val destinationWaypoint = WaypointMatrix(placeId = activity.placeId) // Assuming placeName is a Place ID
+                    val destinationWaypoint = WaypointMatrix(placeId = activity.placeId)
                     waypointDestinations.add(RouteMatrixDestination(waypoint = destinationWaypoint))
                 }
 
@@ -185,18 +187,29 @@ class ActivityPrioritizationOptimizer(activityContext: Context) {
                         // Log: API response received
                         Log.d(TAG, "API response received. Calculating proximity scores.")
 
-                        // Calculate proximity scores
-                        routesMatrixResponse.forEachIndexed { index, routeMatrixElement ->
-                            val distanceMeters = routeMatrixElement.distanceMeters.toDouble()
-                            // Log: Distance and score for each activity
-                            Log.d(TAG, "Activity: ${activityList[index].activityName}, Distance: $distanceMeters meters, Score: ${1.0 / distanceMeters.coerceAtLeast(1.0)}")
+                        // Map activityList to destinationIndex to ensure correct mapping
+                        val destinationIndexToActivityMap = activityList.mapIndexed { index, activity ->
+                            index to activity
+                        }.toMap()
 
-                            val proximityScore = 1.0 / distanceMeters.coerceAtLeast(1.0) // Higher score for closer places
-                            proximityScores[activityList[index].activityName] = proximityScore
+            // Calculate proximity scores using destinationIndex
+                        routesMatrixResponse.forEach { routeMatrixElement ->
+                            val destinationIndex = routeMatrixElement.destinationIndex
+                            val activity = destinationIndexToActivityMap[destinationIndex] ?: return@forEach
+
+                            val distanceMeters = routeMatrixElement.distanceMeters.toDouble()
+                            val proximityScore = 1.0 / distanceMeters.coerceAtLeast(1.0) // Avoid division by zero
+
+                            // Assign the score to the correct activity
+                            proximityScores[activity.activityName] = proximityScore
+
+                            // Log the details for debugging
+                            Log.d(TAG, "Activity: ${activity.activityName}, Distance: $distanceMeters meters, Score: $proximityScore")
                         }
 
-                        // Log: Calculated proximity scores
-                        Log.d(TAG, "Proximity scores calculated: $proximityScores")
+                        // Log final proximity scores for debugging
+                        Log.d(TAG, "Proximity scores: $proximityScores")
+
 
                         // Return scores on the main thread
                         withContext(Dispatchers.Main) {
