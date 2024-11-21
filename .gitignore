@@ -18,3 +18,4 @@ google-services.json
 /local.defaults.properties
 /secrets.propertiesadd .
 secrets.properties
+app/src/main/assets/maps_cred.json
