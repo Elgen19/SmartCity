@@ -1,0 +1,91 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Question 1 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="1. What activities do you engage in daily?"
+        android:textSize="16sp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:textColor="@color/gray"
+        android:layout_marginBottom="8dp"
+        android:layout_marginTop="16dp" />
+
+    <CheckBox
+        android:id="@+id/checkbox_shopping"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:textColor="@color/gray"
+        android:text="Shopping at a Mall" />
+
+    <CheckBox
+        android:id="@+id/checkbox_dining"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:textColor="@color/gray"
+        android:text="Dining at a Restaurant" />
+
+    <CheckBox
+        android:id="@+id/checkbox_coffee"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:textColor="@color/gray"
+        android:text="Enjoying Coffee at a Cafe" />
+
+    <CheckBox
+        android:id="@+id/checkbox_drinks"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:textColor="@color/gray"
+        android:text="Grabbing Drinks at a Bar" />
+
+    <CheckBox
+        android:id="@+id/checkbox_tourist"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:textColor="@color/gray"
+        android:text="Exploring Tourist Attractions" />
+
+    <CheckBox
+        android:id="@+id/checkbox_movie"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:textColor="@color/gray"
+        android:text="Watching a Movie" />
+
+    <CheckBox
+        android:id="@+id/checkbox_gym"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:textColor="@color/gray"
+        android:text="Working Out at the Gym" />
+
+    <CheckBox
+        android:id="@+id/checkbox_beach"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:textColor="@color/gray"
+        android:text="Relaxing at the Beach" />
+</LinearLayout>

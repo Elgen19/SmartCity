@@ -1,0 +1,73 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Question 2 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:textColor="@color/gray"
+        android:text="2. What type of places do you prefer to visit?"
+        android:textSize="16sp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginTop="16dp" />
+
+    <CheckBox
+        android:id="@+id/checkbox_cafes_restaurants"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:textColor="@color/gray"
+        android:text="Cafes and restaurants" />
+
+    <CheckBox
+        android:id="@+id/checkbox_parks_outdoor_spaces"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:textColor="@color/gray"
+        android:text="Parks and outdoor spaces" />
+
+    <CheckBox
+        android:id="@+id/checkbox_cultural_historical_sites"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:textColor="@color/gray"
+        android:text="Cultural and historical sites" />
+
+    <CheckBox
+        android:id="@+id/checkbox_shopping_areas"
+        android:layout_width="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:textColor="@color/gray"
+        android:layout_height="wrap_content"
+        android:text="Shopping areas and malls" />
+
+    <CheckBox
+        android:id="@+id/checkbox_workspaces_study_areas"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:textColor="@color/gray"
+        android:text="Workspaces or study areas" />
+
+    <CheckBox
+        android:id="@+id/checkbox_entertainment_venues"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:textColor="@color/gray"
+        android:text="Entertainment venues (theaters, clubs)" />
+</LinearLayout>

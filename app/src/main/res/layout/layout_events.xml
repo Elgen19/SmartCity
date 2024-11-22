@@ -1,0 +1,72 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+    <!-- Question 3 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:textColor="@color/gray"
+        android:text="3. What types of events are you most interested in?"
+        android:textSize="16sp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginTop="16dp" />
+
+    <CheckBox
+        android:id="@+id/checkbox_concerts"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:textColor="@color/gray"
+        android:text="Concerts &amp; Live Performances" />
+
+    <CheckBox
+        android:id="@+id/checkbox_festivals"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:textColor="@color/gray"
+        android:text="Festivals &amp; Celebrations" />
+
+    <CheckBox
+        android:id="@+id/checkbox_sales"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:textColor="@color/gray"
+        android:text="Sales &amp; Promotions" />
+
+    <CheckBox
+        android:id="@+id/checkbox_workshops"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:textColor="@color/gray"
+        android:text="Workshops &amp; Seminars" />
+
+    <CheckBox
+        android:id="@+id/checkbox_community"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:textColor="@color/gray"
+        android:text="Community Events" />
+
+    <CheckBox
+        android:id="@+id/checkbox_outdoor_events"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:textColor="@color/gray"
+        android:text="Outdoor &amp; Adventure Events" />
+</LinearLayout>

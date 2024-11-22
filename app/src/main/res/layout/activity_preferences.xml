@@ -11,13 +11,11 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-
         <!-- Title Section -->
         <FrameLayout
             android:id="@+id/top"
             android:layout_width="match_parent"
-            android:layout_height="200dp"
-            android:layout_marginBottom="32dp">
+            android:layout_height="200dp">
 
             <!-- Lottie Background Animation -->
             <com.airbnb.lottie.LottieAnimationView
@@ -69,241 +67,521 @@
             </LinearLayout>
         </FrameLayout>
 
-
-
-        <!-- Question 1 -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="1. What activities do you engage in daily?"
-            android:textSize="16sp"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:textColor="@color/gray"
-            android:layout_marginBottom="8dp"
-            android:layout_marginTop="16dp" />
-
-        <CheckBox
-            android:id="@+id/checkbox_shopping"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="Shopping at a Mall" />
-
-        <CheckBox
-            android:id="@+id/checkbox_dining"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="Dining at a Restaurant" />
-
-        <CheckBox
-            android:id="@+id/checkbox_coffee"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="Enjoying Coffee at a Cafe" />
-
-        <CheckBox
-            android:id="@+id/checkbox_drinks"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="Grabbing Drinks at a Bar" />
-
-        <CheckBox
-            android:id="@+id/checkbox_tourist"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="Exploring Tourist Attractions" />
-
-        <CheckBox
-            android:id="@+id/checkbox_movie"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="Watching a Movie" />
-
-        <CheckBox
-            android:id="@+id/checkbox_gym"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="Working Out at the Gym" />
-
-        <CheckBox
-            android:id="@+id/checkbox_beach"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="Relaxing at the Beach" />
-
-
-
-
-        <!-- Question 2 -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="2. What type of places do you prefer to visit?"
-            android:textSize="16sp"
-            android:layout_marginBottom="8dp"
-            android:layout_marginTop="16dp" />
-
-        <CheckBox
-            android:id="@+id/checkbox_cafes_restaurants"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="Cafes and restaurants" />
-
-        <CheckBox
-            android:id="@+id/checkbox_parks_outdoor_spaces"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="Parks and outdoor spaces" />
-
-        <CheckBox
-            android:id="@+id/checkbox_cultural_historical_sites"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="Cultural and historical sites" />
-
-        <CheckBox
-            android:id="@+id/checkbox_shopping_areas"
-            android:layout_width="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:layout_height="wrap_content"
-            android:text="Shopping areas and malls" />
-
-        <CheckBox
-            android:id="@+id/checkbox_workspaces_study_areas"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="Workspaces or study areas" />
-
-        <CheckBox
-            android:id="@+id/checkbox_entertainment_venues"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="Entertainment venues (theaters, clubs)" />
-
-        <!-- Question 3 -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="3. What types of events are you most interested in?"
-            android:textSize="16sp"
-            android:layout_marginBottom="8dp"
-            android:layout_marginTop="16dp" />
-
-        <CheckBox
-            android:id="@+id/checkbox_concerts"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="Concerts &amp; Live Performances" />
-
-        <CheckBox
-            android:id="@+id/checkbox_festivals"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="Festivals &amp; Celebrations" />
-
-        <CheckBox
-            android:id="@+id/checkbox_sales"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="Sales &amp; Promotions" />
-
-        <CheckBox
-            android:id="@+id/checkbox_workshops"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="Workshops &amp; Seminars" />
-
-        <CheckBox
-            android:id="@+id/checkbox_community"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="Community Events" />
-
-        <CheckBox
-            android:id="@+id/checkbox_outdoor_events"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:textColor="@color/gray"
-            android:text="Outdoor &amp; Adventure Events" />
-
-
-        <!-- Submit Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/submit_button"
+        <LinearLayout
+            android:id="@+id/question1"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            android:text="Get Started"
-            android:backgroundTint="@color/secondary_color"
-            android:paddingTop="16dp"
-            android:paddingBottom="16dp"
-            app:rippleColor="@color/brand_color"
-            app:cornerRadius="8dp"
-            android:textColor="@color/white" />
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+            <!-- Question 1 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1. What activities do you engage in daily?"
+                android:textSize="16sp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:textColor="@color/gray"
+                android:layout_marginBottom="8dp"
+                android:layout_marginTop="16dp" />
+
+            <CheckBox
+                android:id="@+id/checkbox_shopping"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Shopping at a Mall" />
+
+            <CheckBox
+                android:id="@+id/checkbox_dining"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Dining at a Restaurant" />
+
+            <CheckBox
+                android:id="@+id/checkbox_coffee"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Enjoying Coffee at a Cafe" />
+
+            <CheckBox
+                android:id="@+id/checkbox_drinks"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Grabbing Drinks at a Bar" />
+
+            <CheckBox
+                android:id="@+id/checkbox_tourist"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Exploring Tourist Attractions" />
+
+            <CheckBox
+                android:id="@+id/checkbox_movie"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Watching a Movie" />
+
+            <CheckBox
+                android:id="@+id/checkbox_gym"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Working Out at the Gym" />
+
+            <CheckBox
+                android:id="@+id/checkbox_beach"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Relaxing at the Beach" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/question2"
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+            <!-- Question 2 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="2. What type of places do you prefer to visit?"
+                android:textSize="16sp"
+                android:layout_marginBottom="8dp"
+                android:layout_marginTop="16dp" />
+
+            <CheckBox
+                android:id="@+id/checkbox_cafes_restaurants"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Cafes and restaurants" />
+
+            <CheckBox
+                android:id="@+id/checkbox_parks_outdoor_spaces"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Parks and outdoor spaces" />
+
+            <CheckBox
+                android:id="@+id/checkbox_cultural_historical_sites"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Cultural and historical sites" />
+
+            <CheckBox
+                android:id="@+id/checkbox_shopping_areas"
+                android:layout_width="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:layout_height="wrap_content"
+                android:text="Shopping areas and malls" />
+
+            <CheckBox
+                android:id="@+id/checkbox_workspaces_study_areas"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Workspaces or study areas" />
+
+            <CheckBox
+                android:id="@+id/checkbox_entertainment_venues"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Entertainment venues (theaters, clubs)" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/question3"
+            android:layout_width="match_parent"
+            android:visibility="gone"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+            <!-- Question 3 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="3. What types of events are you most interested in?"
+                android:textSize="16sp"
+                android:layout_marginBottom="8dp"
+                android:layout_marginTop="16dp" />
+
+            <CheckBox
+                android:id="@+id/checkbox_concerts"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Concerts &amp; Live Performances" />
+
+            <CheckBox
+                android:id="@+id/checkbox_festivals"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Festivals &amp; Celebrations" />
+
+            <CheckBox
+                android:id="@+id/checkbox_sales"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Sales &amp; Promotions" />
+
+            <CheckBox
+                android:id="@+id/checkbox_workshops"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Workshops &amp; Seminars" />
+
+            <CheckBox
+                android:id="@+id/checkbox_community"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Community Events" />
+
+            <CheckBox
+                android:id="@+id/checkbox_outdoor_events"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Outdoor &amp; Adventure Events" />
+        </LinearLayout>
+
+        <!-- Question 4: Do you have a car or motorcycle? -->
+        <LinearLayout
+            android:id="@+id/question4"
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="4. Do you have a car or motorcycle?"
+                android:textSize="16sp"
+                android:layout_marginBottom="8dp"
+                android:layout_marginTop="16dp" />
+
+            <RadioGroup
+                android:id="@+id/radioGroupQuestion4"
+                android:layout_width="match_parent"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_height="wrap_content">
+
+                <RadioButton
+                    android:id="@+id/radio_car"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Car"
+                    android:textColor="@color/gray" />
+
+                <RadioButton
+                    android:id="@+id/radio_motorcycle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Motorcycle"
+                    android:textColor="@color/gray" />
+
+                <RadioButton
+                    android:id="@+id/radio_both"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="I have both"
+                    android:textColor="@color/gray" />
+
+                <RadioButton
+                    android:id="@+id/radio_none"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="I dont have any"
+                    android:textColor="@color/gray" />
+            </RadioGroup>
+        </LinearLayout>
+
+        <!-- Question 5: Preferred gas stations (only if car or motorcycle is selected) -->
+        <LinearLayout
+            android:id="@+id/question5"
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="5. Do you have any preferred gas station?"
+                android:textSize="16sp"
+                android:layout_marginBottom="8dp"
+                android:layout_marginTop="16dp" />
+
+            <CheckBox
+                android:id="@+id/checkbox_shell"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Shell" />
+
+            <CheckBox
+                android:id="@+id/checkbox_petron"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Petron" />
+
+            <CheckBox
+                android:id="@+id/checkbox_caltex"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Caltex" />
+
+            <CheckBox
+                android:id="@+id/checkbox_phoenix"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Phoenix" />
+
+            <CheckBox
+                android:id="@+id/checkbox_seaoil"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Sea Oil" />
+
+            <CheckBox
+                android:id="@+id/checkbox_total"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Total" />
+
+            <CheckBox
+                android:id="@+id/checkbox_flyingv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Flying V" />
+
+
+            <CheckBox
+                android:id="@+id/checkbox_ptt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="PTT" />
+
+
+        </LinearLayout>
+
+        <!-- Question 6: Preferred meal places -->
+        <LinearLayout
+            android:id="@+id/question6"
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="6. Do you have any preferred meal places?"
+                android:textSize="16sp"
+                android:layout_marginBottom="8dp"
+                android:layout_marginTop="16dp" />
+
+            <CheckBox
+                android:id="@+id/checkbox_american"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="American restaurants" />
+
+            <CheckBox
+                android:id="@+id/checkbox_korean"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Korean restaurant" />
+
+            <CheckBox
+                android:id="@+id/checkbox_ramen"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Ramen restaurant" />
+
+            <CheckBox
+                android:id="@+id/checkbox_fastfood"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Fastfood restaurant" />
+
+            <CheckBox
+                android:id="@+id/checkbox_steak"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Steak house" />
+
+            <CheckBox
+                android:id="@+id/fine_dining"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Fine dining" />
+
+            <CheckBox
+                android:id="@+id/food_court"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@color/gray"
+                android:text="Food court" />
+
+        </LinearLayout>
+
+
+        <LinearLayout
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:orientation="horizontal">
+
+          <!-- back Button -->
+          <com.google.android.material.button.MaterialButton
+              android:id="@+id/back_button"
+              android:layout_width="0dp"
+              android:layout_weight="1"
+              android:layout_height="wrap_content"
+              android:layout_margin="16dp"
+              android:text="Previous"
+              android:visibility="gone"
+              android:backgroundTint="@color/primary_color"
+              android:paddingTop="16dp"
+              android:paddingBottom="16dp"
+              app:rippleColor="@color/brand_color"
+              app:cornerRadius="8dp"
+
+              android:textColor="@color/gray" />
+
+          <!-- Submit Button -->
+          <com.google.android.material.button.MaterialButton
+              android:id="@+id/submit_button"
+              android:layout_width="0dp"
+              android:layout_weight="1"
+              android:layout_height="wrap_content"
+              android:layout_margin="16dp"
+              android:text="Next"
+              android:backgroundTint="@color/secondary_color"
+              android:paddingTop="16dp"
+              android:paddingBottom="16dp"
+              app:rippleColor="@color/brand_color"
+              app:cornerRadius="8dp"
+              android:textColor="@color/white" />
+      </LinearLayout>
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>
