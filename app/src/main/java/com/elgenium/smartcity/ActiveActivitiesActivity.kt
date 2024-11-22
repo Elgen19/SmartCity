@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Bundle
-import android.text.Html
 import android.util.Log
 import android.view.View
 import android.view.inputmethod.InputMethodManager
@@ -15,6 +14,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.text.HtmlCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.elgenium.smartcity.contextuals.ActivityPlaceRecommendation
@@ -64,31 +64,33 @@ class ActiveActivitiesActivity : AppCompatActivity() {
     private val placeIdsList = mutableListOf<String>()
     private lateinit var routeFetcher: RouteFetcher
 
-    private val searchActivityLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == RESULT_OK) {
-            val data = result.data
-            val placeName = data?.getStringExtra("PLACE_NAME") ?: "Place Name"
-            val placeAddress = data?.getStringExtra("PLACE_ADDRESS") ?: "Address of the place here"
-            val activity = data?.getStringExtra("ACTIVITY") ?: "No activity"
-            val tempLatlng = data?.getStringExtra("PLACE_LATLNG") ?: ""
-            placeLatlng = parseLatLng(tempLatlng) ?: "No latlng"
-            placeId = data?.getStringExtra("PLACE_ID") ?: ""
+    private val searchActivityLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                val data = result.data
+                val placeName = data?.getStringExtra("PLACE_NAME") ?: "Place Name"
+                val placeAddress =
+                    data?.getStringExtra("PLACE_ADDRESS") ?: "Address of the place here"
+                val activity = data?.getStringExtra("ACTIVITY") ?: "No activity"
+                val tempLatlng = data?.getStringExtra("PLACE_LATLNG") ?: ""
+                placeLatlng = parseLatLng(tempLatlng) ?: "No latlng"
+                placeId = data?.getStringExtra("PLACE_ID") ?: ""
 
-            Log.e("ActivityPlaceProcessor", "ACTIVITY: $activity")
-            Log.e("ActivityPlaceProcessor", "placeLatlng: $placeLatlng")
+                Log.e("ActivityPlaceProcessor", "ACTIVITY: $activity")
+                Log.e("ActivityPlaceProcessor", "placeLatlng: $placeLatlng")
 
-            showBottomSheet()
+                showBottomSheet()
 
-            // Update the CardView details
-            bottomSheetBinding.tvActivityName.text = activity
-            bottomSheetBinding.activityPrompter.visibility = View.GONE
-            bottomSheetBinding.tvPlaceLabel.text = placeName
-            bottomSheetBinding.tvAddressLabel.text = placeAddress
-            bottomSheetBinding.mainContainer.visibility = View.VISIBLE
-            bottomSheetBinding.btnConfirm.visibility = View.VISIBLE
-            bottomSheetBinding.recommendationPlaceLayout.visibility = View.VISIBLE
+                // Update the CardView details
+                bottomSheetBinding.tvActivityName.text = activity
+                bottomSheetBinding.activityPrompter.visibility = View.GONE
+                bottomSheetBinding.tvPlaceLabel.text = placeName
+                bottomSheetBinding.tvAddressLabel.text = placeAddress
+                bottomSheetBinding.mainContainer.visibility = View.VISIBLE
+                bottomSheetBinding.btnConfirm.visibility = View.VISIBLE
+                bottomSheetBinding.recommendationPlaceLayout.visibility = View.VISIBLE
+            }
         }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -113,8 +115,8 @@ class ActiveActivitiesActivity : AppCompatActivity() {
         }
 
         binding.btnConfirm.setOnClickListener {
-            Log.d("ActiveActivitiesActivity", "LATLNG LIST SIZE: ${latLngList.size}" )
-            Log.d("ActiveActivitiesActivity", "LATLNG LIST: ${latLngList}" )
+            Log.d("ActiveActivitiesActivity", "LATLNG LIST SIZE: ${latLngList.size}")
+            Log.d("ActiveActivitiesActivity", "LATLNG LIST: ${latLngList}")
 
             showTripSummaryBottomSheet()
         }
@@ -134,12 +136,18 @@ class ActiveActivitiesActivity : AppCompatActivity() {
     private fun fetchAndUseCurrentLocation() {
         routeFetcher.getCurrentLocation(this) { latLng ->
             if (latLng != null) {
-                Log.d("ActiveActivitiesActivity", "Current Location: ${latLng.latitude}, ${latLng.longitude}")
+                Log.d(
+                    "ActiveActivitiesActivity",
+                    "Current Location: ${latLng.latitude}, ${latLng.longitude}"
+                )
 
                 val tempLatlng = parseLatLng(latLng.toString())
                 if (tempLatlng != null) {
                     latLngList.add(tempLatlng)
-                    Log.d("ActiveActivitiesActivity", "LATLNG LIST AT CURRENT LOCATION: $latLngList")
+                    Log.d(
+                        "ActiveActivitiesActivity",
+                        "LATLNG LIST AT CURRENT LOCATION: $latLngList"
+                    )
 
                 }
             } else {
@@ -165,7 +173,8 @@ class ActiveActivitiesActivity : AppCompatActivity() {
 
         var selectedPriority: String? = clickedActivity?.priorityLevel
         // Handle startTime and endTime when they are empty or null
-        val format = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()) // Initialize SimpleDateFormat
+        val format =
+            SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()) // Initialize SimpleDateFormat
 
         // Handling startTime only if it is not empty or null
         var startTime: Calendar? = if (!clickedActivity?.startTime.isNullOrBlank()) {
@@ -201,15 +210,31 @@ class ActiveActivitiesActivity : AppCompatActivity() {
             bottomSheetBinding.tvActivityName.text = clickedActivity.activityName
             bottomSheetBinding.tvAddressLabel.text = clickedActivity.placeAddress
             when (clickedActivity.priorityLevel) {
-                "High" -> togglePrioritySelection(bottomSheetBinding.btnHighPriority, bottomSheetBinding.btnMediumPriority, bottomSheetBinding.btnLowPriority)
-                "Medium" -> togglePrioritySelection(bottomSheetBinding.btnMediumPriority, bottomSheetBinding.btnHighPriority, bottomSheetBinding.btnLowPriority)
-                "Low" -> togglePrioritySelection(bottomSheetBinding.btnLowPriority, bottomSheetBinding.btnHighPriority, bottomSheetBinding.btnMediumPriority)
+                "High" -> togglePrioritySelection(
+                    bottomSheetBinding.btnHighPriority,
+                    bottomSheetBinding.btnMediumPriority,
+                    bottomSheetBinding.btnLowPriority
+                )
+
+                "Medium" -> togglePrioritySelection(
+                    bottomSheetBinding.btnMediumPriority,
+                    bottomSheetBinding.btnHighPriority,
+                    bottomSheetBinding.btnLowPriority
+                )
+
+                "Low" -> togglePrioritySelection(
+                    bottomSheetBinding.btnLowPriority,
+                    bottomSheetBinding.btnHighPriority,
+                    bottomSheetBinding.btnMediumPriority
+                )
             }
             startTime?.let {
-                bottomSheetBinding.btnStartTime.text = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(it.time)
+                bottomSheetBinding.btnStartTime.text =
+                    SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(it.time)
             }
             endTime?.let {
-                bottomSheetBinding.btnEndTime.text = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(it.time)
+                bottomSheetBinding.btnEndTime.text =
+                    SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(it.time)
             }
         }
 
@@ -282,7 +307,8 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                 bottomSheetBinding.btnLowPriority
             )
 
-            selectedPriority = if (bottomSheetBinding.btnMediumPriority.isSelected) "Medium" else null
+            selectedPriority =
+                if (bottomSheetBinding.btnMediumPriority.isSelected) "Medium" else null
         }
 
         bottomSheetBinding.btnLowPriority.setOnClickListener {
@@ -308,7 +334,10 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                     }
 
                     startTime = tempStartTime
-                    bottomSheetBinding.btnStartTime.text = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(startTime!!.time)
+                    bottomSheetBinding.btnStartTime.text = SimpleDateFormat(
+                        "yyyy-MM-dd HH:mm",
+                        Locale.getDefault()
+                    ).format(startTime!!.time)
                 } else {
                     showToast("Start time cannot be in the past.")
                 }
@@ -356,15 +385,25 @@ class ActiveActivitiesActivity : AppCompatActivity() {
             val placeName = bottomSheetBinding.tvPlaceLabel.text.toString()
             val placeAddress = bottomSheetBinding.tvAddressLabel.text.toString()
             var priority = selectedPriority
-            val startTimeFormatted = startTime?.let { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(it.time) }
-            val endTimeFormatted = endTime?.let { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(it.time) }
+            val startTimeFormatted = startTime?.let {
+                SimpleDateFormat(
+                    "yyyy-MM-dd HH:mm",
+                    Locale.getDefault()
+                ).format(it.time)
+            }
+            val endTimeFormatted = endTime?.let {
+                SimpleDateFormat(
+                    "yyyy-MM-dd HH:mm",
+                    Locale.getDefault()
+                ).format(it.time)
+            }
 
             if (activityName.isBlank() || placeName == "Place Name" || placeAddress == "Address of the place here") {
                 showToast("Please fill in all required fields.")
                 return@setOnClickListener
             }
 
-            if (selectedPriority.isNullOrEmpty()){
+            if (selectedPriority.isNullOrEmpty()) {
                 priority = "Low"
             }
 
@@ -375,7 +414,6 @@ class ActiveActivitiesActivity : AppCompatActivity() {
             }
 
 
-
             val activityDetails = ActivityDetails(
                 activityName = activityName,
                 placeName = placeName,
@@ -383,10 +421,10 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                 priorityLevel = priority,
                 startTime = startTimeFormatted,
                 endTime = endTimeFormatted,
-                placeId =  placeId,
+                placeId = placeId,
                 placeLatlng = placeLatlng,
 
-            )
+                )
 
             if (clickedActivity != null && position != null) {
                 // Update the existing activity
@@ -423,8 +461,10 @@ class ActiveActivitiesActivity : AppCompatActivity() {
         bottomSheetBinding.tvActivityName.text = clickedActivity.activityName
         bottomSheetBinding.tvPlaceName.text = clickedActivity.placeName
         bottomSheetBinding.tvPlaceAddress.text = clickedActivity.placeAddress
-        bottomSheetBinding.tvPriority.text = clickedActivity.priorityLevel ?: "No priority level set"
-        bottomSheetBinding.tvTimeRange.text = formatTimeRange(clickedActivity.startTime, clickedActivity.endTime)
+        bottomSheetBinding.tvPriority.text =
+            clickedActivity.priorityLevel ?: "No priority level set"
+        bottomSheetBinding.tvTimeRange.text =
+            formatTimeRange(clickedActivity.startTime, clickedActivity.endTime)
 
         // Create the BottomSheetDialog and set the view using ViewBinding
         val bottomSheetDialog = BottomSheetDialog(this)
@@ -445,10 +485,13 @@ class ActiveActivitiesActivity : AppCompatActivity() {
             Log.d("Delete", "Activity: $activityToDelete")  // Add this line for debugging
 
 
-
             if (activityId.isNullOrBlank()) {
                 activityAdapter.removeActivity(position)
-                Toast.makeText(this@ActiveActivitiesActivity, "Activity deleted", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this@ActiveActivitiesActivity,
+                    "Activity deleted",
+                    Toast.LENGTH_SHORT
+                ).show()
                 return@setOnClickListener
             }
 
@@ -475,7 +518,11 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                     .addOnFailureListener { exception ->
                         // Handle error if the deletion fails
                         Log.e("Firebase", "Failed to delete activity: ${exception.message}")
-                        Toast.makeText(this@ActiveActivitiesActivity, "Failed to delete activity", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            this@ActiveActivitiesActivity,
+                            "Failed to delete activity",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
             }
 
@@ -492,65 +539,6 @@ class ActiveActivitiesActivity : AppCompatActivity() {
         // Show the BottomSheetDialog
         bottomSheetDialog.show()
     }
-
-
-
-
-
-//    private fun fetchPlacesBasedOnActivity(places: List<String>) {
-//        // Log the places being searched for
-//        Log.d("ActiveActivitiesActivity", "Fetching places for the following: '$places'")
-//        bottomSheetBinding.activityPrompter.visibility = View.GONE
-//        // Assume the ActivityPlaceRecommendation class is already set up
-//        ActivityPlaceRecommendation(this).performTextSearch(placesClient, places) { placeItems ->
-//            // Log the number of place items fetched
-//            Log.d("ActiveActivitiesActivity", "Fetched ${placeItems.size} place recommendations")
-//
-//            // Update the RecyclerView with the fetched place items
-//            // Set the LayoutManager
-//            bottomSheetBinding.recyclerViewRecommendations.layoutManager = LinearLayoutManager(this)
-//            bottomSheetBinding.tvPlaceRecomLabel.visibility = View.VISIBLE
-//            bottomSheetBinding.recommendationPlaceLayout.visibility = View.VISIBLE
-//
-//
-//            // Set the Adapter
-//            placeAdapter = LocationBasedPlaceRecommendationAdapter(placeItems) { selectedPlace ->
-//                Log.d("ActiveActivitiesActivity", "Clicked on place: ${selectedPlace.name}, ${selectedPlace.address}")
-//                // Perform additional actions
-//
-//                bottomSheetBinding.tvActivityName.text = bottomSheetBinding.etActivity.text
-//                bottomSheetBinding.tvPlaceLabel.text = selectedPlace.name
-//                bottomSheetBinding.tvAddressLabel.text = selectedPlace.address
-//                bottomSheetBinding.mainContainer.visibility = View.VISIBLE
-//                bottomSheetBinding.btnConfirm.visibility = View.VISIBLE
-//                bottomSheetBinding.recommendationPlaceLayout.visibility = View.GONE
-//                placeId = selectedPlace.placeId
-//
-//                placeLatlng = parseLatLng(selectedPlace.placeLatlng) ?: "No latlng"
-//
-//
-//            }
-//            bottomSheetBinding.recyclerViewRecommendations.adapter = placeAdapter
-//
-//
-//            Log.d("ActiveActivitiesActivity", "PLACE ITEMS SIZE: ${placeItems.size}")
-//
-//            // Log the visibility state of the RecyclerView
-//            if (placeItems.isNotEmpty()) {
-//                Log.d("ActiveActivitiesActivity", "Setting RecyclerView visibility to VISIBLE")
-//                bottomSheetBinding.recyclerViewRecommendations.visibility = View.VISIBLE
-//                // Hide loading animation and empty text
-//                bottomSheetBinding.lottieAnimation.visibility = View.GONE
-//                bottomSheetBinding.emptyDataLabel.visibility = View.GONE
-//            } else {
-//                Log.d("ActiveActivitiesActivity", "Setting RecyclerView visibility to GONE")
-//                bottomSheetBinding.recyclerViewRecommendations.visibility = View.GONE
-//                bottomSheetBinding.lottieAnimation.setAnimation(R.raw.no_data)
-//                bottomSheetBinding.emptyDataLabel.text =
-//                    getString(R.string.no_places_found_please_try_again)
-//            }
-//        }
-//    }
 
     private fun fetchPlacesBasedOnActivity(places: List<String>) {
         Log.d("ActiveActivitiesActivity", "Fetching places for: '$places'")
@@ -578,12 +566,49 @@ class ActiveActivitiesActivity : AppCompatActivity() {
         updateRecyclerViewAdapter(placeItems)
     }
 
-
     private fun updateRecyclerViewAdapter(filteredItems: List<LocationBasedPlaceRecommendationItems>) {
-        placeAdapter = LocationBasedPlaceRecommendationAdapter(filteredItems) { selectedPlace ->
-            Log.d("ActiveActivitiesActivity", "Clicked on place: ${selectedPlace.name}, ${selectedPlace.address}")
-            displaySelectedPlace(selectedPlace)
+        // Find the closest place
+        val closestPlace = filteredItems.minByOrNull {
+            it.distance.replace(" km", "").toDoubleOrNull() ?: Double.MAX_VALUE
         }
+
+        placeAdapter = LocationBasedPlaceRecommendationAdapter(filteredItems) { selectedPlace ->
+            Log.d(
+                "ActiveActivitiesActivity",
+                "Clicked on place: ${selectedPlace.name}, ${selectedPlace.address}"
+            )
+
+            val selectedDistance = selectedPlace.distance.replace(" km", "").toDoubleOrNull()
+            val closestDistance = closestPlace?.distance?.replace(" km", "")?.toDoubleOrNull()
+
+            if (selectedDistance != null && closestDistance != null && selectedDistance > closestDistance) {
+                // Show dialog when the selected place is farther than the closest one
+                showSuggestionsDialog(
+                    title = "Closer Place Found",
+                    message = "You selected <b>${selectedPlace.name}</b> (<b>${selectedPlace.distance}</b>), but a closer option is available at " +
+                            "<b>${closestPlace.name}</b> in only <b>${closestPlace.distance}</b>. Do you want to continue?",
+                    isActionButtonVisible = true,
+                    onDismiss = {
+                        // Finalize the selection if dismissed
+                        Log.d(
+                            "ActiveActivitiesActivity",
+                            "Selection finalized for ${selectedPlace.name}"
+                        )
+                        displaySelectedPlace(selectedPlace)
+                    },
+                    onAction = {
+                        // Allow re-selection
+                        Log.d("ActiveActivitiesActivity", "User opted to reselect a place")
+                        Toast.makeText(this, "Please select a closer place", Toast.LENGTH_SHORT)
+                            .show()
+                    }
+                )
+            } else {
+                // Finalize selection if no dialog is shown
+                displaySelectedPlace(selectedPlace)
+            }
+        }
+
         bottomSheetBinding.recyclerViewRecommendations.adapter = placeAdapter
 
         // Manage empty state
@@ -600,7 +625,10 @@ class ActiveActivitiesActivity : AppCompatActivity() {
     }
 
 
-    private fun filterPlacesByDistance(placeItems: List<LocationBasedPlaceRecommendationItems>, maxDistanceKm: Double) {
+    private fun filterPlacesByDistance(
+        placeItems: List<LocationBasedPlaceRecommendationItems>,
+        maxDistanceKm: Double
+    ) {
         val filteredItems = placeItems.filter { place ->
             val distanceInKm = place.distance.replace(" km", "").toDoubleOrNull()
             distanceInKm != null && distanceInKm <= maxDistanceKm
@@ -609,16 +637,17 @@ class ActiveActivitiesActivity : AppCompatActivity() {
         updateRecyclerViewAdapter(filteredItems)
     }
 
-
-    private fun filterPlacesByRating(placeItems: List<LocationBasedPlaceRecommendationItems>, minRating: Double, maxRating: Double) {
+    private fun filterPlacesByRating(
+        placeItems: List<LocationBasedPlaceRecommendationItems>,
+        minRating: Double,
+        maxRating: Double
+    ) {
         val filteredItems = placeItems.filter { place ->
             val rating = place.ratings.toDoubleOrNull()
             rating != null && rating in minRating..maxRating
         }
         updateRecyclerViewAdapter(filteredItems)
     }
-
-
 
     private fun displaySelectedPlace(selectedPlace: LocationBasedPlaceRecommendationItems) {
         bottomSheetBinding.tvActivityName.text = bottomSheetBinding.etActivity.text
@@ -630,7 +659,6 @@ class ActiveActivitiesActivity : AppCompatActivity() {
         placeId = selectedPlace.placeId
         placeLatlng = parseLatLng(selectedPlace.placeLatlng) ?: "No latlng"
     }
-
 
     private fun setupChipListeners(
         originalPlaceItems: List<LocationBasedPlaceRecommendationItems>
@@ -682,13 +710,6 @@ class ActiveActivitiesActivity : AppCompatActivity() {
         }
     }
 
-
-
-
-
-
-
-
     private fun togglePrioritySelection(
         selectedButton: MaterialButton,
         vararg otherButtons: MaterialButton
@@ -702,12 +723,17 @@ class ActiveActivitiesActivity : AppCompatActivity() {
         // Deselect other buttons
         otherButtons.forEach { button ->
             button.isSelected = false
-            button.setBackgroundColor(getColor(defaultColorMap[button.id] ?: R.color.secondary_color))
+            button.setBackgroundColor(
+                getColor(
+                    defaultColorMap[button.id] ?: R.color.secondary_color
+                )
+            )
         }
 
         // Toggle the selected button
         selectedButton.isSelected = !selectedButton.isSelected
-        bottomSheetBinding.timeContraints.visibility = if (selectedButton.isSelected) View.VISIBLE else View.GONE
+        bottomSheetBinding.timeContraints.visibility =
+            if (selectedButton.isSelected) View.VISIBLE else View.GONE
         val defaultColor = defaultColorMap[selectedButton.id] ?: R.color.secondary_color
         selectedButton.setBackgroundColor(
             if (selectedButton.isSelected) getColor(R.color.brand_color) else getColor(defaultColor)
@@ -716,14 +742,20 @@ class ActiveActivitiesActivity : AppCompatActivity() {
 
     private fun showDateTimePicker(onDateTimeSelected: (Calendar) -> Unit) {
         val calendar = Calendar.getInstance()
-        DatePickerDialog(this, { _, year, month, day ->
-            TimePickerDialog(this, { _, hour, minute ->
-                val selectedCalendar = Calendar.getInstance().apply {
-                    set(year, month, day, hour, minute)
-                }
-                onDateTimeSelected(selectedCalendar)
-            }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), false).show()
-        }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show()
+        DatePickerDialog(
+            this,
+            { _, year, month, day ->
+                TimePickerDialog(this, { _, hour, minute ->
+                    val selectedCalendar = Calendar.getInstance().apply {
+                        set(year, month, day, hour, minute)
+                    }
+                    onDateTimeSelected(selectedCalendar)
+                }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), false).show()
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        ).show()
     }
 
     private fun showToast(message: String) {
@@ -785,43 +817,88 @@ class ActiveActivitiesActivity : AppCompatActivity() {
         }
     }
 
-    private fun isTimeValid(startTime: Calendar, endTime: Calendar, existingActivities: List<ActivityDetails>): Boolean {
+    private fun isTimeValid(
+        startTime: Calendar,
+        endTime: Calendar,
+        existingActivities: List<ActivityDetails>
+    ): Boolean {
         for (activity in existingActivities) {
             if (activity.priorityLevel in listOf("High", "Medium")) {
                 val existingStart = activity.startTime?.let { parseToCalendar(it) }
                 val existingEnd = activity.endTime?.let { parseToCalendar(it) }
+                val dateFormatter = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault())
+                val timeFormatter = SimpleDateFormat("h:mm a", Locale.getDefault())
+
+                val scheduledTime = if (existingStart != null && existingEnd != null) {
+                    if (dateFormatter.format(existingStart.time) == dateFormatter.format(existingEnd.time)) {
+                        // Same day: Condense to single date with time range
+                        "${dateFormatter.format(existingStart.time)} from ${
+                            timeFormatter.format(
+                                existingStart.time
+                            )
+                        } to ${timeFormatter.format(existingEnd.time)}"
+                    } else {
+                        // Different days: Show full dates and times
+                        "${dateFormatter.format(existingStart.time)} at ${
+                            timeFormatter.format(
+                                existingStart.time
+                            )
+                        } to ${dateFormatter.format(existingEnd.time)} at ${
+                            timeFormatter.format(
+                                existingEnd.time
+                            )
+                        }"
+                    }
+                } else {
+                    "Unavailable" // Fallback message for null values
+                }
+
+                val selectedTime =
+                    if (dateFormatter.format(startTime.time) == dateFormatter.format(endTime.time)) {
+                        // Same day: Condense to single date with time range
+                        "${dateFormatter.format(startTime.time)} from ${
+                            timeFormatter.format(
+                                startTime.time
+                            )
+                        } to ${timeFormatter.format(endTime.time)}"
+                    } else {
+                        // Different days: Show full dates and times
+                        "${dateFormatter.format(startTime.time)} at ${timeFormatter.format(startTime.time)} to ${
+                            dateFormatter.format(
+                                endTime.time
+                            )
+                        } at ${timeFormatter.format(endTime.time)}"
+                    }
+
 
                 // Skip activities without proper time data
                 if (existingStart == null || existingEnd == null) continue
 
                 // Check for overlap
-                val isOverlapping = startTime.timeInMillis < existingEnd.timeInMillis && endTime.timeInMillis > existingStart.timeInMillis
+                val isOverlapping =
+                    startTime.timeInMillis < existingEnd.timeInMillis && endTime.timeInMillis > existingStart.timeInMillis
                 if (isOverlapping) {
-                    showConflictDialog(
+                    showSuggestionsDialog(
                         title = "Time Conflict",
-                        message = Html.fromHtml(
-                            """
-                            <p>The selected time for this activity overlaps with another activity: "<b>${activity.activityName}</b>".</p>
-                            
-                            <h4>Details:</h4>
+                        message = """
+                            The selected time for this activity overlaps with another activity, <b>${activity.activityName}</b>.
+                            <br/><br/>
                             <ul>
-                                <li><b>Overlapping Activity:</b> ${activity.activityName}</li>
-                                <li><b>Scheduled Time:</b> 
-                                    ${existingStart.let { SimpleDateFormat("MMMM dd, yyyy 'at' HH:mm", Locale.getDefault()).format(it.time) }} to 
-                                    ${existingEnd.let { SimpleDateFormat("MMMM dd, yyyy 'at' HH:mm", Locale.getDefault()).format(it.time) }}
-                                </li>
-                                <li><b>Your Selected Time:</b> 
-                                    ${SimpleDateFormat("MMMM dd, yyyy 'at' HH:mm", Locale.getDefault()).format(startTime.time)} to 
-                                    ${SimpleDateFormat("MMMM dd, yyyy 'at' HH:mm", Locale.getDefault()).format(endTime.time)}
-                                </li>
+                                <li><b>Scheduled Time:</b> $scheduledTime</li>
+                                <li><b>Your Selected Time:</b> $selectedTime</li>
                             </ul>
-                            
-                            <h4>Resolution:</h4>
-                            <p>Choose a different start or end time for this activity to avoid overlapping with the existing one.</p>
-                            """.trimIndent(),
-                            Html.FROM_HTML_MODE_LEGACY
-                        ).toString()
+                            <br/>
+                            Choose a different start or end time for this activity to avoid overlapping with the existing one.
+                        """.trimIndent(),
+                        isActionButtonVisible = false,
+                        onDismiss = {
+                            Log.d("ConflictDialog", "User dismissed the dialog.")
+                        },
+                        onAction = {
+                            Log.d("ConflictDialog", "User will adjust activity timing.")
+                        }
                     )
+
 
                     return false
                 }
@@ -832,25 +909,26 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                     (abs(existingEnd.timeInMillis - startTime.timeInMillis) >= bufferTimeMillis) &&
                             (abs(endTime.timeInMillis - existingStart.timeInMillis) >= bufferTimeMillis)
                 if (!hasBuffer) {
-                    showConflictDialog(
+                    showSuggestionsDialog(
                         title = "Insufficient Buffer Time",
-                        message = Html.fromHtml(
-                            """
-                            <p>There is not enough buffer time between this activity and another: "<b>${activity.activityName}</b>".</p>
+                        message = """
+                            <p>There is not enough buffer time between this activity and another, <b>${activity.activityName}</b>.</p>
                             
-                            <h4>Details:</h4>
                             <ul>
                                 <li><b>Conflict Activity:</b> ${activity.activityName}</li>
-                                <li><b>Scheduled Time:</b> ${existingStart.let { SimpleDateFormat("MMMM dd, yyyy 'at' HH:mm", Locale.getDefault()).format(it.time) }} to ${existingEnd.let { SimpleDateFormat("MMMM dd, yyyy 'at' HH:mm", Locale.getDefault()).format(it.time) }}</li>
-                                <li><b>Your Selected Time:</b> ${SimpleDateFormat("MMMM dd, yyyy 'at' HH:mm", Locale.getDefault()).format(startTime.time)} to ${SimpleDateFormat("MMMM dd, yyyy 'at' HH:mm", Locale.getDefault()).format(endTime.time)}</li>
-                                <li><b>Minimum Buffer Required:</b> 15 minutes</li>
+                                <li><b>Scheduled Time:</b> $scheduledTime</li>
+                                <li><b>Your Selected Time:</b> $selectedTime</li>
                             </ul>
                             
-                            <h4>Resolution:</h4>
-                            <p>Adjust the start or end time of your activity to allow at least 15 minutes between the two activities.</p>
-                            """.trimIndent(),
-                            Html.FROM_HTML_MODE_LEGACY
-                        ).toString()
+                        <p>Please adjust the start time of this activity to allow at least a 15-minute buffer for this activity.</p>
+                        """.trimIndent(),
+                        isActionButtonVisible = false,
+                        onDismiss = {
+                            Log.d("ConflictDialog", "User dismissed the dialog.")
+                        },
+                        onAction = {
+                            Log.d("ConflictDialog", "User will adjust activity timing.")
+                        }
                     )
 
                     return false
@@ -865,30 +943,43 @@ class ActiveActivitiesActivity : AppCompatActivity() {
         return Calendar.getInstance().apply { time = format.parse(dateString)!! }
     }
 
-    private fun showConflictDialog(title: String, message: String) {
-        // Inflate the dialog layout using ViewBinding
+    private fun showSuggestionsDialog(
+        title: String,
+        message: String,
+        isActionButtonVisible: Boolean,
+        onDismiss: () -> Unit,
+        onAction: () -> Unit
+    ) {
         val binding = DialogActivitySuggestionsBinding.inflate(layoutInflater)
-
-        // Create an AlertDialog
         val dialog = AlertDialog.Builder(this).setView(binding.root).create()
 
-        // Set title and message
+        // Set dialog title and message
         binding.dialogTitle.text = title
-        binding.dialogMessage.text = message
+        binding.dialogMessage.text = HtmlCompat.fromHtml(message, HtmlCompat.FROM_HTML_MODE_LEGACY)
 
-        // Handle "Dismiss" button
+        // Handle "Dismiss" button (finalize selection)
         binding.btnDismiss.setOnClickListener {
             dialog.dismiss()
+            onDismiss()
         }
 
-        // Hide the "Fix" button since no callback is provided
-        binding.btnAction.visibility = View.GONE
 
-        // Show the dialog
+        if (isActionButtonVisible) {
+            binding.btnAction.visibility = View.VISIBLE
+            binding.btnAction.setOnClickListener {
+                dialog.dismiss()
+                onAction()
+            }
+        }
+
         dialog.show()
     }
 
-    private fun saveAllActivitiesToFirebase(activityDetailsList: List<ActivityDetails>, containerId: String) {
+
+    private fun saveAllActivitiesToFirebase(
+        activityDetailsList: List<ActivityDetails>,
+        containerId: String
+    ) {
         val userId = FirebaseAuth.getInstance().currentUser?.uid
         if (userId == null) {
             Toast.makeText(this, "User not logged in.", Toast.LENGTH_SHORT).show()
@@ -925,12 +1016,20 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                 if (batchUpdates.isNotEmpty()) {
                     Tasks.whenAll(batchUpdates).addOnCompleteListener { task ->
                         if (task.isSuccessful) {
-                            Toast.makeText(this, "All activities saved successfully!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                this,
+                                "All activities saved successfully!",
+                                Toast.LENGTH_SHORT
+                            ).show()
 
                             // Fetch updated list and update RecyclerView
                             fetchAndDisplayActivities(containerId)
                         } else {
-                            Toast.makeText(this, "Failed to save some activities.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                this,
+                                "Failed to save some activities.",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                     }
                 } else {
@@ -938,7 +1037,8 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                     fetchAndDisplayActivities(containerId)
                 }
             } else {
-                Toast.makeText(this, "Failed to clear existing activities.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Failed to clear existing activities.", Toast.LENGTH_SHORT)
+                    .show()
             }
         }
     }
@@ -973,8 +1073,14 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                     if (newActivityList.isNotEmpty()) {
                         // Before updating the activityList, prioritize the activities
                         val currentTime = System.currentTimeMillis()
-                        prioritizationOptimizer.prioritizeActivities(newActivityList, currentTime) { prioritizedList ->
-                            Log.d("ActiveActivitiesActivity", "Prioritized activities: $prioritizedList")
+                        prioritizationOptimizer.prioritizeActivities(
+                            newActivityList,
+                            currentTime
+                        ) { prioritizedList ->
+                            Log.d(
+                                "ActiveActivitiesActivity",
+                                "Prioritized activities: $prioritizedList"
+                            )
 
                             // Update the activityList with the prioritized list
                             activityList.clear()
@@ -998,7 +1104,11 @@ class ActiveActivitiesActivity : AppCompatActivity() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Toast.makeText(this@ActiveActivitiesActivity, "Failed to fetch activities: ${error.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this@ActiveActivitiesActivity,
+                    "Failed to fetch activities: ${error.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         })
     }
@@ -1053,7 +1163,8 @@ class ActiveActivitiesActivity : AppCompatActivity() {
             binding.tvTotalActivities.text = "Total Activities: ${activityAdapter.itemCount}"
             binding.tvTotalDistance.text = "Total Distance: ${routeFetcher.getTotalDistance()}"
             binding.tvTotalDuration.text = "Duration: ${routeFetcher.getTotalDuration()}"
-            binding.tvTrafficCondition.text = "Traffic Condition: ${routeFetcher.determineOverallTrafficCondition()}"
+            binding.tvTrafficCondition.text =
+                "Traffic Condition: ${routeFetcher.determineOverallTrafficCondition()}"
             val routeToken = routeFetcher.getCustomRouteToken()
             // Handle Close button click
             binding.btnClose.setOnClickListener {

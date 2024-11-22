@@ -24,7 +24,7 @@
         android:text="Time conflict"
         android:textColor="@color/brand_color"
         android:layout_marginTop="8dp"
-        android:textSize="20sp"
+        android:textSize="16sp"
         android:textStyle="bold"
         android:paddingBottom="8dp" />
 
@@ -34,19 +34,18 @@
         android:layout_height="wrap_content"
         android:textColor="@color/gray"
         android:text="conflicting times"
-        android:textSize="16sp"
-        android:paddingBottom="16dp" />
+        android:layout_marginBottom="32dp" />
 
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnAction"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Fix"
+        android:text="Reselect"
         android:visibility="gone"
         app:backgroundTint="@color/secondary_color"
-        android:paddingTop="16dp"
-        android:paddingBottom="16dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
         app:cornerRadius="8dp"
         android:textColor="@color/primary_color"
         android:layout_marginBottom="8dp" />
@@ -57,9 +56,9 @@
         android:layout_height="wrap_content"
         android:text="Dismiss"
         app:backgroundTint="@color/primary_color"
-        android:paddingTop="16dp"
+        android:paddingTop="8dp"
         android:textSize="16sp"
-        android:paddingBottom="16dp"
+        android:paddingBottom="8dp"
         app:cornerRadius="8dp"
         android:textColor="@color/gray"
         app:strokeWidth="1dp"
