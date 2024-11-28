@@ -31,10 +31,6 @@ class ActivityPrioritizationOptimizer(activityContext: Context) {
     private val context = activityContext
     companion object {
         private const val TAG = "ActivityPrioritizationOptimizer"
-        // Weights for the prioritization
-        private const val TIME_WEIGHT = 50
-        private const val PROXIMITY_WEIGHT = 30
-        private const val PRIORITY_WEIGHT = 20
     }
 
     private val fusedLocationClient: FusedLocationProviderClient =
@@ -43,50 +39,280 @@ class ActivityPrioritizationOptimizer(activityContext: Context) {
     /**
      * Prioritize activities based on dynamic factors such as time, proximity, and priority level.
      */
+//    fun prioritizeActivities(
+//        activityList: List<ActivityDetails>,
+//        currentTime: Long,
+//        onCompletion: (List<ActivityDetails>) -> Unit
+//    ) {
+//        Log.d(TAG, "Starting prioritization process for ${activityList.size} activities")
+//
+//        // Calculate proximity scores (current location is handled internally)
+//        calculateProximityScores(activityList, context) { proximityScores ->
+//            // Once proximity scores are available, prioritize activities
+//            val prioritizedList = activityList.sortedByDescending { activity ->
+//                calculateActivityScore(activity, proximityScores, currentTime)
+//            }
+//
+//            Log.d(TAG, "Prioritization complete. Returning prioritized list of activities.")
+//            onCompletion(prioritizedList)
+//        }
+//    }
+
     fun prioritizeActivities(
         activityList: List<ActivityDetails>,
-        currentTime: Long,
         onCompletion: (List<ActivityDetails>) -> Unit
     ) {
         Log.d(TAG, "Starting prioritization process for ${activityList.size} activities")
 
+        // Get the current time internally
+        val currentTime = System.currentTimeMillis()
+
         // Calculate proximity scores (current location is handled internally)
         calculateProximityScores(activityList, context) { proximityScores ->
-            // Once proximity scores are available, prioritize activities
+            // Prioritize activities based on dynamic weights, scores, and travel time
             val prioritizedList = activityList.sortedByDescending { activity ->
-                calculateActivityScore(activity, proximityScores, currentTime)
+                // Extract the travel time for each activity (in minutes)
+                val travelTimeMinutes = proximityScores[activity.activityName] ?: 0.0
+
+                // Calculate activity score including travel time
+                calculateActivityScore(activity, proximityScores, currentTime, travelTimeMinutes)
             }
 
-            Log.d(TAG, "Prioritization complete. Returning prioritized list of activities.")
+            // Return the prioritized list via the callback
             onCompletion(prioritizedList)
         }
     }
 
 
+
+    private fun calculateDynamicWeights(activity: ActivityDetails, currentTime: Long): Triple<Double, Double, Double> {
+        val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+        val activityTime = try {
+            activity.startTime?.let { formatter.parse(it)?.time } ?: Long.MAX_VALUE
+        } catch (e: Exception) {
+            Long.MAX_VALUE
+        }
+
+        val timeDifference = (activityTime - currentTime) / 1000 // Time difference in seconds
+
+        val timeWeight = when {
+            timeDifference < 900 -> 70.0 // High weight if the activity starts within 15 minutes
+            timeDifference < 3600 -> 50.0 // Moderate weight if it starts within an hour
+            else -> 20.0 // Lower weight for activities far in the future
+        }
+
+        val proximityWeight = 20.0
+        val priorityWeight = 30.0
+
+        Log.d(
+            TAG,
+            "Dynamic Weights -> Activity: ${activity.activityName}, " +
+                    "Time Weight: $timeWeight, Proximity Weight: $proximityWeight, Priority Weight: $priorityWeight"
+        )
+        return Triple(timeWeight, proximityWeight, priorityWeight)
+    }
+
+
+
+
     /**
      * Calculate the prioritization score for an activity.
      */
+//    private fun calculateActivityScore(
+//        activity: ActivityDetails,
+//        proximityScores: Map<String, Double>,
+//        currentTime: Long
+//    ): Double {
+//        Log.d(TAG, "Calculating score for activity: ${activity.activityName}")
+//
+//        val timeScore = calculateTimeScore(activity.startTime, currentTime)
+//        val proximityScore = proximityScores[activity.activityName] ?: 0.0
+//        val priorityScore = calculatePriorityScore(activity.priorityLevel)
+//
+//        val totalScore = (TIME_WEIGHT * timeScore) +
+//                (PROXIMITY_WEIGHT * proximityScore) +
+//                (PRIORITY_WEIGHT * priorityScore)
+//
+//        Log.d(
+//            TAG, "Scores for ${activity.activityName} -> Time: $timeScore, " +
+//                    "Proximity: $proximityScore, Priority: $priorityScore, Total: $totalScore"
+//        )
+//        return totalScore
+//    }
+
     private fun calculateActivityScore(
         activity: ActivityDetails,
         proximityScores: Map<String, Double>,
-        currentTime: Long
+        currentTime: Long,
+        travelTimeMinutes: Double // Travel time in minutes, passed from proximityScores
     ): Double {
-        Log.d(TAG, "Calculating score for activity: ${activity.activityName}")
+        val (timeWeight, proximityWeight, priorityWeight) = calculateDynamicWeights(activity, currentTime)
 
         val timeScore = calculateTimeScore(activity.startTime, currentTime)
-        val proximityScore = proximityScores[activity.activityName] ?: 0.0
-        val priorityScore = calculatePriorityScore(activity.priorityLevel)
+        val proximityScore = proximityScores[activity.activityName]?.coerceIn(0.0, 1.0) ?: 0.0
+        val priorityScore = calculatePriorityScore(activity.priorityLevel).coerceIn(0.0, 1.0)
 
-        val totalScore = (TIME_WEIGHT * timeScore) +
-                (PROXIMITY_WEIGHT * proximityScore) +
-                (PRIORITY_WEIGHT * priorityScore)
+        // Adjust feasibility check based on priority
+        val feasibilityPenalty = when (activity.priorityLevel) {
+            "High" -> {
+                val isFeasible = isActivityFeasibleStrict(activity, proximityScore, currentTime, travelTimeMinutes)
+                if (isFeasible) 1.0 else 0.0 // Penalize non-feasible high priority activities
+            }
+            "Medium" -> {
+                val isFeasible = isActivityFeasibleFlexible(activity, proximityScore, currentTime, travelTimeMinutes)
+                if (isFeasible) 1.0 else 0.5 // Penalize medium priority activities less
+            }
+            "Low" -> {
+                1.0 // Low priority activities have no feasibility penalty
+            }
+            else -> 1.0 // Default to no penalty if the priority level is unknown
+        }
+
+        // Calculate the total score considering all factors
+        val totalScore = (timeWeight * timeScore) +
+                (proximityWeight * proximityScore) +
+                (priorityWeight * priorityScore) * feasibilityPenalty
 
         Log.d(
-            TAG, "Scores for ${activity.activityName} -> Time: $timeScore, " +
-                    "Proximity: $proximityScore, Priority: $priorityScore, Total: $totalScore"
+            TAG,
+            "Activity: ${activity.activityName}, Feasibility Penalty: $feasibilityPenalty, Total Score: $totalScore"
         )
+
         return totalScore
     }
+
+    private fun isActivityFeasibleStrict(
+        activity: ActivityDetails,
+        proximityScore: Double,
+        currentTime: Long,
+        travelTimeMinutes: Double // Pass the calculated travel time in minutes
+    ): Boolean {
+        val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+        val activityStartTime = try {
+            formatter.parse(activity.startTime)?.time ?: return false
+        } catch (e: Exception) {
+            return false
+        }
+
+        // Estimate travel time in milliseconds
+        val travelTimeMillis = (travelTimeMinutes * 60 * 1000).toLong()
+
+        // High priority activities must be reachable before the start time
+        return currentTime + travelTimeMillis <= activityStartTime
+    }
+
+    private fun isActivityFeasibleFlexible(
+        activity: ActivityDetails,
+        proximityScore: Double,
+        currentTime: Long,
+        travelTimeMinutes: Double // Pass the calculated travel time in minutes
+    ): Boolean {
+        val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+        val activityStartTime = try {
+            formatter.parse(activity.startTime)?.time ?: return false
+        } catch (e: Exception) {
+            return false
+        }
+
+        // Estimate travel time in milliseconds
+        val travelTimeMillis = (travelTimeMinutes * 60 * 1000).toLong()
+
+        // Medium priority activities should reach before the end time
+        val activityEndTime = activityStartTime + (travelTimeMinutes * 60 * 1000).toLong()
+        return currentTime + travelTimeMillis <= activityEndTime
+    }
+
+    private fun calculateProximityScores(
+        activityList: List<ActivityDetails>,
+        context: Context,
+        onScoresCalculated: (Map<String, Double>) -> Unit
+    ) {
+        getCurrentLocation(context) { currentLocation ->
+            if (currentLocation != null) {
+                val travelMode = "DRIVE"
+                val waypointOrigins = mutableListOf<RouteMatrixOrigin>()
+                val waypointDestinations = mutableListOf<RouteMatrixDestination>()
+
+                // Log: Current location as origin
+                Log.d(TAG, "Current location: Lat: ${currentLocation.latitude}, Lng: ${currentLocation.longitude}")
+
+                activityList.forEach { activity ->
+                    Log.d(TAG, "Preparing destination for activity: ${activity.activityName}, Place: ${activity.placeName}")
+                }
+
+                // Current location as origin
+                val currentWaypoint = WaypointMatrix(
+                    location = LocationMatrix(latLng = LatLngMatrix(currentLocation.latitude, currentLocation.longitude))
+                )
+                waypointOrigins.add(RouteMatrixOrigin(waypoint = currentWaypoint))
+
+                // Prepare destinations for all activities
+                activityList.forEach { activity ->
+                    Log.d(TAG, "Adding destination for activity: ${activity.activityName}, Place: ${activity.placeName}")
+                    val destinationWaypoint = WaypointMatrix(placeId = activity.placeId)
+                    waypointDestinations.add(RouteMatrixDestination(waypoint = destinationWaypoint))
+                }
+
+                // Create the RouteMatrixRequest
+                val routeMatrixRequest = RouteMatrixRequest(
+                    origins = waypointOrigins,
+                    destinations = waypointDestinations,
+                    travelMode = travelMode,
+                    routingPreference = "TRAFFIC_AWARE"
+                )
+
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        val apiKey = BuildConfig.MAPS_API_KEY
+                        Log.d(TAG, "Making RouteMatrix API call with API key.")
+                        val routesMatrixResponse = RoutesMatrixClientSingleton.instance.computeRouteMatrix(apiKey, request = routeMatrixRequest)
+
+                        val proximityScores = mutableMapOf<String, Double>()
+                        Log.d(TAG, "API response received. Calculating proximity scores.")
+
+                        // Map activityList to destinationIndex to ensure correct mapping
+                        val destinationIndexToActivityMap = activityList.mapIndexed { index, activity ->
+                            index to activity
+                        }.toMap()
+
+                        routesMatrixResponse.forEach { routeMatrixElement ->
+                            val destinationIndex = routeMatrixElement.destinationIndex
+                            val activity = destinationIndexToActivityMap[destinationIndex] ?: return@forEach
+
+                            val distanceMeters = routeMatrixElement.distanceMeters.toDouble()
+
+                            // Extract duration string and convert to minutes
+                            val durationString = routeMatrixElement.duration
+                            val durationInSeconds = durationString.replace("s", "").toLong()
+                            val travelTimeMinutes = durationInSeconds / 60.0
+
+                            // Log the travel time for debugging
+                            Log.d(TAG, "Activity: ${activity.activityName}, Distance: $distanceMeters meters, Travel Time: $travelTimeMinutes minutes")
+
+                            // Calculate proximity score (using distance)
+                            val proximityScore = 1.0 / distanceMeters.coerceAtLeast(1.0)
+
+                            proximityScores[activity.activityName] = proximityScore
+                        }
+
+                        // Return scores on the main thread
+                        withContext(Dispatchers.Main) {
+                            onScoresCalculated(proximityScores)
+                            Log.d(TAG, "Proximity scores returned to callback.")
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error calculating proximity scores: ${e.message}", e)
+                    }
+                }
+            } else {
+                Log.e(TAG, "Unable to retrieve current location.")
+                onScoresCalculated(emptyMap())
+            }
+        }
+    }
+
+
+
 
     /**
      * Calculate the time score (higher score for activities closer to the current time).
@@ -129,104 +355,8 @@ class ActivityPrioritizationOptimizer(activityContext: Context) {
 
 
 
-    private fun calculateProximityScores(
-        activityList: List<ActivityDetails>,
-        context: Context,
-        onScoresCalculated: (Map<String, Double>) -> Unit
-    ) {
-        // First, get the current location asynchronously
-        getCurrentLocation(context) { currentLocation ->
-            if (currentLocation != null) {
-                val travelMode = "DRIVE"
-                val waypointOrigins = mutableListOf<RouteMatrixOrigin>()
-                val waypointDestinations = mutableListOf<RouteMatrixDestination>()
-
-                // Log: Current location as origin
-                Log.d(TAG, "Current location: Lat: ${currentLocation.latitude}, Lng: ${currentLocation.longitude}")
-
-                // Log each activity and its associated destination (place)
-                activityList.forEach { activity ->
-                    Log.d(TAG, "Preparing destination for activity: ${activity.activityName}, Place: ${activity.placeName}")
-                }
-
-                // Current location as origin
-                val currentWaypoint = WaypointMatrix(
-                    location = LocationMatrix(latLng = LatLngMatrix(currentLocation.latitude, currentLocation.longitude))
-                )
-                waypointOrigins.add(RouteMatrixOrigin(waypoint = currentWaypoint))
-
-                // Prepare destinations for all activities
-                activityList.forEach { activity ->
-                    Log.d(TAG, "Adding destination for activity: ${activity.activityName}, Place: ${activity.placeName}")
-                    val destinationWaypoint = WaypointMatrix(placeId = activity.placeId)
-                    waypointDestinations.add(RouteMatrixDestination(waypoint = destinationWaypoint))
-                }
-
-                // Create the RouteMatrixRequest
-                val routeMatrixRequest = RouteMatrixRequest(
-                    origins = waypointOrigins,
-                    destinations = waypointDestinations,
-                    travelMode = travelMode,
-                    routingPreference = "TRAFFIC_AWARE"
-                )
-
-                // Log: Request creation for RouteMatrix API
-                Log.d(TAG, "RouteMatrixRequest created with ${waypointOrigins.size} origins and ${waypointDestinations.size} destinations.")
-
-                CoroutineScope(Dispatchers.IO).launch {
-                    try {
-                        val apiKey = BuildConfig.MAPS_API_KEY
-                        // Log: Making API request
-                        Log.d(TAG, "Making RouteMatrix API call with API key.")
-
-                        val routesMatrixResponse = RoutesMatrixClientSingleton.instance.computeRouteMatrix(apiKey, request = routeMatrixRequest)
-
-                        // Map to hold activity name -> proximity score
-                        val proximityScores = mutableMapOf<String, Double>()
-
-                        // Log: API response received
-                        Log.d(TAG, "API response received. Calculating proximity scores.")
-
-                        // Map activityList to destinationIndex to ensure correct mapping
-                        val destinationIndexToActivityMap = activityList.mapIndexed { index, activity ->
-                            index to activity
-                        }.toMap()
-
-            // Calculate proximity scores using destinationIndex
-                        routesMatrixResponse.forEach { routeMatrixElement ->
-                            val destinationIndex = routeMatrixElement.destinationIndex
-                            val activity = destinationIndexToActivityMap[destinationIndex] ?: return@forEach
-
-                            val distanceMeters = routeMatrixElement.distanceMeters.toDouble()
-                            val proximityScore = 1.0 / distanceMeters.coerceAtLeast(1.0) // Avoid division by zero
-
-                            // Assign the score to the correct activity
-                            proximityScores[activity.activityName] = proximityScore
-
-                            // Log the details for debugging
-                            Log.d(TAG, "Activity: ${activity.activityName}, Distance: $distanceMeters meters, Score: $proximityScore")
-                        }
-
-                        // Log final proximity scores for debugging
-                        Log.d(TAG, "Proximity scores: $proximityScores")
 
 
-                        // Return scores on the main thread
-                        withContext(Dispatchers.Main) {
-                            onScoresCalculated(proximityScores)
-                            Log.d(TAG, "Proximity scores returned to callback.")
-                        }
-                    } catch (e: Exception) {
-                        // Log: Error during the API request
-                        Log.e(TAG, "Error calculating proximity scores: ${e.message}", e)
-                    }
-                }
-            } else {
-                Log.e(TAG, "Unable to retrieve current location.")
-                onScoresCalculated(emptyMap()) // Return an empty map if location is null
-            }
-        }
-    }
 
 
 

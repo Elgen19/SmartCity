@@ -109,16 +109,16 @@ class PlaceOpeningHoursContextuals(private val activityContext: Context) {
 
         currentOpeningHours?.let { openingHours ->
             var currentDayIndex = when (currentHour.get(Calendar.DAY_OF_WEEK)) {
-                Calendar.SUNDAY -> 0
-                Calendar.MONDAY -> 1
-                Calendar.TUESDAY -> 2
-                Calendar.WEDNESDAY -> 3
-                Calendar.THURSDAY -> 4
-                Calendar.FRIDAY -> 5
-                Calendar.SATURDAY -> 6
+                Calendar.SUNDAY -> 1
+                Calendar.MONDAY -> 2
+                Calendar.TUESDAY -> 3
+                Calendar.WEDNESDAY -> 4
+                Calendar.THURSDAY -> 5
+                Calendar.FRIDAY -> 6
+                Calendar.SATURDAY -> 7
                 else -> -1 // Just a fallback, though it should never happen
             }
-            currentDayIndex -= 1
+
 
             val currentDate = currentHour.time // get the current date and time for logging
             val dayOfWeek = currentHour.get(Calendar.DAY_OF_WEEK)

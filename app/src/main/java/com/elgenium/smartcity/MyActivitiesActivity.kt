@@ -5,7 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Toast
-import androidx.activity.addCallback
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -15,7 +15,6 @@ import com.elgenium.smartcity.databinding.BottomSheetOptionsBinding
 import com.elgenium.smartcity.databinding.DialogConfirmDeleteBinding
 import com.elgenium.smartcity.models.MyActivityContainer
 import com.elgenium.smartcity.recyclerview_adapter.MyActivitiesAdapter
-import com.elgenium.smartcity.singletons.ActivityNavigationUtils
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.firebase.auth.FirebaseAuth
@@ -55,9 +54,14 @@ class MyActivitiesActivity : AppCompatActivity() {
             showAddContainerBottomSheet(null)
         }
 
-        onBackPressedDispatcher.addCallback(this) {
-           ActivityNavigationUtils.navigateToActivity(this@MyActivitiesActivity, PlacesActivity::class.java, true)
-        }
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // Define the behavior when the back button is pressed
+                val intent = Intent(this@MyActivitiesActivity, PlacesActivity::class.java)
+                startActivity(intent)
+                finish() // This will finish the current activity
+            }
+        })
     }
 
     private fun fetchActivityContainers() {
@@ -124,6 +128,7 @@ class MyActivitiesActivity : AppCompatActivity() {
 
         // Handle Delete option
         binding.optionDelete.setOnClickListener {
+            bottomSheetDialog.dismiss()
             showConfirmDeleteDialog(container)
         }
 
@@ -139,6 +144,8 @@ class MyActivitiesActivity : AppCompatActivity() {
         // Pass container name as an extra
         val intent = Intent(this, ActiveActivitiesActivity::class.java)
         intent.putExtra("containerId", container.containerId)
+        intent.putExtra("containerStatus", container.status)
+        Toast.makeText(this, "Container status: ${container.status}", Toast.LENGTH_SHORT).show()
         startActivity(intent)
     }
 

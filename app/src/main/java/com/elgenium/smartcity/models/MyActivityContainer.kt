@@ -4,5 +4,6 @@ data class MyActivityContainer(
     var containerId: String = "",
     val name: String = "",
     val dateCreated: Long = System.currentTimeMillis(), // default to current time
+    var status: String = "Unscheduled"
 )
 

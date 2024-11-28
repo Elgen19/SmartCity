@@ -1,0 +1,53 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@color/primary_color"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Enter Work Schedule"
+        android:textSize="16sp"
+        android:textColor="@color/gray"
+        android:layout_marginBottom="8dp" />
+
+    <EditText
+        android:id="@+id/editTextSchedule"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="e.g., MON-FRI (4:00 pm - 5:00 pm)"
+        android:padding="12dp"
+        android:textSize="14sp"
+        android:background="@drawable/rounded_background_white"
+        android:textColor="@color/gray"
+        android:textColorHint="@color/sub_support_text"
+        android:inputType="text" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end"
+        android:layout_marginTop="16dp">
+
+        <Button
+            android:id="@+id/buttonCancelSchedule"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cancel"
+            android:layout_marginStart="8dp"
+            android:backgroundTint="@color/primary_color"
+            android:textColor="@color/red" />
+
+        <Button
+            android:id="@+id/buttonConfirmSchedule"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Confirm"
+            android:backgroundTint="@color/secondary_color"
+            android:textColor="@android:color/white" />
+    </LinearLayout>
+</LinearLayout>

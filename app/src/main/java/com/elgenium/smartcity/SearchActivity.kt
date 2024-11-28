@@ -37,6 +37,7 @@ import com.google.android.gms.ads.nativead.NativeAdView
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.libraries.places.api.model.CircularBounds
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.model.RectangularBounds
 import com.google.android.libraries.places.api.net.SearchByTextRequest
@@ -58,6 +59,7 @@ class SearchActivity : AppCompatActivity() {
     private lateinit var textSearchAdapter: TextSearchAdapter
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var locationBias: RectangularBounds? = null
+    private var locationBiasForSearch: CircularBounds? = null
     private lateinit var database: DatabaseReference
     private lateinit var auth: FirebaseAuth
     private lateinit var recentSearchAdapter: RecentSearchAdapter
@@ -114,6 +116,9 @@ class SearchActivity : AppCompatActivity() {
         val fromReportEventActivity = intent.getBooleanExtra("FROM_REPORT_EVENTS_ACTIVITY", false)
         val fromActiveActivitiesActivity = intent.getBooleanExtra("FROM_ACTIVE_ACTIVITIES", false)
         val activeActivitiesActivity = intent.getStringExtra("ACTIVITY")
+        val fromPreferencesActivityHome = intent.getBooleanExtra("FROM_PREFERENCES_HOME", false)
+        val fromPreferencesActivityWork = intent.getBooleanExtra("FROM_PREFERENCES_WORK", false)
+        val fromPreferencesActivityStudy = intent.getBooleanExtra("FROM_PREFERENCES_STUDY", false)
         Log.e("ActivityPlaceProcessor", "Activity at Search: $activeActivitiesActivity")
 
         textSearchAdapter = TextSearchAdapter(emptyList()) { selectedPlace ->
@@ -157,6 +162,42 @@ class SearchActivity : AppCompatActivity() {
                     putExtra("PLACE_ADDRESS", placeAddress)
                     putExtra("PLACE_LATLNG", placeLatlng)
                     putExtra("ACTIVITY", activeActivitiesActivity)
+
+                }
+                setResult(Activity.RESULT_OK, resultIntent)
+                finish() // Close SearchActivity and return to StopManagementActivity
+            }
+            else if (fromPreferencesActivityHome){
+                val resultIntent = Intent().apply {
+                    putExtra("PLACE_ID", placeId)
+                    putExtra("PLACE_NAME", placeName)
+                    putExtra("PLACE_ADDRESS", placeAddress)
+                    putExtra("PLACE_LATLNG", placeLatlng)
+                    putExtra("SENDER", "FROM_PREFERENCES_HOME")
+
+                }
+                setResult(Activity.RESULT_OK, resultIntent)
+                finish() // Close SearchActivity and return to StopManagementActivity
+            }
+            else if (fromPreferencesActivityStudy){
+                val resultIntent = Intent().apply {
+                    putExtra("PLACE_ID", placeId)
+                    putExtra("PLACE_NAME", placeName)
+                    putExtra("PLACE_ADDRESS", placeAddress)
+                    putExtra("PLACE_LATLNG", placeLatlng)
+                    putExtra("SENDER", "FROM_PREFERENCES_STUDY")
+
+                }
+                setResult(Activity.RESULT_OK, resultIntent)
+                finish() // Close SearchActivity and return to StopManagementActivity
+            }
+            else if (fromPreferencesActivityWork){
+                val resultIntent = Intent().apply {
+                    putExtra("PLACE_ID", placeId)
+                    putExtra("PLACE_NAME", placeName)
+                    putExtra("PLACE_ADDRESS", placeAddress)
+                    putExtra("PLACE_LATLNG", placeLatlng)
+                    putExtra("SENDER", "FROM_PREFERENCES_WORK")
 
                 }
                 setResult(Activity.RESULT_OK, resultIntent)
@@ -207,6 +248,42 @@ class SearchActivity : AppCompatActivity() {
                     putExtra("PLACE_ADDRESS", placeAddress)
                     putExtra("PLACE_LATLNG", placeLatlng)
                     putExtra("ACTIVITY", activeActivitiesActivity)
+
+                }
+                setResult(Activity.RESULT_OK, resultIntent)
+                finish() // Close SearchActivity and return to StopManagementActivity
+            }
+            else if (fromPreferencesActivityStudy){
+                val resultIntent = Intent().apply {
+                    putExtra("PLACE_ID", placeId)
+                    putExtra("PLACE_NAME", placeName)
+                    putExtra("PLACE_ADDRESS", placeAddress)
+                    putExtra("PLACE_LATLNG", placeLatlng)
+                    putExtra("SENDER", "FROM_PREFERENCES_STUDY")
+
+                }
+                setResult(Activity.RESULT_OK, resultIntent)
+                finish() // Close SearchActivity and return to StopManagementActivity
+            }
+            else if (fromPreferencesActivityHome){
+                val resultIntent = Intent().apply {
+                    putExtra("PLACE_ID", placeId)
+                    putExtra("PLACE_NAME", placeName)
+                    putExtra("PLACE_ADDRESS", placeAddress)
+                    putExtra("PLACE_LATLNG", placeLatlng)
+                    putExtra("SENDER", "FROM_PREFERENCES_HOME")
+
+                }
+                setResult(Activity.RESULT_OK, resultIntent)
+                finish() // Close SearchActivity and return to StopManagementActivity
+            }
+            else if (fromPreferencesActivityWork){
+                val resultIntent = Intent().apply {
+                    putExtra("PLACE_ID", placeId)
+                    putExtra("PLACE_NAME", placeName)
+                    putExtra("PLACE_ADDRESS", placeAddress)
+                    putExtra("PLACE_LATLNG", placeLatlng)
+                    putExtra("SENDER", "FROM_PREFERENCES_WORK")
 
                 }
                 setResult(Activity.RESULT_OK, resultIntent)
@@ -483,6 +560,8 @@ class SearchActivity : AppCompatActivity() {
                 .addOnSuccessListener { location: Location? ->
                     location?.let {
                         setLocationBias(it)
+                        val center = LatLng(location.latitude, location.longitude)
+                        locationBiasForSearch = CircularBounds.newInstance(center, 1000.0)
                     }
                 }
                 .addOnFailureListener { exception ->
@@ -545,7 +624,6 @@ class SearchActivity : AppCompatActivity() {
 
                     // Use the builder to create a SearchByTextRequest object
                     val searchByTextRequest = SearchByTextRequest.builder(searchText, placeFields)
-                        .setMaxResultCount(15)
                         .setPlaceFields(placeFields)
                         .build()
 
@@ -599,6 +677,8 @@ class SearchActivity : AppCompatActivity() {
                         // Use the builder to create a SearchByTextRequest object
                         val searchByTextRequest = SearchByTextRequest.builder(query, placeFields)
                             .setMaxResultCount(15)
+                            .setLocationBias(locationBiasForSearch)
+                            .setRankPreference(SearchByTextRequest.RankPreference.DISTANCE)
                             .build()
 
                         var hasMatch = false

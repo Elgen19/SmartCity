@@ -6,8 +6,10 @@ data class ActivityDetails(
     val placeName: String = "",
     val placeAddress: String = "",
     val priorityLevel: String? = null,
-    val startTime: String? = "" ,
+    val startTime: String? = "",
     val endTime: String? = "",
     val placeId: String = "",
     val placeLatlng: String = "",
+    var status: String = "Upcoming",
+    var containerStatus: String = "Unscheduled"
 )

@@ -20,6 +20,11 @@
     <color name="bronze">#CD7F32</color>
     <color name="sub_support_text">#a7a7a7</color>
     <color name="defaultRankColor">#000000</color> <!-- Default color for other ranks -->
+    <color name="active">#007BFF</color>
+    <color name="in_progress">#FD7E14 </color>
+    <color name="done">#6C757D </color>
+    <color name="upcoming">#B9FBC0</color>
+
 
 
 </resources>

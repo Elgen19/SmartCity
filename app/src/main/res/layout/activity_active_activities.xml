@@ -65,16 +65,66 @@
     </FrameLayout>
 
 
-
-
-    <!-- RecyclerView -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerView"
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/nestedScroll"
         android:layout_below="@+id/top"
         android:layout_above="@id/btn_button_rows"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:clipToPadding="false" />
+        android:fillViewport="true"
+        android:background="@color/primary_color">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Active Label -->
+            <TextView
+                android:id="@+id/activeLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:visibility="gone"
+                android:text="Scheduled"
+                android:textColor="@color/green"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <!-- RecyclerView for Active Activities -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipToPadding="false"
+                android:nestedScrollingEnabled="false" />
+
+            <!-- Finished Label -->
+            <TextView
+                android:id="@+id/finishedLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:visibility="gone"
+                android:text="Finished Activities"
+                android:textColor="@color/red"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <!-- RecyclerView for Finished Activities -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewEndActivities"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:clipToPadding="false"
+                android:nestedScrollingEnabled="false" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
 
     <LinearLayout
         android:id="@+id/btn_button_rows"
@@ -82,43 +132,63 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_margin="16dp"
-        android:orientation="horizontal">
+        android:orientation="vertical">
 
 
-        <!-- Google Material Button -->
+        <LinearLayout
+            android:id="@+id/addAndConfirmButtonRows"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <!-- Google Material Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_confirm"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:cornerRadius="8dp"
+                android:paddingTop="16dp"
+                android:paddingBottom="16dp"
+                android:text="Confirm Activities"
+                android:layout_marginEnd="8dp"
+                app:rippleColor="@color/brand_color"
+                app:backgroundTint="@color/secondary_color"
+                android:textColor="@color/white" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/fab_add"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                app:cornerRadius="8dp"
+                android:paddingTop="16dp"
+                android:paddingBottom="16dp"
+                app:strokeWidth="1dp"
+                app:rippleColor="@color/dark_gray"
+                android:text="Add"
+                app:backgroundTint="@color/primary_color"
+                app:icon="@drawable/add"
+                app:iconGravity="start"
+                app:iconTint="@color/gray"
+                android:textColor="@color/gray" />
+        </LinearLayout>
+
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_confirm"
-            android:layout_width="wrap_content"
+            android:id="@+id/btnCancel"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cornerRadius="8dp"
             android:paddingTop="16dp"
             android:paddingBottom="16dp"
-            android:text="Confirm Activities"
+            android:visibility="gone"
+            android:text="Cancel Activity Scheduling"
             android:layout_marginEnd="8dp"
-            app:rippleColor="@color/brand_color"
-            app:backgroundTint="@color/secondary_color"
+            app:rippleColor="@color/black"
+            app:backgroundTint="@color/red"
             android:textColor="@color/white" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/fab_add"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            app:cornerRadius="8dp"
-            android:paddingTop="16dp"
-            android:paddingBottom="16dp"
-            app:strokeWidth="1dp"
-            app:rippleColor="@color/dark_gray"
-            android:text="Add"
-            app:backgroundTint="@color/primary_color"
-            app:icon="@drawable/add"
-            app:iconGravity="start"
-            app:iconTint="@color/gray"
-            android:textColor="@color/gray" />
-
-
-
     </LinearLayout>
+
+
 
 
 

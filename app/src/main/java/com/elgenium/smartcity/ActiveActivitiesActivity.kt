@@ -11,12 +11,16 @@ import android.util.Log
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.text.HtmlCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.work.Data
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.elgenium.smartcity.contextuals.ActivityPlaceRecommendation
 import com.elgenium.smartcity.databinding.ActivityActiveActivitiesBinding
 import com.elgenium.smartcity.databinding.BottomSheetActivityTripSummaryBinding
@@ -32,6 +36,7 @@ import com.elgenium.smartcity.recyclerview_adapter.LocationBasedPlaceRecommendat
 import com.elgenium.smartcity.routing.RouteFetcher
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.singletons.PlacesNewClientSingleton
+import com.elgenium.smartcity.work_managers.ActivityNotificationWorker
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -47,7 +52,7 @@ import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
-import kotlin.math.abs
+import java.util.concurrent.TimeUnit
 
 class ActiveActivitiesActivity : AppCompatActivity() {
     private lateinit var binding: ActivityActiveActivitiesBinding
@@ -60,9 +65,16 @@ class ActiveActivitiesActivity : AppCompatActivity() {
     private var placeId = "No place id"
     private var placeLatlng = "No latlng"
     private var containerId = ""
+    private var containerStatus = ""
     private val latLngList = mutableListOf<String>()
     private val placeIdsList = mutableListOf<String>()
     private lateinit var routeFetcher: RouteFetcher
+    private val finishedActivitiesList = mutableListOf<ActivityDetails>()
+    private lateinit var finishedActivitiesAdapter: ActivityDetailsAdapter
+    private var selectedActivity: ActivityDetails? = null
+    private var selectedActivityPosition: Int? = null
+
+
 
     private val searchActivityLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -79,7 +91,11 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                 Log.e("ActivityPlaceProcessor", "ACTIVITY: $activity")
                 Log.e("ActivityPlaceProcessor", "placeLatlng: $placeLatlng")
 
-                showBottomSheet()
+
+               if (selectedActivity!= null)
+                   showBottomSheet(selectedActivity, selectedActivityPosition)
+                else
+                   showBottomSheet()
 
                 // Update the CardView details
                 bottomSheetBinding.tvActivityName.text = activity
@@ -88,7 +104,7 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                 bottomSheetBinding.tvAddressLabel.text = placeAddress
                 bottomSheetBinding.mainContainer.visibility = View.VISIBLE
                 bottomSheetBinding.btnConfirm.visibility = View.VISIBLE
-                bottomSheetBinding.recommendationPlaceLayout.visibility = View.VISIBLE
+                bottomSheetBinding.recommendationPlaceLayout.visibility = View.GONE
             }
         }
 
@@ -104,36 +120,90 @@ class ActiveActivitiesActivity : AppCompatActivity() {
 
 
         containerId = intent.getStringExtra("containerId") ?: ""
+        containerStatus = intent.getStringExtra("containerStatus") ?: ""
+
+
 
         // Initialize RecyclerView and Adapter
         activityAdapter = ActivityDetailsAdapter(activityList) { clickedActivity, position ->
-            showActivityDetailsBottomSheet(clickedActivity, position)
+            selectedActivity = clickedActivity
+            selectedActivityPosition = position
+            showActivityDetailsBottomSheet(selectedActivity!!, selectedActivityPosition!!)
         }
         binding.recyclerView.apply {
             layoutManager = LinearLayoutManager(this@ActiveActivitiesActivity)
             adapter = activityAdapter
         }
 
+
+        finishedActivitiesAdapter = ActivityDetailsAdapter(finishedActivitiesList) { clickedActivity, position ->
+            selectedActivity = clickedActivity
+            selectedActivityPosition = position
+            showActivityDetailsBottomSheet(selectedActivity!!, selectedActivityPosition!!)
+        }
+        binding.recyclerViewEndActivities.apply {
+            layoutManager = LinearLayoutManager(this@ActiveActivitiesActivity)
+            adapter = finishedActivitiesAdapter
+        }
+
+        binding.finishedLabel.visibility = View.VISIBLE
+        binding.btnCancel.visibility = if (containerStatus == "Scheduled") View.VISIBLE else View.GONE
+        binding.activeLabel.visibility = if (containerStatus == "Scheduled") View.VISIBLE else View.GONE
+        binding.addAndConfirmButtonRows.visibility = if (containerStatus == "Unscheduled" || containerStatus == "None") View.VISIBLE else View.GONE
+
+
         binding.btnConfirm.setOnClickListener {
             Log.d("ActiveActivitiesActivity", "LATLNG LIST SIZE: ${latLngList.size}")
-            Log.d("ActiveActivitiesActivity", "LATLNG LIST: ${latLngList}")
+            Log.d("ActiveActivitiesActivity", "LATLNG LIST: $latLngList")
 
             showTripSummaryBottomSheet()
         }
 
+        binding.btnCancel.setOnClickListener {
+            val workManager = WorkManager.getInstance(this)
+            workManager.cancelAllWork()
+            Toast.makeText(this, "All work requests have been canceled.", Toast.LENGTH_SHORT).show()
+
+            activityList.forEach { activity ->
+                activity.containerStatus = "Unscheduled"
+            }
+            updateActivityStatus(containerId, "Unscheduled")
+            containerStatus = "Unscheduled"
+            activityAdapter.notifyDataSetChanged()
+            fetchAndDisplayActivities(containerId)
+            binding.activeLabel.visibility = View.GONE
+            binding.btnCancel.visibility = View.GONE
+            binding.addAndConfirmButtonRows.visibility = View.VISIBLE
+
+        }
+
+
 
         fetchAndDisplayActivities(containerId)
 
+        Log.e("listAfterDeletion", "ActivityList: $activityList")
+        Log.e("listAfterDeletion", "FinishedActivity list: $finishedActivitiesList")
 
         NavigationBarColorCustomizerHelper.setNavigationBarColor(this, R.color.primary_color)
 
         binding.fabAdd.setOnClickListener {
-            showBottomSheet()
+            selectedActivity = null
+            selectedActivityPosition = null
+            showBottomSheet(null, null)
         }
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // Define the behavior when the back button is pressed
+                val intent = Intent(this@ActiveActivitiesActivity, MyActivitiesActivity::class.java)
+                startActivity(intent)
+                finish() // This will finish the current activity
+            }
+        })
     }
 
 
-    private fun fetchAndUseCurrentLocation() {
+    private fun fetchAndUseCurrentLocation(callback: (String?) -> Unit) {
         routeFetcher.getCurrentLocation(this) { latLng ->
             if (latLng != null) {
                 Log.d(
@@ -143,15 +213,14 @@ class ActiveActivitiesActivity : AppCompatActivity() {
 
                 val tempLatlng = parseLatLng(latLng.toString())
                 if (tempLatlng != null) {
-                    latLngList.add(tempLatlng)
-                    Log.d(
-                        "ActiveActivitiesActivity",
-                        "LATLNG LIST AT CURRENT LOCATION: $latLngList"
-                    )
-
+                    callback(tempLatlng)
+                } else {
+                    Log.e("ActiveActivitiesActivity", "Failed to parse current location.")
+                    callback(null)
                 }
             } else {
                 Log.e("ActiveActivitiesActivity", "Failed to fetch current location.")
+                callback(null)
             }
         }
     }
@@ -171,38 +240,32 @@ class ActiveActivitiesActivity : AppCompatActivity() {
         val bottomSheetDialog = BottomSheetDialog(this)
         bottomSheetDialog.setContentView(bottomSheetBinding.root)
 
-        var selectedPriority: String? = clickedActivity?.priorityLevel
+        var selectedPriority: String? = clickedActivity?.priorityLevel ?: "Low"
         // Handle startTime and endTime when they are empty or null
         val format =
             SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()) // Initialize SimpleDateFormat
 
-        // Handling startTime only if it is not empty or null
         var startTime: Calendar? = if (!clickedActivity?.startTime.isNullOrBlank()) {
-            val parsedStartTime =
-                clickedActivity?.startTime?.let { format.parse(it) } // Parse the startTime string only if it is not blank
-            parsedStartTime?.let { // Only create Calendar if parsing was successful
-                Calendar.getInstance().apply { time = parsedStartTime }
-            }
+            val parsedStartTime = clickedActivity?.startTime?.let { format.parse(it) }
+            parsedStartTime?.let { Calendar.getInstance().apply { time = parsedStartTime } }
         } else {
-            null // Do nothing if startTime is empty or null
+            null // Set to null or use a default value if needed
         }
 
-        // Handling endTime only if it is not empty or null
         var endTime: Calendar? = if (!clickedActivity?.endTime.isNullOrBlank()) {
-            val parsedEndTime =
-                clickedActivity?.endTime?.let { format.parse(it) } // Parse the endTime string only if it is not blank
-            parsedEndTime?.let { // Only create Calendar if parsing was successful
-                Calendar.getInstance().apply { time = parsedEndTime }
-            }
+            val parsedEndTime = clickedActivity?.endTime?.let { format.parse(it) }
+            parsedEndTime?.let { Calendar.getInstance().apply { time = parsedEndTime } }
         } else {
-            null // Do nothing if endTime is empty or null
+            null // Set to null or use a default value if needed
         }
+
 
         if (clickedActivity != null && position != null) {
             Log.d("INDEX", "position: $position")
             Log.d("INDEX", "activity list size: ${activityList.size}")
 
-
+            placeLatlng = clickedActivity.placeLatlng
+            placeId = clickedActivity.placeId
             bottomSheetBinding.mainContainer.visibility = View.VISIBLE
             bottomSheetBinding.btnConfirm.visibility = View.VISIBLE
             bottomSheetBinding.etActivity.setText(clickedActivity.activityName)
@@ -236,6 +299,7 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                 bottomSheetBinding.btnEndTime.text =
                     SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(it.time)
             }
+
         }
 
         bottomSheetBinding.switchDisableLocation.isChecked = false
@@ -243,49 +307,54 @@ class ActiveActivitiesActivity : AppCompatActivity() {
         bottomSheetBinding.switchDisableLocation.setOnCheckedChangeListener { _, isChecked ->
             isLocationBasedRecommendationDisabled = isChecked
         }
+        bottomSheetBinding.timeContraints.visibility = if(selectedPriority == "Low") View.GONE else View.VISIBLE
 
         bottomSheetBinding.btnSet.setOnClickListener {
-            bottomSheetBinding.recyclerViewRecommendations.visibility = View.GONE
-            bottomSheetBinding.mainContainer.visibility = View.GONE
-            bottomSheetBinding.btnConfirm.visibility = View.GONE
-            bottomSheetBinding.tvPlaceRecomLabel.visibility = View.GONE
-            bottomSheetBinding.activityPrompter.visibility = View.GONE
+            if (!bottomSheetBinding.etActivity.text.isNullOrEmpty()){
+                bottomSheetBinding.recyclerViewRecommendations.visibility = View.GONE
+                bottomSheetBinding.mainContainer.visibility = View.GONE
+                bottomSheetBinding.btnConfirm.visibility = View.GONE
+                bottomSheetBinding.tvPlaceRecomLabel.visibility = View.GONE
+                bottomSheetBinding.activityPrompter.visibility = View.GONE
 
-            val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-            imm.hideSoftInputFromWindow(bottomSheetBinding.root.windowToken, 0)
+                val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.hideSoftInputFromWindow(bottomSheetBinding.root.windowToken, 0)
 
-            val userQuery = bottomSheetBinding.etActivity.text.toString().trim()
+                val userQuery = bottomSheetBinding.etActivity.text.toString().trim()
 
-            if (!isLocationBasedRecommendationDisabled) {
-                if (userQuery.isNotEmpty()) {
-                    bottomSheetBinding.lottieAnimation.visibility = View.VISIBLE
-                    bottomSheetBinding.emptyDataLabel.visibility = View.VISIBLE
-                    // Call the function to process the query asynchronously
-                    lifecycleScope.launch {
-                        val result = ActivityPlaceProcessor().processUserQuery(userQuery)
+                if (!isLocationBasedRecommendationDisabled) {
+                    if (userQuery.isNotEmpty()) {
+                        bottomSheetBinding.lottieAnimation.visibility = View.VISIBLE
+                        bottomSheetBinding.emptyDataLabel.visibility = View.VISIBLE
+                        // Call the function to process the query asynchronously
+                        lifecycleScope.launch {
+                            val result = ActivityPlaceProcessor().processUserQuery(userQuery)
 
-                        if (result != null) {
-                            Log.d("ActivityPlaceProcessor", "Place: $result")
-                            showToast("Displaying results")
+                            if (result != null) {
+                                Log.d("ActivityPlaceProcessor", "Place: $result")
+                                showToast("Displaying results")
 
-                            // Assuming that you now need to get places related to this activity:
-                            fetchPlacesBasedOnActivity(result)
-                        } else {
-                            Log.e("ActivityPlaceProcessor", "No valid result received")
+                                // Assuming that you now need to get places related to this activity:
+                                fetchPlacesBasedOnActivity(result)
+                            } else {
+                                Log.e("ActivityPlaceProcessor", "No valid result received")
+                            }
                         }
+                    } else {
+                        Log.e("ActivityPlaceProcessor", "User query is empty")
+                        showToast("Please enter an activity.")
                     }
                 } else {
-                    Log.e("ActivityPlaceProcessor", "User query is empty")
-                    showToast("Please enter an activity.")
+                    bottomSheetDialog.dismiss()
+                    val intent = Intent(this, SearchActivity::class.java)
+                    intent.putExtra("FROM_ACTIVE_ACTIVITIES", true)
+                    intent.putExtra("ACTIVITY", userQuery)
+                    Log.e("ActivityPlaceProcessor", "Activity: ${bottomSheetBinding.etActivity.text}")
+
+                    searchActivityLauncher.launch(intent)
                 }
             } else {
-                bottomSheetDialog.dismiss()
-                val intent = Intent(this, SearchActivity::class.java)
-                intent.putExtra("FROM_ACTIVE_ACTIVITIES", true)
-                intent.putExtra("ACTIVITY", userQuery)
-                Log.e("ActivityPlaceProcessor", "Activity: ${bottomSheetBinding.etActivity.text}")
-
-                searchActivityLauncher.launch(intent)
+                showToast("Please enter an activity")
             }
 
         }
@@ -318,7 +387,14 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                 bottomSheetBinding.btnMediumPriority
             )
             selectedPriority = if (bottomSheetBinding.btnLowPriority.isSelected) "Low" else null
-            bottomSheetBinding.timeContraints.visibility = View.GONE
+            // If Low priority is selected, remove time constraints
+            if (selectedPriority == "Low") {
+                startTime = null
+                endTime = null
+                bottomSheetBinding.btnStartTime.text = "Set Start Time"
+                bottomSheetBinding.btnEndTime.text = "Set End Time"
+                bottomSheetBinding.timeContraints.visibility = View.GONE // Optionally hide time constraints UI
+            }
         }
 
         // Set start time with validation
@@ -329,7 +405,7 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                     val tempStartTime = selectedCalendar
 
                     // Check if this time is valid with other activities
-                    if (endTime != null && !isTimeValid(tempStartTime, endTime!!, activityList)) {
+                    if (endTime != null && !isTimeValid(tempStartTime, endTime!!, activityList, clickedActivity?.activityId)) {
                         return@showDateTimePicker
                     }
 
@@ -362,7 +438,7 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                     }
 
                     // Check if the time is valid with other activities
-                    if (!isTimeValid(startTime!!, selectedCalendar, activityList)) {
+                    if (!isTimeValid(startTime!!, selectedCalendar, activityList, clickedActivity?.activityId)) {
                         return@showDateTimePicker
                     }
 
@@ -413,7 +489,6 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-
             val activityDetails = ActivityDetails(
                 activityName = activityName,
                 placeName = placeName,
@@ -423,24 +498,43 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                 endTime = endTimeFormatted,
                 placeId = placeId,
                 placeLatlng = placeLatlng,
+                containerStatus = containerStatus
 
                 )
 
             if (clickedActivity != null && position != null) {
-                // Update the existing activity
-                activityList[position] = activityDetails
-                activityAdapter.notifyItemChanged(position)
-            } else {
+                if (clickedActivity.status == "Finished") {
+                    showToast("Editing a Finished activity")
+                    // Editing a Finished activity. adding it back to the activity list
+                    finishedActivitiesList.removeAt(position)
+                    finishedActivitiesAdapter.notifyItemRemoved(position)
+                    activityList.add(activityDetails)
+                    activityAdapter.notifyItemInserted(activityList.size - 1)
+                } else {
+                    // Editing a a non Finished activity.
+                    activityList[position] = activityDetails
+                    activityAdapter.notifyItemChanged(position)
+                    showToast("Editing")
+                }
+
+            }
+            else {
                 // Add a new activity
                 activityList.add(activityDetails)
                 activityAdapter.notifyItemInserted(activityList.size - 1)
+                showToast("Adding")
             }
 
             // Update Firebase and dismiss the dialog
+            selectedActivity = null
+            selectedPriority = null
+            Log.d("ActivityList", "Activity list is: $activityList")
             saveAllActivitiesToFirebase(activityList, containerId)
             latLngList.add(placeLatlng)
             checkRecyclerViewData()
+
             bottomSheetDialog.dismiss()
+
         }
 
         // Cancel button logic
@@ -470,6 +564,9 @@ class ActiveActivitiesActivity : AppCompatActivity() {
         val bottomSheetDialog = BottomSheetDialog(this)
         bottomSheetDialog.setContentView(bottomSheetBinding.root)
 
+        bottomSheetBinding.actionButtons.visibility = if (clickedActivity.containerStatus == "Scheduled") View.GONE else View.VISIBLE
+        bottomSheetBinding.btnEdit.text = if (clickedActivity.status == "Finished") "Reschedule" else "Edit"
+
         // Handle the button actions inside the bottom sheet
         bottomSheetBinding.btnEdit.setOnClickListener {
             showBottomSheet(clickedActivity, position)
@@ -477,27 +574,14 @@ class ActiveActivitiesActivity : AppCompatActivity() {
         }
 
         bottomSheetBinding.btnDelete.setOnClickListener {
-            // Get the activity to delete
-            val activityToDelete = activityList[position]
-            val activityId = activityToDelete.activityId
+            // Display a toast for feedback
+            showToast("Deleting activity: ${clickedActivity.activityName}")
 
-            Log.d("Delete", "Activity ID: $activityId")  // Add this line for debugging
-            Log.d("Delete", "Activity: $activityToDelete")  // Add this line for debugging
+            val activityId = clickedActivity.activityId
 
-
-            if (activityId.isNullOrBlank()) {
-                activityAdapter.removeActivity(position)
-                Toast.makeText(
-                    this@ActiveActivitiesActivity,
-                    "Activity deleted",
-                    Toast.LENGTH_SHORT
-                ).show()
-                return@setOnClickListener
-            }
-
+            // Validate the Firebase user ID and activity ID
             val userId = FirebaseAuth.getInstance().currentUser?.uid
-            if (userId != null) {
-                // Reference to the Firebase node
+            if (userId != null && !activityId.isNullOrEmpty()) {
                 val databaseReference = FirebaseDatabase.getInstance().reference
                     .child("Users")
                     .child(userId)
@@ -505,31 +589,49 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                     .child(containerId)
                     .child("activities")
 
-                // Remove the activity from Firebase using its activityId
+                // Attempt to delete the activity from Firebase
                 databaseReference.child(activityId).removeValue()
                     .addOnSuccessListener {
-                        // Successfully deleted the activity from Firebase
-                        Log.d("Firebase", "Activity deleted successfully")
-                        // Remove the activity from the adapter and update the RecyclerView
-                        activityList.removeAt(position)
-                        activityAdapter.notifyItemRemoved(position)
-                        checkRecyclerViewData() // Your custom method to check if there is data left in the list
+                        Log.d("Firebase", "Activity deleted successfully from Firebase")
+
+                        // Remove activity from the appropriate list
+                        if (clickedActivity.status == "Finished") {
+                            // Remove from finished activities list
+                            val index = finishedActivitiesList.indexOfFirst { it.activityId == activityId }
+                            if (index != -1) {
+                                finishedActivitiesList.removeAt(index)
+                                finishedActivitiesAdapter.notifyItemRemoved(index)
+                            }
+                        } else {
+                            // Remove from active activities list
+                            val index = activityList.indexOfFirst { it.activityId == activityId }
+                            if (index != -1) {
+                                activityList.removeAt(index)
+                                activityAdapter.notifyItemRemoved(index)
+                            }
+                        }
+
+                        // Log the updated lists for debugging
+                        Log.d("listAfterDeletion", "ActivityList: $activityList")
+                        Log.d("listAfterDeletion", "FinishedActivityList: $finishedActivitiesList")
+
+                        Toast.makeText(this@ActiveActivitiesActivity, "Activity deleted", Toast.LENGTH_SHORT).show()
                     }
                     .addOnFailureListener { exception ->
-                        // Handle error if the deletion fails
                         Log.e("Firebase", "Failed to delete activity: ${exception.message}")
-                        Toast.makeText(
-                            this@ActiveActivitiesActivity,
-                            "Failed to delete activity",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        Toast.makeText(this@ActiveActivitiesActivity, "Failed to delete activity", Toast.LENGTH_SHORT).show()
                     }
+            } else {
+                // Handle invalid user or activity ID scenario
+                Toast.makeText(this@ActiveActivitiesActivity, "Error: Unable to delete activity", Toast.LENGTH_SHORT).show()
             }
 
-            fetchAndDisplayActivities(containerId)
             // Dismiss the bottom sheet
             bottomSheetDialog.dismiss()
         }
+
+
+
 
 
         bottomSheetBinding.btnClose.setOnClickListener {
@@ -801,142 +903,139 @@ class ActiveActivitiesActivity : AppCompatActivity() {
     }
 
     private fun checkRecyclerViewData() {
-        if (activityList.isEmpty()) {
-            // Show loading animation and text
+        if (activityList.isEmpty() && finishedActivitiesList.isEmpty()) {
+            // Show loading animation and text if both lists are empty
             binding.lottieAnimation.visibility = View.VISIBLE
             binding.loadingText.visibility = View.VISIBLE
             binding.recyclerView.visibility = View.GONE
             binding.btnConfirm.visibility = View.GONE
+            binding.recyclerViewEndActivities.visibility = View.GONE  // Assuming this RecyclerView exists
         } else {
-            // Hide loading animation and text, show RecyclerView
+            // Hide loading animation and text, show active RecyclerView
             binding.lottieAnimation.visibility = View.GONE
             binding.loadingText.visibility = View.GONE
-            binding.recyclerView.visibility = View.VISIBLE
-            binding.btnConfirm.visibility = View.VISIBLE
-
+            binding.recyclerView.visibility = if (activityList.isNotEmpty()) View.VISIBLE else View.GONE
+            binding.btnConfirm.visibility = if (activityList.isNotEmpty()) View.VISIBLE else View.GONE
+            // Handle finished activities visibility
+            binding.recyclerViewEndActivities.visibility = if (finishedActivitiesList.isNotEmpty()) View.VISIBLE else View.GONE
         }
     }
+
 
     private fun isTimeValid(
         startTime: Calendar,
         endTime: Calendar,
-        existingActivities: List<ActivityDetails>
+        existingActivities: List<ActivityDetails>,
+        editedActivityId: String? // Pass null if adding a new activity
     ): Boolean {
+        Log.d("TimeValidation", "Start time: ${startTime.time}, End time: ${endTime.time}")
+        Log.d("TimeValidation", "Existing Activities: $existingActivities")
+
+        if (existingActivities.isEmpty()) {
+            Log.d("TimeValidation", "No existing activities. No conflicts.")
+            return true // No conflicts if there are no other activities
+        }
+
         for (activity in existingActivities) {
-            if (activity.priorityLevel in listOf("High", "Medium")) {
-                val existingStart = activity.startTime?.let { parseToCalendar(it) }
-                val existingEnd = activity.endTime?.let { parseToCalendar(it) }
-                val dateFormatter = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault())
-                val timeFormatter = SimpleDateFormat("h:mm a", Locale.getDefault())
+            Log.d("TimeValidation", "Checking activity: ${activity.activityName} (ID: ${activity.activityId})")
 
-                val scheduledTime = if (existingStart != null && existingEnd != null) {
-                    if (dateFormatter.format(existingStart.time) == dateFormatter.format(existingEnd.time)) {
-                        // Same day: Condense to single date with time range
-                        "${dateFormatter.format(existingStart.time)} from ${
-                            timeFormatter.format(
-                                existingStart.time
-                            )
-                        } to ${timeFormatter.format(existingEnd.time)}"
-                    } else {
-                        // Different days: Show full dates and times
-                        "${dateFormatter.format(existingStart.time)} at ${
-                            timeFormatter.format(
-                                existingStart.time
-                            )
-                        } to ${dateFormatter.format(existingEnd.time)} at ${
-                            timeFormatter.format(
-                                existingEnd.time
-                            )
-                        }"
+            // Skip the activity being edited
+            if (editedActivityId != null && activity.activityId == editedActivityId) {
+                Log.d("TimeValidation", "Skipping edited activity: ${activity.activityId}")
+                continue
+            }
+
+            // Skip "Low" priority activities as they don't require time validation
+            if (activity.priorityLevel == "Low") {
+                Log.d("TimeValidation", "Skipping Low priority activity: ${activity.activityName}")
+                continue
+            }
+
+            // Parse existing activity times
+            val existingStart = activity.startTime?.let { parseToCalendar(it) }
+            val existingEnd = activity.endTime?.let { parseToCalendar(it) }
+
+            // Skip activities with invalid times
+            if (existingStart == null || existingEnd == null) {
+                Log.d("TimeValidation", "Skipping activity with invalid times: ${activity.activityName}")
+                continue
+            }
+
+            Log.d("TimeValidation", "Existing activity start: ${existingStart.time}, end: ${existingEnd.time}")
+
+            // Check for overlapping times
+            val isOverlapping = startTime.timeInMillis < existingEnd.timeInMillis &&
+                    endTime.timeInMillis > existingStart.timeInMillis
+            if (isOverlapping) {
+                Log.d("TimeValidation", "Overlap detected with activity: ${activity.activityName}")
+                showSuggestionsDialog(
+                    title = "Time Conflict",
+                    message = """
+                    The selected time overlaps with another activity, <b>${activity.activityName}</b>.
+                    <ul>
+                        <li><b>Scheduled Time:</b> ${formatActivityTime(existingStart, existingEnd)}</li>
+                        <li><b>Your Selected Time:</b> ${formatActivityTime(startTime, endTime)}</li>
+                    </ul>
+                    Please choose a different time to avoid overlapping.
+                """.trimIndent(),
+                    isActionButtonVisible = false,
+                    onDismiss = { Log.d("ConflictDialog", "User dismissed the dialog.") },
+                    onAction = {
+                        Log.d("ConflictDialog", "User will adjust activity timing.")
                     }
-                } else {
-                    "Unavailable" // Fallback message for null values
-                }
+                )
+                return false
+            }
 
-                val selectedTime =
-                    if (dateFormatter.format(startTime.time) == dateFormatter.format(endTime.time)) {
-                        // Same day: Condense to single date with time range
-                        "${dateFormatter.format(startTime.time)} from ${
-                            timeFormatter.format(
-                                startTime.time
-                            )
-                        } to ${timeFormatter.format(endTime.time)}"
-                    } else {
-                        // Different days: Show full dates and times
-                        "${dateFormatter.format(startTime.time)} at ${timeFormatter.format(startTime.time)} to ${
-                            dateFormatter.format(
-                                endTime.time
-                            )
-                        } at ${timeFormatter.format(endTime.time)}"
+            // Ensure buffer time between activities
+            val bufferTimeMillis = 15 * 60 * 1000 // 15 minutes in milliseconds
+            val hasBuffer = (startTime.timeInMillis >= existingEnd.timeInMillis + bufferTimeMillis) ||
+                    (endTime.timeInMillis <= existingStart.timeInMillis - bufferTimeMillis)
+            if (!hasBuffer) {
+                Log.d("TimeValidation", "Insufficient buffer time detected with activity: ${activity.activityName}")
+                showSuggestionsDialog(
+                    title = "Insufficient Buffer Time",
+                    message = """
+                    There is not enough buffer time between this activity and another, <b>${activity.activityName}</b>.
+                    <ul>
+                        <li><b>Conflict Activity:</b> ${activity.activityName}</li>
+                        <li><b>Scheduled Time:</b> ${formatActivityTime(existingStart, existingEnd)}</li>
+                        <li><b>Your Selected Time:</b> ${formatActivityTime(startTime, endTime)}</li>
+                    </ul>
+                    Please allow at least a 15-minute buffer between activities.
+                """.trimIndent(),
+                    isActionButtonVisible = false,
+                    onDismiss = { Log.d("ConflictDialog", "User dismissed the dialog.") },
+                    onAction = {
+                        Log.d("ConflictDialog", "User will adjust activity timing.")
                     }
-
-
-                // Skip activities without proper time data
-                if (existingStart == null || existingEnd == null) continue
-
-                // Check for overlap
-                val isOverlapping =
-                    startTime.timeInMillis < existingEnd.timeInMillis && endTime.timeInMillis > existingStart.timeInMillis
-                if (isOverlapping) {
-                    showSuggestionsDialog(
-                        title = "Time Conflict",
-                        message = """
-                            The selected time for this activity overlaps with another activity, <b>${activity.activityName}</b>.
-                            <br/><br/>
-                            <ul>
-                                <li><b>Scheduled Time:</b> $scheduledTime</li>
-                                <li><b>Your Selected Time:</b> $selectedTime</li>
-                            </ul>
-                            <br/>
-                            Choose a different start or end time for this activity to avoid overlapping with the existing one.
-                        """.trimIndent(),
-                        isActionButtonVisible = false,
-                        onDismiss = {
-                            Log.d("ConflictDialog", "User dismissed the dialog.")
-                        },
-                        onAction = {
-                            Log.d("ConflictDialog", "User will adjust activity timing.")
-                        }
-                    )
-
-
-                    return false
-                }
-
-                // Check for buffer time (15 minutes)
-                val bufferTimeMillis = 15 * 60 * 1000
-                val hasBuffer =
-                    (abs(existingEnd.timeInMillis - startTime.timeInMillis) >= bufferTimeMillis) &&
-                            (abs(endTime.timeInMillis - existingStart.timeInMillis) >= bufferTimeMillis)
-                if (!hasBuffer) {
-                    showSuggestionsDialog(
-                        title = "Insufficient Buffer Time",
-                        message = """
-                            <p>There is not enough buffer time between this activity and another, <b>${activity.activityName}</b>.</p>
-                            
-                            <ul>
-                                <li><b>Conflict Activity:</b> ${activity.activityName}</li>
-                                <li><b>Scheduled Time:</b> $scheduledTime</li>
-                                <li><b>Your Selected Time:</b> $selectedTime</li>
-                            </ul>
-                            
-                        <p>Please adjust the start time of this activity to allow at least a 15-minute buffer for this activity.</p>
-                        """.trimIndent(),
-                        isActionButtonVisible = false,
-                        onDismiss = {
-                            Log.d("ConflictDialog", "User dismissed the dialog.")
-                        },
-                        onAction = {
-                            Log.d("ConflictDialog", "User will adjust activity timing.")
-                        }
-                    )
-
-                    return false
-                }
+                )
+                return false
             }
         }
-        return true
+
+        Log.d("TimeValidation", "No conflicts found.")
+        return true // No conflicts found
     }
+
+
+
+
+    private fun formatActivityTime(start: Calendar, end: Calendar): String {
+        val dateFormatter = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault())
+        val timeFormatter = SimpleDateFormat("h:mm a", Locale.getDefault())
+
+        return if (dateFormatter.format(start.time) == dateFormatter.format(end.time)) {
+            // Same day
+            "${dateFormatter.format(start.time)} from ${timeFormatter.format(start.time)} to ${timeFormatter.format(end.time)}"
+        } else {
+            // Different days
+            "${dateFormatter.format(start.time)} at ${timeFormatter.format(start.time)} to " +
+                    "${dateFormatter.format(end.time)} at ${timeFormatter.format(end.time)}"
+        }
+    }
+
+
 
     private fun parseToCalendar(dateString: String): Calendar {
         val format = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
@@ -993,13 +1092,16 @@ class ActiveActivitiesActivity : AppCompatActivity() {
             .child(containerId)
             .child("activities")
 
-        // First, clear existing activities
+        // Merge global finishedActivitiesList with the provided activityDetailsList
+        val allActivitiesList = activityDetailsList + finishedActivitiesList
+
+        // Clear existing activities
         databaseReference.removeValue().addOnCompleteListener { removeTask ->
             if (removeTask.isSuccessful) {
-                // Proceed to save new activities
+                // Proceed to save merged activities
                 val batchUpdates = mutableListOf<Task<Void>>()
 
-                for (activityDetails in activityDetailsList) {
+                for (activityDetails in allActivitiesList) {
                     val activityId = databaseReference.push().key // Generate a unique key
 
                     if (activityId != null) {
@@ -1043,6 +1145,157 @@ class ActiveActivitiesActivity : AppCompatActivity() {
         }
     }
 
+
+
+
+//    private fun fetchAndDisplayActivities(containerId: String) {
+//        val userId = FirebaseAuth.getInstance().currentUser?.uid
+//        if (userId == null) {
+//            Toast.makeText(this, "User not logged in.", Toast.LENGTH_SHORT).show()
+//            Log.e("FetchActivities", "User not logged in.")
+//            return
+//        }
+//
+//        val databaseReference = FirebaseDatabase.getInstance().reference
+//            .child("Users")
+//            .child(userId)
+//            .child("MyActivities")
+//            .child(containerId)
+//            .child("activities")
+//
+//        Log.d("FetchActivities", "Fetching activities for containerId: $containerId")
+//
+//        databaseReference.addListenerForSingleValueEvent(object : ValueEventListener {
+//            override fun onDataChange(snapshot: DataSnapshot) {
+//                Log.d("FetchActivities", "onDataChange triggered. Data exists: ${snapshot.exists()}")
+//                if (snapshot.exists()) {
+//                    // Temporary lists for active activities and finished ones
+//                    val activeActivityList = mutableListOf<ActivityDetails>()
+//                    val allActivitiesList = mutableListOf<ActivityDetails>()
+//
+//                    // Temporary lists for latLng and placeIds (these will always contain data)
+//                    val tempLatLngList = mutableListOf<String>()
+//                    val tempPlaceIdsList = mutableListOf<String>()
+//
+//                    for (activitySnapshot in snapshot.children) {
+//                        val activity = activitySnapshot.getValue(ActivityDetails::class.java)
+//                        if (activity != null) {
+//                            activity.containerStatus = containerStatus
+//
+//                            val currentTimeMillis = System.currentTimeMillis()
+//                            val startTimeString = activity.startTime // Example: "2024-11-27 11:05"
+//                            val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+//
+//                            try {
+//                                // Parse the string into a Date object
+//                                val activityStartTime = startTimeString?.let { dateFormat.parse(it) }
+//
+//                                // If parsing is successful, get the time in milliseconds
+//                                if (activityStartTime != null) {
+//                                    val activityStartTimeMillis = activityStartTime.time
+//
+//                                    // Now compare with currentTimeMillis
+//                                    if (activity.status == "Upcoming" && currentTimeMillis > activityStartTimeMillis) {
+//                                        // Update the activity status to Finished
+//                                        activity.status = "Finished"
+//                                        activitySnapshot.ref.child("status").setValue("Finished")
+//                                            .addOnCompleteListener { task ->
+//                                                if (task.isSuccessful) {
+//                                                    Log.d("FetchActivities", "Activity status updated to Finished: ${activitySnapshot.key}")
+//                                                } else {
+//                                                    Log.e("FetchActivities", "Failed to update activity status: ${task.exception?.message}")
+//                                                }
+//                                            }
+//                                    }
+//                                }
+//                            } catch (e: Exception) {
+//                                Log.e("FetchActivities", "Failed to parse start time: ${e.message}")
+//                            }
+//
+//                            allActivitiesList.add(activity) // Add all activities to the general list
+//                            val activityRef = activitySnapshot.ref
+//                            activityRef.child("containerStatus").setValue(containerStatus)
+//                                .addOnCompleteListener { task ->
+//                                    if (task.isSuccessful) {
+//                                        Log.d("FetchActivities", "containerStatus updated successfully for activity: ${activityRef.key}")
+//                                    } else {
+//                                        Log.e("FetchActivities", "Failed to update containerStatus: ${task.exception?.message}")
+//                                    }
+//                                }
+//
+//                            // Add latLng and placeId to the lists for all activities
+//                            tempLatLngList.add(activity.placeLatlng)  // Assuming ActivityDetails has latLng
+//                            tempPlaceIdsList.add(activity.placeId)  // Assuming ActivityDetails has placeId
+//
+//                            // If containerStatus is "Unscheduled", we show all activities regardless of status
+//                            if (containerStatus == "Unscheduled") {
+//                                // Add to the active list (since we're showing all activities)
+//                                activeActivityList.add(activity)
+//                            } else {
+//                                // If containerStatus is "Scheduled", only add non-Finished activities to active list
+//                                if (activity.status != "Finished") {
+//                                    activeActivityList.add(activity)
+//                                }
+//                            }
+//                        } else {
+//                            Log.w("FetchActivities", "Null activity encountered in snapshot.")
+//                        }
+//                    }
+//
+//                    // Update the full activity list in RecyclerView (includes both active and finished)
+//                    activityList.clear()
+//                    activityList.addAll(allActivitiesList)
+//                    activityAdapter.notifyDataSetChanged()
+//                    Log.d("FetchActivities", "Updated activityList with all activities: $activityList")
+//
+//                    // Now, update latLng and placeIds lists for active activities (these are now populated)
+//                    latLngList.clear()
+//                    latLngList.addAll(tempLatLngList)
+//                    placeIdsList.clear()
+//                    placeIdsList.addAll(tempPlaceIdsList)
+//
+//                    // Update the latLngList and placeIdsList after all activities have been added
+//                    updateLatLngListFromActivities()
+//                    updatePlaceIdsListFromActivities()
+//
+//                    Log.w("FetchActivities", "LAT LNG LIST NOW AT: $latLngList")
+//                    Log.w("FetchActivities", "PLACE IDS LIST NOW AT: $placeIdsList")
+//
+//                    // If containerStatus is "Scheduled", prioritize activities
+//                    if (containerStatus == "Scheduled" && activeActivityList.isNotEmpty()) {
+//                        prioritizationOptimizer.prioritizeActivities(activeActivityList) { prioritizedList ->
+//                            activityList.clear()
+//                            activityList.addAll(prioritizedList)
+//                            activityAdapter.notifyDataSetChanged()
+//                        }
+//                        updateLatLngListFromActivities()
+//                        updatePlaceIdsListFromActivities()
+//                    }
+//
+//                    // Check RecyclerView data
+//                    checkRecyclerViewData()
+//                } else {
+//                    Log.w("FetchActivities", "No activities found for the specified container.")
+//
+//                    // Handle case when no activities exist
+//                    activityList.clear()
+//                    activityAdapter.notifyDataSetChanged()
+//
+//                    checkRecyclerViewData()
+//                }
+//            }
+//
+//            override fun onCancelled(error: DatabaseError) {
+//                Log.e("FetchActivities", "Database error: ${error.message}")
+//                Toast.makeText(
+//                    this@ActiveActivitiesActivity,
+//                    "Failed to fetch activities: ${error.message}",
+//                    Toast.LENGTH_SHORT
+//                ).show()
+//            }
+//        })
+//    }
+
     private fun fetchAndDisplayActivities(containerId: String) {
         val userId = FirebaseAuth.getInstance().currentUser?.uid
         if (userId == null) {
@@ -1058,80 +1311,163 @@ class ActiveActivitiesActivity : AppCompatActivity() {
             .child(containerId)
             .child("activities")
 
+        Log.d("FetchActivities", "Fetching activities for containerId: $containerId")
+
         databaseReference.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
+                Log.d("FetchActivities", "onDataChange triggered. Data exists: ${snapshot.exists()}")
+
                 if (snapshot.exists()) {
-                    val newActivityList = mutableListOf<ActivityDetails>()
+                    val activeActivityList = mutableListOf<ActivityDetails>()
+                    val finishedActivityList = mutableListOf<ActivityDetails>()
+                    val tempLatLngList = mutableListOf<String>()
+                    val tempPlaceIdsList = mutableListOf<String>()
+
+                    // Clear finished activities list before adding new ones
+                    finishedActivitiesList.clear()
 
                     for (activitySnapshot in snapshot.children) {
                         val activity = activitySnapshot.getValue(ActivityDetails::class.java)
                         if (activity != null) {
-                            newActivityList.add(activity)
+                            activity.containerStatus = containerStatus
+
+                            // Update status if activity is overdue
+                            val currentTimeMillis = System.currentTimeMillis()
+                            val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+                            try {
+                                val activityStartTimeMillis = activity.startTime?.let { dateFormat.parse(it)?.time }
+                                if (activityStartTimeMillis != null && activity.status == "Upcoming" && currentTimeMillis > activityStartTimeMillis) {
+                                    activity.status = "Finished"
+                                    activitySnapshot.ref.child("status").setValue("Finished")
+                                        .addOnCompleteListener { task ->
+                                            if (task.isSuccessful) {
+                                                Log.d("FetchActivities", "Activity status updated to Finished: ${activitySnapshot.key}")
+                                            } else {
+                                                Log.e("FetchActivities", "Failed to update activity status: ${task.exception?.message}")
+                                            }
+                                        }
+                                }
+                            } catch (e: Exception) {
+                                Log.e("FetchActivities", "Failed to parse start time: ${e.message}")
+                            }
+
+                            // Add all activities to the general list (allActivitiesList for reference, not to activityList)
+                            activitySnapshot.ref.child("containerStatus").setValue(containerStatus)
+                                .addOnCompleteListener { task ->
+                                    if (task.isSuccessful) {
+                                        Log.d("FetchActivities", "containerStatus updated successfully for activity: ${activitySnapshot.key}")
+                                    } else {
+                                        Log.e("FetchActivities", "Failed to update containerStatus: ${task.exception?.message}")
+                                    }
+                                }
+
+                            tempLatLngList.add(activity.placeLatlng)
+                            tempPlaceIdsList.add(activity.placeId)
+
+                            // Add finished activities to finishedActivityList
+                            if (activity.status == "Finished") {
+                                finishedActivityList.add(activity)
+                            }
+
+                            // Add non-finished activities to activeActivityList
+                            if ((containerStatus == "Scheduled" || containerStatus == "Unscheduled") && activity.status != "Finished") {
+                                activeActivityList.add(activity)
+                            }
+                        } else {
+                            Log.w("FetchActivities", "Null activity encountered in snapshot.")
                         }
                     }
 
-                    if (newActivityList.isNotEmpty()) {
-                        // Before updating the activityList, prioritize the activities
-                        val currentTime = System.currentTimeMillis()
-                        prioritizationOptimizer.prioritizeActivities(
-                            newActivityList,
-                            currentTime
-                        ) { prioritizedList ->
-                            Log.d(
-                                "ActiveActivitiesActivity",
-                                "Prioritized activities: $prioritizedList"
-                            )
+                    // Update the active activities list (only non-finished ones) and notify the adapter
+                    activityList.clear()
+                    activityList.addAll(activeActivityList)
+                    activityAdapter.notifyDataSetChanged()
 
-                            // Update the activityList with the prioritized list
+                    // Update latLng and placeIds lists
+                    latLngList.clear()
+                    latLngList.addAll(tempLatLngList)
+                    placeIdsList.clear()
+                    placeIdsList.addAll(tempPlaceIdsList)
+                    updateLatLngListFromActivities()
+                    updatePlaceIdsListFromActivities()
+
+                    // Prioritize active activities if containerStatus is "Scheduled" or "Unscheduled"
+                    if (activeActivityList.isNotEmpty()) {
+                        prioritizationOptimizer.prioritizeActivities(activeActivityList) { prioritizedList ->
                             activityList.clear()
                             activityList.addAll(prioritizedList)
-
-                            // Notify the adapter about the changes
                             activityAdapter.notifyDataSetChanged()
-
-                            // Update the LatLng list from activities after prioritization
-                            updateLatLngListFromActivities()
-                            updatePlaceIdsListFromActivities()
                         }
-                    } else {
-                        checkRecyclerViewData()
-                        updateLatLngListFromActivities()
-                        updatePlaceIdsListFromActivities()
                     }
+
+                    // Set visibility for finished activities RecyclerView (after the active RecyclerView is updated)
+                    if (finishedActivityList.isNotEmpty()) {
+                        binding.recyclerViewEndActivities.visibility = View.VISIBLE
+                        finishedActivitiesList.clear()
+                        finishedActivitiesList.addAll(finishedActivityList)
+                    } else {
+                        binding.recyclerViewEndActivities.visibility = View.GONE
+                    }
+
+                    // Update finished activities RecyclerView only after both lists are updated
+                    finishedActivitiesAdapter.notifyDataSetChanged()
+
+                    // Check RecyclerView data
+                    checkRecyclerViewData()
                 } else {
+                    Log.w("FetchActivities", "No activities found for the specified container.")
+                    activityList.clear()
+                    activityAdapter.notifyDataSetChanged()
                     checkRecyclerViewData()
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Toast.makeText(
-                    this@ActiveActivitiesActivity,
-                    "Failed to fetch activities: ${error.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Log.e("FetchActivities", "Database error: ${error.message}")
+                Toast.makeText(this@ActiveActivitiesActivity, "Failed to fetch activities: ${error.message}", Toast.LENGTH_SHORT).show()
             }
         })
     }
 
+
+
+
+
+
     private fun updateLatLngListFromActivities() {
         latLngList.clear()
-        fetchAndUseCurrentLocation()
-        for (activity in activityList) {
-            activity.placeLatlng.let { latLng ->
-                latLngList.add(latLng)
+
+        // Fetch current location first and then update the list
+        fetchAndUseCurrentLocation { currentLatLng ->
+            if (currentLatLng != null) {
+                latLngList.add(currentLatLng)
+                Log.d("ActiveActivitiesActivity", "LATLNG LIST AT CURRENT LOCATION: $latLngList")
             }
+
+            // After current location is added, add latLng from activities (only non-Finished ones)
+            for (activity in activityList) {
+                if (activity.status != "Finished") {  // Check if the activity is not finished
+                    activity.placeLatlng.let { latLng ->
+                        latLngList.add(latLng)
+                    }
+                }
+            }
+
+            rearrangeLatLngList()
+
+            Log.e("ActiveActivitiesActivity", "Updated latLngList: $latLngList")
         }
-
-        rearrangeLatLngList()
-
-        Log.e("ActiveActivitiesActivity", "Updated latLngList: $latLngList")
     }
 
     private fun updatePlaceIdsListFromActivities() {
         placeIdsList.clear()
+
         for (activity in activityList) {
-            activity.placeId.let { placeids ->
-                placeIdsList.add(placeids)
+            // Only add placeId if the activity is not finished
+            if (activity.status != "Finished") {  // Check if the activity is not finished
+                activity.placeId.let { placeId ->
+                    placeIdsList.add(placeId)
+                }
             }
         }
 
@@ -1152,27 +1488,27 @@ class ActiveActivitiesActivity : AppCompatActivity() {
 
     private fun showTripSummaryBottomSheet() {
         // Initialize the View Binding
-        val binding = BottomSheetActivityTripSummaryBinding.inflate(layoutInflater)
+        val sheetBinding = BottomSheetActivityTripSummaryBinding.inflate(layoutInflater)
 
         // Initialize the BottomSheetDialog
         val bottomSheetDialog = BottomSheetDialog(this)
-        bottomSheetDialog.setContentView(binding.root)
+        bottomSheetDialog.setContentView(sheetBinding.root)
 
         // Fetch route and update UI when ready
         routeFetcher.fetchRoute {
-            binding.tvTotalActivities.text = "Total Activities: ${activityAdapter.itemCount}"
-            binding.tvTotalDistance.text = "Total Distance: ${routeFetcher.getTotalDistance()}"
-            binding.tvTotalDuration.text = "Duration: ${routeFetcher.getTotalDuration()}"
-            binding.tvTrafficCondition.text =
+            sheetBinding.tvTotalActivities.text = "Total Activities: ${activityAdapter.itemCount}"
+            sheetBinding.tvTotalDistance.text = "Total Distance: ${routeFetcher.getTotalDistance()}"
+            sheetBinding.tvTotalDuration.text = "Duration: ${routeFetcher.getTotalDuration()}"
+            sheetBinding.tvTrafficCondition.text =
                 "Traffic Condition: ${routeFetcher.determineOverallTrafficCondition()}"
             val routeToken = routeFetcher.getCustomRouteToken()
             // Handle Close button click
-            binding.btnClose.setOnClickListener {
+            sheetBinding.btnClose.setOnClickListener {
                 bottomSheetDialog.dismiss()
             }
 
             // Handle Start Navigation button click
-            binding.btnStartNavigation.setOnClickListener {
+            sheetBinding.btnStartNavigation.setOnClickListener {
                 val intent = Intent(
                     this@ActiveActivitiesActivity,
                     StartNavigationsActivity::class.java
@@ -1190,29 +1526,138 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                 bottomSheetDialog.dismiss()
             }
 
-            // Handle Simulate button click
-            binding.btnSimulate.setOnClickListener {
-                val intent = Intent(
-                    this@ActiveActivitiesActivity,
-                    StartNavigationsActivity::class.java
-                ).apply {
-                    putExtra("IS_SIMULATED", false)
-                    putExtra("ROUTE_TOKEN", routeToken)
-                    putExtra("IS_SIMULATED", true)
-                    putExtra("TRAVEL_MODE", "DRIVE")
-                    putStringArrayListExtra("PLACE_IDS", ArrayList(placeIdsList))
+            sheetBinding.btnSimulate.setOnClickListener {
+                for (activity in activityList) {
+                    scheduleNotificationsForActivity()
                 }
-                // Log the intent before starting the activity
-                Log.e("ActiveActivitiesActivity", intent.extras.toString())
+                binding.activeLabel.visibility = View.VISIBLE
+                binding.finishedLabel.visibility = View.VISIBLE
+                binding.btnCancel.visibility = View.VISIBLE
+                binding.addAndConfirmButtonRows.visibility = View.GONE
+                showToast("Starting scheduled activities in background.")
 
-                startActivity(intent)
+                updateActivityStatus(containerId, "Scheduled")
+                containerStatus = "Scheduled"
+                activityAdapter.notifyDataSetChanged()
+                fetchAndDisplayActivities(containerId)
+
                 bottomSheetDialog.dismiss()
             }
-
             // Show the BottomSheetDialog
             bottomSheetDialog.show()
         }
     }
 
+    private fun scheduleNotificationsForActivity() {
+        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+        var previousEndTimeInMillis: Long? = null // Keeps track of the previous activity's end time
 
+        activityList.forEach { activity ->
+            var startTimeInMillis: Long? = null
+            var endTimeInMillis: Long? = null
+
+            // If both start time and end time are provided
+            if (!activity.startTime.isNullOrEmpty() && !activity.endTime.isNullOrEmpty()) {
+                try {
+                    startTimeInMillis = sdf.parse(activity.startTime)?.time
+                    endTimeInMillis = sdf.parse(activity.endTime)?.time
+                } catch (e: Exception) {
+                    Log.e("NotificationScheduler", "Error parsing start or end time for activity: ${activity.activityName}")
+                }
+            } else {
+                // If both start time and end time are missing, calculate them sequentially based on the previous activity
+                startTimeInMillis = previousEndTimeInMillis ?: System.currentTimeMillis() // Start time based on previous end time or now
+                endTimeInMillis = startTimeInMillis + TimeUnit.HOURS.toMillis(1) // End time is 1 hour after start
+
+                Log.w("NotificationScheduler", "Start or end time missing for activity: ${activity.activityName}, setting based on previous activity.")
+            }
+
+            // Log the calculated times for the activity
+            Log.d("NotificationScheduler", "Calculated times for activity '${activity.activityName}' - Start: $startTimeInMillis, End: $endTimeInMillis")
+
+
+
+            // Now, schedule notifications for reminder, start, and end
+            startTimeInMillis?.let { startMillis ->
+                val reminderTime = startMillis - 10 * 60 * 1000 // 10 minutes before
+                if (reminderTime > System.currentTimeMillis()) {
+                    Log.d("NotificationScheduler", "Scheduling reminder for activity '${activity.activityName}' at $reminderTime")
+                    scheduleWork(containerId, activity.activityId, activity.activityName, "Reminder: ${activity.activityName} starts soon!", reminderTime, "Upcoming")
+                } else {
+                    Log.d("NotificationScheduler", "Reminder time for activity '${activity.activityName}' has already passed.")
+                }
+
+                // Schedule the "Start" notification
+                if (startMillis > System.currentTimeMillis()) {
+                    Log.d("NotificationScheduler", "Scheduling start notification for activity '${activity.activityName}' at $startMillis")
+                    scheduleWork(containerId, activity.activityId, activity.activityName, "Activity Started: ${activity.activityName}", startMillis, "In Progress")
+                } else {
+                    Log.d("NotificationScheduler", "Start time for activity '${activity.activityName}' has already passed.")
+                }
+            }
+
+            endTimeInMillis?.let { endMillis ->
+                // Schedule the "End" notification
+                if (endMillis > System.currentTimeMillis()) {
+                    Log.d("NotificationScheduler", "Scheduling end notification for activity '${activity.activityName}' at $endMillis")
+                    scheduleWork(containerId, activity.activityId, activity.activityName, "Activity Ended: ${activity.activityName}", endMillis, "Finished")
+                } else {
+                    Log.d("NotificationScheduler", "End time for activity '${activity.activityName}' has already passed.")
+                }
+            }
+
+            // Update the previous end time for the next activity
+            previousEndTimeInMillis = endTimeInMillis
+        }
+    }
+
+    private fun scheduleWork(containerId: String, activityId: String?, activityName: String, message: String, triggerAtMillis: Long, newStatus: String) {
+        val delay = triggerAtMillis - System.currentTimeMillis() // Calculate delay in milliseconds
+        Log.d("NotificationScheduler", "Scheduling work for activity '$activityName' with delay: $delay ms")
+
+        // Prepare input data with additional fields
+        val data = Data.Builder()
+            .putString("activityName", activityName)
+            .putString("notificationMessage", message)
+            .putString("containerId", containerId)
+            .putString("activityId", activityId)
+            .putString("newStatus", newStatus)
+            .build()
+
+        // Create a one-time work request with delay
+        val workRequest = OneTimeWorkRequestBuilder<ActivityNotificationWorker>()
+            .setInputData(data)
+            .setInitialDelay(delay, TimeUnit.MILLISECONDS)
+            .build()
+
+        // Enqueue the work
+        WorkManager.getInstance(this).enqueue(workRequest)
+        Log.d("NotificationScheduler", "Work request for activity '$activityName' enqueued successfully.")
+    }
+
+    private fun updateActivityStatus(containerId: String, status: String) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId == null) {
+            // Handle the case where the user is not logged in
+            Log.e("UpdateContainerStatus", "User not logged in.")
+            return
+        }
+
+        // Reference to the container's location in the Firebase Database
+        val databaseReference = FirebaseDatabase.getInstance().reference
+            .child("Users")
+            .child(userId)
+            .child("MyActivities")
+            .child(containerId)
+
+        // Update the status field of the container
+        databaseReference.child("status").setValue(status)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    Log.d("UpdateContainerStatus", "Status successfully updated to: $status")
+                } else {
+                    Log.e("UpdateContainerStatus", "Failed to update status: ${task.exception?.message}")
+                }
+            }
+    }
 }

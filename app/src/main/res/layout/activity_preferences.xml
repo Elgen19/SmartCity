@@ -71,6 +71,7 @@
             android:id="@+id/question1"
             android:layout_width="match_parent"
             android:layout_height="0dp"
+            android:visibility="visible"
             android:layout_weight="1"
             android:orientation="vertical">
             <!-- Question 1 -->
@@ -543,6 +544,349 @@
                 android:text="Food court" />
 
         </LinearLayout>
+
+        <!-- Question 7: Where do you live -->
+        <LinearLayout
+            android:id="@+id/question7"
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/gray"
+                android:text="7. Where do you live?"
+                android:textSize="16sp"
+                android:layout_marginBottom="8dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <!-- EditText for entering or selecting the address -->
+                <EditText
+                    android:id="@+id/editText_address"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="Enter or search your address"
+                    android:inputType="none"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
+                    android:padding="12dp"
+                    android:textColor="@color/gray"
+                    android:textColorHint="@color/sub_support_text"
+                    android:background="@drawable/rounded_background_white" />
+
+                <!-- ImageButton with location icon -->
+                <ImageButton
+                    android:id="@+id/imageButton_location"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="8dp"
+                    android:backgroundTint="@color/secondary_color"
+                    android:src="@drawable/baseline_my_location_24"
+                    android:contentDescription="Get Current Location"
+                    app:tint="@color/primary_color" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Question 8: Work and study -->
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/scrollLayout"
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:id="@+id/question8"
+                android:layout_width="match_parent"
+                android:visibility="gone"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- Question Text -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/gray"
+                    android:text="8. Are you working or studying?"
+                    android:textSize="16sp"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- Radio Buttons: Working or Studying -->
+                <RadioGroup
+                    android:id="@+id/radioGroupWorkOrStudy"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/radioWork"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Working"
+                        android:textSize="12sp"
+                        android:textColor="@color/gray"
+                        android:layout_marginEnd="16dp" />
+
+                    <RadioButton
+                        android:id="@+id/radioStudy"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="12sp"
+                        android:text="Studying"
+                        android:textColor="@color/gray" />
+
+                    <RadioButton
+                        android:id="@+id/radioBoth"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Both"
+                        android:textSize="12sp"
+                        android:textColor="@color/gray" />
+                </RadioGroup>
+
+                <!-- Work Section -->
+              <LinearLayout
+                  android:id="@+id/workLayout"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:visibility="gone"
+                  android:orientation="vertical">
+                  <TextView
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="Work Details"
+                      android:layout_marginTop="8dp"
+                      android:layout_marginBottom="8dp"
+                      android:textColor="@color/gray"
+                      android:textSize="16sp" />
+
+                  <androidx.cardview.widget.CardView
+                      android:id="@+id/cardWorkDetails"
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      app:cardCornerRadius="8dp"
+                      app:cardElevation="4dp"
+                      android:visibility="visible">
+
+                      <LinearLayout
+                          android:layout_width="match_parent"
+                          android:layout_height="wrap_content"
+                          android:background="@color/white"
+                          android:orientation="vertical"
+                          android:padding="16dp">
+
+                          <!-- Work Address -->
+                          <LinearLayout
+                              android:id="@+id/layoutWorkAddress"
+                              android:layout_width="match_parent"
+                              android:layout_height="wrap_content"
+                              android:orientation="vertical"
+                              android:layout_marginBottom="16dp">
+
+                              <TextView
+                                  android:layout_width="wrap_content"
+                                  android:layout_height="wrap_content"
+                                  android:text="Enter your work address"
+                                  android:textColor="@color/gray"
+                                  android:textSize="14sp"
+                                  android:layout_marginBottom="8dp" />
+
+                              <EditText
+                                  android:id="@+id/editText_workAddress"
+                                  android:layout_width="match_parent"
+                                  android:layout_height="wrap_content"
+                                  android:hint="Work address"
+                                  android:inputType="none"
+                                  android:focusable="false"
+                                  android:focusableInTouchMode="false"
+                                  android:padding="12dp"
+                                  android:textSize="14sp"
+                                  android:textColor="@color/gray"
+                                  android:textColorHint="@color/sub_support_text"
+                                  android:background="@drawable/rounded_background" />
+
+                              <com.google.android.material.button.MaterialButton
+                                  android:id="@+id/buttonWorkAtHome"
+                                  android:layout_width="wrap_content"
+                                  android:layout_height="wrap_content"
+                                  android:text="I work at homeyy"
+                                  app:icon="@drawable/home"
+                                  app:iconTint="@color/gray"
+                                  android:layout_gravity="end"
+                                  android:paddingEnd="0dp"
+                                  android:textSize="12sp"
+                                  android:backgroundTint="@color/white"
+                                  android:textColor="@color/gray" />
+                          </LinearLayout>
+
+                          <!-- Work Schedule -->
+                          <LinearLayout
+                              android:id="@+id/layoutVaryingWorkSchedule"
+                              android:layout_width="match_parent"
+                              android:layout_height="wrap_content"
+                              android:orientation="vertical">
+
+                              <TextView
+                                  android:layout_width="wrap_content"
+                                  android:layout_height="wrap_content"
+                                  android:text="Please enter your work schedule"
+                                  android:textColor="@color/gray"
+                                  android:layout_marginBottom="8dp"
+                                  android:textSize="14sp" />
+
+                              <TextView
+                                  android:id="@+id/textViewWorkScheduleSummary"
+                                  android:layout_width="match_parent"
+                                  android:layout_height="wrap_content"
+                                  android:text="Your Work Schedule"
+                                  android:textColor="@color/dark_gray"
+                                  android:paddingStart="8dp"
+                                  android:paddingTop="8dp"
+                                  android:paddingBottom="8dp"
+                                  android:textSize="14sp" />
+
+                              <com.google.android.material.button.MaterialButton
+                                  android:id="@+id/buttonAddWorkSchedule"
+                                  android:layout_width="wrap_content"
+                                  android:layout_height="wrap_content"
+                                  android:text="Add Work Schedule"
+                                  app:icon="@drawable/add"
+                                  android:layout_gravity="end"
+                                  android:paddingEnd="0dp"
+                                  android:textSize="12sp"
+                                  android:backgroundTint="@color/white"
+                                  android:textColor="@color/gray" />
+                          </LinearLayout>
+                      </LinearLayout>
+                  </androidx.cardview.widget.CardView>
+              </LinearLayout>
+
+                <!-- Student Section -->
+               <LinearLayout
+                   android:visibility="gone"
+                   android:id="@+id/studyLayout"
+                   android:layout_width="match_parent"
+                   android:layout_height="wrap_content"
+                   android:orientation="vertical">
+                   <TextView
+                       android:layout_width="wrap_content"
+                       android:layout_height="wrap_content"
+                       android:text="Student Details"
+                       android:textColor="@color/gray"
+                       android:textSize="16sp"
+                       android:layout_marginTop="16dp"
+                       android:layout_marginBottom="8dp" />
+
+                   <androidx.cardview.widget.CardView
+                       android:id="@+id/cardStudentDetails"
+                       android:layout_width="match_parent"
+                       android:layout_height="wrap_content"
+                       app:cardCornerRadius="8dp"
+                       app:cardElevation="4dp"
+                       android:visibility="visible">
+
+                       <LinearLayout
+                           android:layout_width="match_parent"
+                           android:layout_height="wrap_content"
+                           android:orientation="vertical"
+                           android:background="@color/white"
+                           android:padding="16dp">
+
+                           <!-- School Address -->
+                           <LinearLayout
+                               android:id="@+id/layoutSchoolAddress"
+                               android:layout_width="match_parent"
+                               android:layout_height="wrap_content"
+                               android:orientation="vertical"
+                               android:layout_marginBottom="16dp">
+
+                               <TextView
+                                   android:layout_width="wrap_content"
+                                   android:layout_height="wrap_content"
+                                   android:text="Enter your school address"
+                                   android:textColor="@color/gray"
+                                   android:textSize="14sp"
+                                   android:layout_marginBottom="8dp" />
+
+                               <EditText
+                                   android:id="@+id/editText_schoolAddress"
+                                   android:layout_width="match_parent"
+                                   android:layout_height="wrap_content"
+                                   android:hint="School address"
+                                   android:inputType="none"
+                                   android:focusable="false"
+                                   android:focusableInTouchMode="false"
+                                   android:padding="12dp"
+                                   android:textSize="14sp"
+                                   android:textColor="@color/gray"
+                                   android:textColorHint="@color/sub_support_text"
+                                   android:background="@drawable/rounded_background" />
+                           </LinearLayout>
+
+                           <!-- School Schedule -->
+                           <LinearLayout
+                               android:id="@+id/layoutVaryingSchoolSchedule"
+                               android:layout_width="match_parent"
+                               android:layout_height="wrap_content"
+                               android:orientation="vertical">
+
+                               <TextView
+                                   android:layout_width="wrap_content"
+                                   android:layout_height="wrap_content"
+                                   android:text="Please enter your school schedule"
+                                   android:textColor="@color/gray"
+                                   android:layout_marginBottom="8dp"
+                                   android:textSize="14sp" />
+
+                               <TextView
+                                   android:id="@+id/textViewSchoolScheduleSummary"
+                                   android:layout_width="match_parent"
+                                   android:layout_height="wrap_content"
+                                   android:text="Your School Schedule"
+                                   android:textColor="@color/dark_gray"
+                                   android:paddingStart="8dp"
+                                   android:paddingTop="8dp"
+                                   android:paddingBottom="8dp"
+                                   android:textSize="14sp" />
+
+                               <com.google.android.material.button.MaterialButton
+                                   android:id="@+id/buttonAddSchoolSchedule"
+                                   android:layout_width="wrap_content"
+                                   android:layout_height="wrap_content"
+                                   android:text="Add School Schedule"
+                                   app:icon="@drawable/add"
+                                   android:layout_gravity="end"
+                                   android:textSize="12sp"
+                                   android:paddingEnd="0dp"
+                                   android:backgroundTint="@color/white"
+                                   android:textColor="@color/gray" />
+                           </LinearLayout>
+                       </LinearLayout>
+                   </androidx.cardview.widget.CardView>
+               </LinearLayout>
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+
+
+
+
+
+
 
 
         <LinearLayout
