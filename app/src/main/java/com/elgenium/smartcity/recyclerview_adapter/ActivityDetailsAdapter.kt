@@ -49,10 +49,10 @@ class ActivityDetailsAdapter(
         val priorityText = activity.priorityLevel ?: "N/A"
         holder.priority.text = priorityText
         val timeConstraintText =
-            if (activity.startTime != null && activity.endTime != null && activity.startTime.isNotEmpty() && activity.endTime.isNotEmpty()) {
+            if (activity.startTime != null && activity.endTime != null && activity.startTime!!.isNotEmpty() && activity.endTime!!.isNotEmpty()) {
                 // Format the time (assuming `startTime` and `endTime` are in "hh:mm a" format)
-                val startTimeFormatted = formatTime(activity.startTime)
-                val endTimeFormatted = formatTime(activity.endTime)
+                val startTimeFormatted = formatTime(activity.startTime!!)
+                val endTimeFormatted = formatTime(activity.endTime!!)
                 "$startTimeFormatted - $endTimeFormatted"
             } else {
                 "No time constraints"

@@ -130,91 +130,89 @@ class ActivityPlaceRecommendation(private val context: Context) {
         }
     }
 
-//    fun performTextSearch(
-//        placesClient: PlacesClient,
-//        currentPlaceTypes: List<String>,
-//        callback: (List<LocationBasedPlaceRecommendationItems>) -> Unit
-//    ) {
-//        // Get the current location first
-//        getCurrentLocation(context) { currentLocation ->
-//            currentLocation?.let { location ->
-//                Log.d("ActivityPlaceRecommendation", "Current location: $location")
-//
-//                val currentLatLng = LatLng(location.latitude, location.longitude)
-//                val locationBias = CircularBounds.newInstance(currentLatLng, 1000.0)
-//                Log.d("ActivityPlaceRecommendation", "Location bias set to: $locationBias")
-//
-//                val placeFields = listOf(
-//                    Place.Field.ID,
-//                    Place.Field.NAME,
-//                    Place.Field.ADDRESS,
-//                    Place.Field.TYPES,
-//                    Place.Field.RATING,
-//                    Place.Field.USER_RATINGS_TOTAL,
-//                    Place.Field.LAT_LNG,
-//                    Place.Field.PHOTO_METADATAS
-//                )
-//
-//                val placesList = mutableListOf<Place>()
-//                val searchCount = currentPlaceTypes.size
-//                var completedSearches = 0
-//
-//                Log.d("ActivityPlaceRecommendation", "Searching for place types: $currentPlaceTypes")
-//
-//                currentPlaceTypes.forEach { placeType ->
-//                    val query = "$placeType near me"
-//                    Log.d("ActivityPlaceRecommendation", "Search query: '$query'")
-//
-//                    val searchByTextRequest = SearchByTextRequest.builder(query, placeFields)
-//                        .setMaxResultCount(10)
-//                        .setLocationBias(locationBias)
-//                        .setRankPreference(SearchByTextRequest.RankPreference.DISTANCE)
-//                        .build()
-//
-//                    placesClient.searchByText(searchByTextRequest)
-//                        .addOnSuccessListener { response ->
-//                            val places = response.places
-//                            Log.d("ActivityPlaceRecommendation", "Found ${places.size} places for query: '$query'")
-//                            places.forEach { place ->
-//                                Log.d("ActivityPlaceRecommendation", "Place found: ${place.name}, Address: ${place.address}")
-//                                placesList.add(place)
-//                            }
-//                        }
-//                        .addOnCompleteListener {
-//                            completedSearches++
-//                            Log.d("ActivityPlaceRecommendation", "Completed search $completedSearches/$searchCount")
-//                            if (completedSearches == searchCount) {
-//                                // Convert places to LocationBasedPlaceRecommendationItems list and update RecyclerView
-//                                val placeItems = placesList.map {
-//                                    LocationBasedPlaceRecommendationItems(
-//                                        it.name ?: "Unknown",
-//                                        it.address ?: "Unknown address",
-//                                        it.id ?: "No ID",
-//                                        it.latLng?.toString() ?: "No LatLng",
-//                                        it.rating?.toString() ?: "No ratings"
-//
-//                                    )
-//                                }
-//
-//                                Log.d("ActivityPlaceRecommendation", "Returning ${placeItems.size} place recommendations.")
-//                                callback(placeItems)
-//                            }
-//                        }
-//                        .addOnFailureListener { exception ->
-//                            Log.e("ActivityPlaceRecommendation", "Error during place search: ${exception.message}")
-//                            completedSearches++
-//                            if (completedSearches == searchCount) {
-//                                Log.d("ActivityPlaceRecommendation", "Returning empty list due to failure.")
-//                                callback(emptyList())
-//                            }
-//                        }
-//                }
-//            } ?: run {
-//                Log.e("ActivityPlaceRecommendation", "Current location is not available.")
-//                callback(emptyList()) // Return an empty list if the location is not available
-//            }
-//        }
-//    }
+    fun performTextSearchWithActivityOrigin(
+        placesClient: PlacesClient,
+        originLatLng: LatLng, // Activity's LatLng as the origin
+        placeTypes: List<String>,
+        callback: (List<LocationBasedPlaceRecommendationItems>) -> Unit
+    ) {
+        Log.d("ActivityPlaceRecommendation", "Using activity origin: $originLatLng")
+
+        val locationBias = CircularBounds.newInstance(originLatLng, 500.0)
+        Log.d("ActivityPlaceRecommendation", "Location bias set to: $locationBias")
+
+        val placeFields = listOf(
+            Place.Field.ID,
+            Place.Field.NAME,
+            Place.Field.ADDRESS,
+            Place.Field.TYPES,
+            Place.Field.RATING,
+            Place.Field.USER_RATINGS_TOTAL,
+            Place.Field.LAT_LNG,
+            Place.Field.PHOTO_METADATAS
+        )
+
+        val placesList = mutableListOf<Place>()
+        val placeItems = mutableListOf<LocationBasedPlaceRecommendationItems>()
+        val searchCount = placeTypes.size
+        var completedSearches = 0
+
+        Log.d("ActivityPlaceRecommendation", "Searching for place types: $placeTypes")
+
+        placeTypes.forEach { placeType ->
+            val query = "$placeType near me"
+            Log.d("ActivityPlaceRecommendation", "Search query: '$query'")
+
+            val searchByTextRequest = SearchByTextRequest.builder(query, placeFields)
+                .setMaxResultCount(3)
+                .setLocationBias(locationBias)
+                .setRankPreference(SearchByTextRequest.RankPreference.DISTANCE)
+                .build()
+
+            placesClient.searchByText(searchByTextRequest)
+                .addOnSuccessListener { response ->
+                    val places = response.places
+                    Log.d("ActivityPlaceRecommendation", "Found ${places.size} places for query: '$query'")
+
+                    val distanceCallbacksCompleted = AtomicInteger(0) // Track distance callbacks
+                    places.forEach { place ->
+                        Log.d("ActivityPlaceRecommendation", "Place found: ${place.name}, Address: ${place.address}")
+                        placesList.add(place)
+
+                        // Use checkPlaceDistance to calculate the distance
+                        checkPlaceDistance(originLatLng, place) { distance ->
+                            val item = LocationBasedPlaceRecommendationItems(
+                                place.name ?: "Unknown",
+                                place.address ?: "Unknown address",
+                                place.id ?: "No ID",
+                                place.latLng?.toString() ?: "No LatLng",
+                                place.rating?.toString() ?: "No ratings",
+                                distance
+                            )
+                            placeItems.add(item)
+
+                            // Check if all distance callbacks are completed
+                            if (distanceCallbacksCompleted.incrementAndGet() == places.size) {
+                                completedSearches++
+                                Log.d("ActivityPlaceRecommendation", "Completed search $completedSearches/$searchCount")
+                                if (completedSearches == searchCount) {
+                                    Log.d("ActivityPlaceRecommendation", "Returning ${placeItems.size} place recommendations.")
+                                    callback(placeItems)
+                                }
+                            }
+                        }
+                    }
+                }
+                .addOnFailureListener { exception ->
+                    Log.e("ActivityPlaceRecommendation", "Error during place search: ${exception.message}")
+                    completedSearches++
+                    if (completedSearches == searchCount) {
+                        Log.d("ActivityPlaceRecommendation", "Returning empty list due to failure.")
+                        callback(emptyList())
+                    }
+                }
+        }
+    }
 
 
 

@@ -29,6 +29,7 @@ import com.elgenium.smartcity.databinding.BottomSheetViewActivityDetailBinding
 import com.elgenium.smartcity.databinding.DialogActivitySuggestionsBinding
 import com.elgenium.smartcity.intelligence.ActivityPlaceProcessor
 import com.elgenium.smartcity.intelligence.ActivityPrioritizationOptimizer
+import com.elgenium.smartcity.intelligence.ProximityCalculator
 import com.elgenium.smartcity.models.ActivityDetails
 import com.elgenium.smartcity.models.LocationBasedPlaceRecommendationItems
 import com.elgenium.smartcity.recyclerview_adapter.ActivityDetailsAdapter
@@ -73,6 +74,10 @@ class ActiveActivitiesActivity : AppCompatActivity() {
     private lateinit var finishedActivitiesAdapter: ActivityDetailsAdapter
     private var selectedActivity: ActivityDetails? = null
     private var selectedActivityPosition: Int? = null
+    private val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+    private val scheduledActivities = mutableSetOf<String>()
+    private lateinit var proximityCalculator: ProximityCalculator
+    private var placeTypes = ""
 
 
 
@@ -87,6 +92,7 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                 val tempLatlng = data?.getStringExtra("PLACE_LATLNG") ?: ""
                 placeLatlng = parseLatLng(tempLatlng) ?: "No latlng"
                 placeId = data?.getStringExtra("PLACE_ID") ?: ""
+
 
                 Log.e("ActivityPlaceProcessor", "ACTIVITY: $activity")
                 Log.e("ActivityPlaceProcessor", "placeLatlng: $placeLatlng")
@@ -135,6 +141,7 @@ class ActiveActivitiesActivity : AppCompatActivity() {
             adapter = activityAdapter
         }
 
+        proximityCalculator = ProximityCalculator(this, placesClient)
 
         finishedActivitiesAdapter = ActivityDetailsAdapter(finishedActivitiesList) { clickedActivity, position ->
             selectedActivity = clickedActivity
@@ -322,6 +329,7 @@ class ActiveActivitiesActivity : AppCompatActivity() {
 
                 val userQuery = bottomSheetBinding.etActivity.text.toString().trim()
 
+
                 if (!isLocationBasedRecommendationDisabled) {
                     if (userQuery.isNotEmpty()) {
                         bottomSheetBinding.lottieAnimation.visibility = View.VISIBLE
@@ -329,6 +337,8 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                         // Call the function to process the query asynchronously
                         lifecycleScope.launch {
                             val result = ActivityPlaceProcessor().processUserQuery(userQuery)
+                            placeTypes = result.toString()
+
 
                             if (result != null) {
                                 Log.d("ActivityPlaceProcessor", "Place: $result")
@@ -488,6 +498,7 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                 showToast("Time constraints are required for High or Medium priority.")
                 return@setOnClickListener
             }
+            Log.d("ActivityPlaceProcessor", "Place types: $placeTypes")
 
             val activityDetails = ActivityDetails(
                 activityName = activityName,
@@ -498,7 +509,8 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                 endTime = endTimeFormatted,
                 placeId = placeId,
                 placeLatlng = placeLatlng,
-                containerStatus = containerStatus
+                containerStatus = containerStatus,
+                placeTypes = placeTypes
 
                 )
 
@@ -1146,156 +1158,6 @@ class ActiveActivitiesActivity : AppCompatActivity() {
     }
 
 
-
-
-//    private fun fetchAndDisplayActivities(containerId: String) {
-//        val userId = FirebaseAuth.getInstance().currentUser?.uid
-//        if (userId == null) {
-//            Toast.makeText(this, "User not logged in.", Toast.LENGTH_SHORT).show()
-//            Log.e("FetchActivities", "User not logged in.")
-//            return
-//        }
-//
-//        val databaseReference = FirebaseDatabase.getInstance().reference
-//            .child("Users")
-//            .child(userId)
-//            .child("MyActivities")
-//            .child(containerId)
-//            .child("activities")
-//
-//        Log.d("FetchActivities", "Fetching activities for containerId: $containerId")
-//
-//        databaseReference.addListenerForSingleValueEvent(object : ValueEventListener {
-//            override fun onDataChange(snapshot: DataSnapshot) {
-//                Log.d("FetchActivities", "onDataChange triggered. Data exists: ${snapshot.exists()}")
-//                if (snapshot.exists()) {
-//                    // Temporary lists for active activities and finished ones
-//                    val activeActivityList = mutableListOf<ActivityDetails>()
-//                    val allActivitiesList = mutableListOf<ActivityDetails>()
-//
-//                    // Temporary lists for latLng and placeIds (these will always contain data)
-//                    val tempLatLngList = mutableListOf<String>()
-//                    val tempPlaceIdsList = mutableListOf<String>()
-//
-//                    for (activitySnapshot in snapshot.children) {
-//                        val activity = activitySnapshot.getValue(ActivityDetails::class.java)
-//                        if (activity != null) {
-//                            activity.containerStatus = containerStatus
-//
-//                            val currentTimeMillis = System.currentTimeMillis()
-//                            val startTimeString = activity.startTime // Example: "2024-11-27 11:05"
-//                            val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-//
-//                            try {
-//                                // Parse the string into a Date object
-//                                val activityStartTime = startTimeString?.let { dateFormat.parse(it) }
-//
-//                                // If parsing is successful, get the time in milliseconds
-//                                if (activityStartTime != null) {
-//                                    val activityStartTimeMillis = activityStartTime.time
-//
-//                                    // Now compare with currentTimeMillis
-//                                    if (activity.status == "Upcoming" && currentTimeMillis > activityStartTimeMillis) {
-//                                        // Update the activity status to Finished
-//                                        activity.status = "Finished"
-//                                        activitySnapshot.ref.child("status").setValue("Finished")
-//                                            .addOnCompleteListener { task ->
-//                                                if (task.isSuccessful) {
-//                                                    Log.d("FetchActivities", "Activity status updated to Finished: ${activitySnapshot.key}")
-//                                                } else {
-//                                                    Log.e("FetchActivities", "Failed to update activity status: ${task.exception?.message}")
-//                                                }
-//                                            }
-//                                    }
-//                                }
-//                            } catch (e: Exception) {
-//                                Log.e("FetchActivities", "Failed to parse start time: ${e.message}")
-//                            }
-//
-//                            allActivitiesList.add(activity) // Add all activities to the general list
-//                            val activityRef = activitySnapshot.ref
-//                            activityRef.child("containerStatus").setValue(containerStatus)
-//                                .addOnCompleteListener { task ->
-//                                    if (task.isSuccessful) {
-//                                        Log.d("FetchActivities", "containerStatus updated successfully for activity: ${activityRef.key}")
-//                                    } else {
-//                                        Log.e("FetchActivities", "Failed to update containerStatus: ${task.exception?.message}")
-//                                    }
-//                                }
-//
-//                            // Add latLng and placeId to the lists for all activities
-//                            tempLatLngList.add(activity.placeLatlng)  // Assuming ActivityDetails has latLng
-//                            tempPlaceIdsList.add(activity.placeId)  // Assuming ActivityDetails has placeId
-//
-//                            // If containerStatus is "Unscheduled", we show all activities regardless of status
-//                            if (containerStatus == "Unscheduled") {
-//                                // Add to the active list (since we're showing all activities)
-//                                activeActivityList.add(activity)
-//                            } else {
-//                                // If containerStatus is "Scheduled", only add non-Finished activities to active list
-//                                if (activity.status != "Finished") {
-//                                    activeActivityList.add(activity)
-//                                }
-//                            }
-//                        } else {
-//                            Log.w("FetchActivities", "Null activity encountered in snapshot.")
-//                        }
-//                    }
-//
-//                    // Update the full activity list in RecyclerView (includes both active and finished)
-//                    activityList.clear()
-//                    activityList.addAll(allActivitiesList)
-//                    activityAdapter.notifyDataSetChanged()
-//                    Log.d("FetchActivities", "Updated activityList with all activities: $activityList")
-//
-//                    // Now, update latLng and placeIds lists for active activities (these are now populated)
-//                    latLngList.clear()
-//                    latLngList.addAll(tempLatLngList)
-//                    placeIdsList.clear()
-//                    placeIdsList.addAll(tempPlaceIdsList)
-//
-//                    // Update the latLngList and placeIdsList after all activities have been added
-//                    updateLatLngListFromActivities()
-//                    updatePlaceIdsListFromActivities()
-//
-//                    Log.w("FetchActivities", "LAT LNG LIST NOW AT: $latLngList")
-//                    Log.w("FetchActivities", "PLACE IDS LIST NOW AT: $placeIdsList")
-//
-//                    // If containerStatus is "Scheduled", prioritize activities
-//                    if (containerStatus == "Scheduled" && activeActivityList.isNotEmpty()) {
-//                        prioritizationOptimizer.prioritizeActivities(activeActivityList) { prioritizedList ->
-//                            activityList.clear()
-//                            activityList.addAll(prioritizedList)
-//                            activityAdapter.notifyDataSetChanged()
-//                        }
-//                        updateLatLngListFromActivities()
-//                        updatePlaceIdsListFromActivities()
-//                    }
-//
-//                    // Check RecyclerView data
-//                    checkRecyclerViewData()
-//                } else {
-//                    Log.w("FetchActivities", "No activities found for the specified container.")
-//
-//                    // Handle case when no activities exist
-//                    activityList.clear()
-//                    activityAdapter.notifyDataSetChanged()
-//
-//                    checkRecyclerViewData()
-//                }
-//            }
-//
-//            override fun onCancelled(error: DatabaseError) {
-//                Log.e("FetchActivities", "Database error: ${error.message}")
-//                Toast.makeText(
-//                    this@ActiveActivitiesActivity,
-//                    "Failed to fetch activities: ${error.message}",
-//                    Toast.LENGTH_SHORT
-//                ).show()
-//            }
-//        })
-//    }
-
     private fun fetchAndDisplayActivities(containerId: String) {
         val userId = FirebaseAuth.getInstance().currentUser?.uid
         if (userId == null) {
@@ -1398,6 +1260,8 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                             activityList.addAll(prioritizedList)
                             activityAdapter.notifyDataSetChanged()
                         }
+
+                        proximityCalculator.prioritizeAndRecalculate(activityList)
                     }
 
                     // Set visibility for finished activities RecyclerView (after the active RecyclerView is updated)
@@ -1429,21 +1293,11 @@ class ActiveActivitiesActivity : AppCompatActivity() {
         })
     }
 
-
-
-
-
-
     private fun updateLatLngListFromActivities() {
         latLngList.clear()
 
         // Fetch current location first and then update the list
         fetchAndUseCurrentLocation { currentLatLng ->
-            if (currentLatLng != null) {
-                latLngList.add(currentLatLng)
-                Log.d("ActiveActivitiesActivity", "LATLNG LIST AT CURRENT LOCATION: $latLngList")
-            }
-
             // After current location is added, add latLng from activities (only non-Finished ones)
             for (activity in activityList) {
                 if (activity.status != "Finished") {  // Check if the activity is not finished
@@ -1452,12 +1306,17 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                     }
                 }
             }
+            latLngList.reverse()
+            if (currentLatLng != null) {
+                // Add current location to the beginning of the list
+                latLngList.add(0, currentLatLng)  // Add at index 0 to make it the first element
+                Log.d("ActiveActivitiesActivity", "LATLNG LIST AT CURRENT LOCATION: $latLngList")
+            }
 
-            rearrangeLatLngList()
-
-            Log.e("ActiveActivitiesActivity", "Updated latLngList: $latLngList")
+            Log.e("ActiveActivitiesActivity", "LATLNG LIST: $latLngList")
         }
     }
+
 
     private fun updatePlaceIdsListFromActivities() {
         placeIdsList.clear()
@@ -1470,21 +1329,11 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                 }
             }
         }
-
-        rearrangeLatLngList()
-
-        Log.e("ActiveActivitiesActivity", "PLACE IDS: $placeIdsList")
+        Log.e("ActiveActivitiesActivity", "PLACE IDS BEFORE: $placeIdsList")
+        placeIdsList.reverse()
+        Log.e("ActiveActivitiesActivity", "PLACE IDS AFTER: $placeIdsList")
     }
 
-    private fun rearrangeLatLngList() {
-        // Check if the list has at least two elements to rearrange
-        if (latLngList.size > 1) {
-            // Reverse the list to have the oldest location at the front
-            latLngList.reverse()
-
-            Log.e("ActiveActivitiesActivity", "Rearranged latLngList: $latLngList")
-        }
-    }
 
     private fun showTripSummaryBottomSheet() {
         // Initialize the View Binding
@@ -1528,7 +1377,7 @@ class ActiveActivitiesActivity : AppCompatActivity() {
 
             sheetBinding.btnSimulate.setOnClickListener {
                 for (activity in activityList) {
-                    scheduleNotificationsForActivity()
+                    scheduleNotificationsForActivity(activityList, containerId)
                 }
                 binding.activeLabel.visibility = View.VISIBLE
                 binding.finishedLabel.visibility = View.VISIBLE
@@ -1548,68 +1397,210 @@ class ActiveActivitiesActivity : AppCompatActivity() {
         }
     }
 
-    private fun scheduleNotificationsForActivity() {
-        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-        var previousEndTimeInMillis: Long? = null // Keeps track of the previous activity's end time
+//    private fun scheduleNotificationsForActivity() {
+//        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+//        var previousEndTimeInMillis: Long? = null // Keeps track of the previous activity's end time
+//
+//        activityList.forEach { activity ->
+//            var startTimeInMillis: Long? = null
+//            var endTimeInMillis: Long? = null
+//
+//            // If both start time and end time are provided
+//            if (!activity.startTime.isNullOrEmpty() && !activity.endTime.isNullOrEmpty()) {
+//                try {
+//                    startTimeInMillis = sdf.parse(activity.startTime)?.time
+//                    endTimeInMillis = sdf.parse(activity.endTime)?.time
+//                } catch (e: Exception) {
+//                    Log.e("NotificationScheduler", "Error parsing start or end time for activity: ${activity.activityName}")
+//                }
+//            } else {
+//                // If both start time and end time are missing, calculate them sequentially based on the previous activity
+//                startTimeInMillis = previousEndTimeInMillis ?: System.currentTimeMillis() // Start time based on previous end time or now
+//                endTimeInMillis = startTimeInMillis + TimeUnit.HOURS.toMillis(1) // End time is 1 hour after start
+//
+//                Log.w("NotificationScheduler", "Start or end time missing for activity: ${activity.activityName}, setting based on previous activity.")
+//            }
+//
+//            // Log the calculated times for the activity
+//            Log.d("NotificationScheduler", "Calculated times for activity '${activity.activityName}' - Start: $startTimeInMillis, End: $endTimeInMillis")
+//
+//
+//
+//            // Now, schedule notifications for reminder, start, and end
+//            startTimeInMillis?.let { startMillis ->
+//                val reminderTime = startMillis - 10 * 60 * 1000 // 10 minutes before
+//                if (reminderTime > System.currentTimeMillis()) {
+//                    Log.d("NotificationScheduler", "Scheduling reminder for activity '${activity.activityName}' at $reminderTime")
+//                    scheduleWork(containerId, activity.activityId, activity.activityName, "Reminder: ${activity.activityName} starts soon!", reminderTime, "Upcoming")
+//                } else {
+//                    Log.d("NotificationScheduler", "Reminder time for activity '${activity.activityName}' has already passed.")
+//                }
+//
+//                // Schedule the "Start" notification
+//                if (startMillis > System.currentTimeMillis()) {
+//                    Log.d("NotificationScheduler", "Scheduling start notification for activity '${activity.activityName}' at $startMillis")
+//                    scheduleWork(containerId, activity.activityId, activity.activityName, "Activity Started: ${activity.activityName}", startMillis, "In Progress")
+//                } else {
+//                    Log.d("NotificationScheduler", "Start time for activity '${activity.activityName}' has already passed.")
+//                }
+//            }
+//
+//            endTimeInMillis?.let { endMillis ->
+//                // Schedule the "End" notification
+//                if (endMillis > System.currentTimeMillis()) {
+//                    Log.d("NotificationScheduler", "Scheduling end notification for activity '${activity.activityName}' at $endMillis")
+//                    scheduleWork(containerId, activity.activityId, activity.activityName, "Activity Ended: ${activity.activityName}", endMillis, "Finished")
+//                } else {
+//                    Log.d("NotificationScheduler", "End time for activity '${activity.activityName}' has already passed.")
+//                }
+//            }
+//
+//            // Update the previous end time for the next activity
+//            previousEndTimeInMillis = endTimeInMillis
+//        }
+//    }
+private fun scheduleNotificationsForActivity(activityList: List<ActivityDetails>, containerId: String) {
+    // Separate activities by priority
+    val highAndMediumPriorityActivities = activityList.filter { it.priorityLevel == "High" || it.priorityLevel == "Medium" }
+    val lowPriorityActivities = activityList.filter { it.priorityLevel == "Low" }
 
-        activityList.forEach { activity ->
-            var startTimeInMillis: Long? = null
-            var endTimeInMillis: Long? = null
+    // Generate available time slots based on high/medium-priority activities
+    val availableTimeSlots = generateAvailableTimeSlotsForHighAndMedium(highAndMediumPriorityActivities)
 
-            // If both start time and end time are provided
-            if (!activity.startTime.isNullOrEmpty() && !activity.endTime.isNullOrEmpty()) {
-                try {
-                    startTimeInMillis = sdf.parse(activity.startTime)?.time
-                    endTimeInMillis = sdf.parse(activity.endTime)?.time
-                } catch (e: Exception) {
-                    Log.e("NotificationScheduler", "Error parsing start or end time for activity: ${activity.activityName}")
-                }
-            } else {
-                // If both start time and end time are missing, calculate them sequentially based on the previous activity
-                startTimeInMillis = previousEndTimeInMillis ?: System.currentTimeMillis() // Start time based on previous end time or now
-                endTimeInMillis = startTimeInMillis + TimeUnit.HOURS.toMillis(1) // End time is 1 hour after start
+    // Schedule high and medium-priority activities
+    highAndMediumPriorityActivities.forEach { activity ->
+        scheduleNotificationsForSpecificActivity(activity, containerId)
+    }
 
-                Log.w("NotificationScheduler", "Start or end time missing for activity: ${activity.activityName}, setting based on previous activity.")
+    // Schedule low-priority activities without time constraints
+    scheduleLowPriorityActivitiesWithoutConstraints(lowPriorityActivities, containerId)
+
+    activityList.forEach { e->
+        Log.e("Low Profiles", "activities: ${e.activityName}")
+    }
+
+   lowPriorityActivities.forEach { e->
+       Log.e("Low Profiles", "Low profile activities: ${e.activityName}")
+   }
+}
+
+
+
+    private fun generateAvailableTimeSlotsForHighAndMedium(existingActivities: List<ActivityDetails>): MutableList<Pair<Long, Long>> {
+        val timeSlots = mutableListOf<Pair<Long, Long>>()
+        var currentStart = System.currentTimeMillis()
+
+        // Sort activities by start time
+        val sortedActivities = existingActivities.sortedBy { it.startTime?.let { sdf.parse(it)?.time } }
+
+        sortedActivities.forEach { activity ->
+            val activityStart = activity.startTime?.let { sdf.parse(it)?.time }
+            val activityEnd = activity.endTime?.let { sdf.parse(it)?.time }
+
+            if (activityStart != null && activityEnd != null && activityStart > currentStart) {
+                // Add the gap before this activity as a time slot
+                timeSlots.add(Pair(currentStart, activityStart))
+                currentStart = activityEnd // Move currentStart to the end of this activity
+            }
+        }
+
+        return timeSlots
+    }
+
+    private fun scheduleLowPriorityActivitiesWithoutConstraints(
+        lowPriorityActivities: List<ActivityDetails>,
+        containerId: String
+    ) {
+        val DEFAULT_DURATION = TimeUnit.HOURS.toMillis(1) // Default duration: 1 hour
+        val BUFFER_TIME = TimeUnit.MINUTES.toMillis(2) // Buffer time: 2 minutes
+        val MIN_FUTURE_TIME = TimeUnit.MINUTES.toMillis(1) // Minimum time before starting an activity (5 minutes)
+        var nextAvailableStartTime = System.currentTimeMillis() + MIN_FUTURE_TIME // Track the next start time
+
+
+        lowPriorityActivities.forEach { activity ->
+            // Skip if notifications have already been scheduled for this activity
+            if (scheduledActivities.contains(activity.activityId)) {
+                return@forEach
             }
 
-            // Log the calculated times for the activity
-            Log.d("NotificationScheduler", "Calculated times for activity '${activity.activityName}' - Start: $startTimeInMillis, End: $endTimeInMillis")
+            // Dynamically schedule activities without predefined constraints
+            val startMillis = nextAvailableStartTime
+            val endMillis = startMillis + DEFAULT_DURATION
 
+            // Log scheduling details
+            Log.d("Scheduler", "Low-priority activity '${activity.activityName}' scheduled from $startMillis to $endMillis")
 
+            // Schedule notifications
+            scheduleWork(containerId, activity.activityId, activity.activityName, "${activity.activityName} has started.", startMillis, "In Progress")
+            scheduleWork(containerId, activity.activityId, activity.activityName, "${activity.activityName} has ended.", endMillis, "Finished")
 
-            // Now, schedule notifications for reminder, start, and end
-            startTimeInMillis?.let { startMillis ->
-                val reminderTime = startMillis - 10 * 60 * 1000 // 10 minutes before
-                if (reminderTime > System.currentTimeMillis()) {
-                    Log.d("NotificationScheduler", "Scheduling reminder for activity '${activity.activityName}' at $reminderTime")
-                    scheduleWork(containerId, activity.activityId, activity.activityName, "Reminder: ${activity.activityName} starts soon!", reminderTime, "Upcoming")
-                } else {
-                    Log.d("NotificationScheduler", "Reminder time for activity '${activity.activityName}' has already passed.")
-                }
+            // Update nextAvailableStartTime to avoid overlapping with the current activity
+            nextAvailableStartTime = endMillis + BUFFER_TIME
 
-                // Schedule the "Start" notification
-                if (startMillis > System.currentTimeMillis()) {
-                    Log.d("NotificationScheduler", "Scheduling start notification for activity '${activity.activityName}' at $startMillis")
-                    scheduleWork(containerId, activity.activityId, activity.activityName, "Activity Started: ${activity.activityName}", startMillis, "In Progress")
-                } else {
-                    Log.d("NotificationScheduler", "Start time for activity '${activity.activityName}' has already passed.")
-                }
-            }
-
-            endTimeInMillis?.let { endMillis ->
-                // Schedule the "End" notification
-                if (endMillis > System.currentTimeMillis()) {
-                    Log.d("NotificationScheduler", "Scheduling end notification for activity '${activity.activityName}' at $endMillis")
-                    scheduleWork(containerId, activity.activityId, activity.activityName, "Activity Ended: ${activity.activityName}", endMillis, "Finished")
-                } else {
-                    Log.d("NotificationScheduler", "End time for activity '${activity.activityName}' has already passed.")
-                }
-            }
-
-            // Update the previous end time for the next activity
-            previousEndTimeInMillis = endTimeInMillis
+            // Mark this activity as scheduled
+            activity.activityId?.let { scheduledActivities.add(it) }
         }
     }
+
+
+
+    // Update a time slot after scheduling an activity
+    private fun MutableList<Pair<Long, Long>>.updateSlot(start: Long, end: Long) {
+        val updatedSlots = mutableListOf<Pair<Long, Long>>() // Temporary list for new slots
+
+        this.forEach { slot ->
+            when {
+                // Case 1: The new activity fits entirely within this slot
+                start >= slot.first && end <= slot.second -> {
+                    if (start > slot.first) updatedSlots.add(Pair(slot.first, start)) // Add the first part
+                    if (end < slot.second) updatedSlots.add(Pair(end, slot.second)) // Add the second part
+                }
+                // Case 2: No overlap, retain the original slot
+                else -> updatedSlots.add(slot)
+            }
+        }
+
+        // Replace the old list with the updated list
+        clear()
+        addAll(updatedSlots)
+    }
+
+
+
+    // Schedule notifications for a specific activity
+    private fun scheduleNotificationsForSpecificActivity(activity: ActivityDetails, containerId: String) {
+        // Check if notifications for this activity have already been scheduled
+        if (scheduledActivities.contains(activity.activityId)) {
+            return
+        }
+
+        val startMillis = activity.startTime?.let { sdf.parse(it)?.time }
+        val endMillis = activity.endTime?.let { sdf.parse(it)?.time }
+
+        startMillis?.let {
+            val reminderTime = it - TimeUnit.MINUTES.toMillis(10) // Reminder 10 minutes before start
+            if (reminderTime > System.currentTimeMillis()) {
+                scheduleWork(containerId, activity.activityId, activity.activityName, "Activity ${activity.activityName} will start 10 minutes from now.", reminderTime, "Active")
+                fetchAndDisplayActivities(containerId)
+            }
+            if (it > System.currentTimeMillis()) {
+                scheduleWork(containerId, activity.activityId, activity.activityName, "Activity ${activity.activityName} has started.", startMillis, "In Progress")
+                fetchAndDisplayActivities(containerId)
+            }
+        }
+
+        endMillis?.let {
+            if (it > System.currentTimeMillis()) {
+                scheduleWork(containerId, activity.activityId, activity.activityName, "Activity ${activity.activityName} has ended.", endMillis, "Finished")
+                fetchAndDisplayActivities(containerId)
+
+            }
+        }
+
+        // Mark this activity as having its notifications scheduled
+        activity.activityId?.let { scheduledActivities.add(it) }
+    }
+
 
     private fun scheduleWork(containerId: String, activityId: String?, activityName: String, message: String, triggerAtMillis: Long, newStatus: String) {
         val delay = triggerAtMillis - System.currentTimeMillis() // Calculate delay in milliseconds
