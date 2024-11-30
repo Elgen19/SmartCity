@@ -180,11 +180,11 @@ class StreamingSpeechRecognition(
                             .setAudioContent(ByteString.copyFrom(data))
                             .build()
                     )
-
+                } else {
+                    Log.w("SpeechRecognizer", "No data read from AudioRecord. Read result: $readResult")
                 }
-
-
             }
+
 
             // Ensure proper cleanup of AudioRecord (only stop if initialized)
             if (audioRecord != null && audioRecord!!.state == AudioRecord.STATE_INITIALIZED) {
@@ -221,13 +221,13 @@ class StreamingSpeechRecognition(
 
     private fun stopListening() {
         Log.d("SpeechRecognizer", "Stopping listening")
-
-        // Check if the AudioRecord is initialized and is in the proper state
-        if (audioRecord != null && isRecording) {
+        if (audioRecord != null && audioRecord?.state == AudioRecord.STATE_INITIALIZED && isRecording) {
             try {
                 audioRecord?.stop()
                 audioRecord?.release()
                 isRecording = false
+                speechClient?.close()
+                executorService.shutdownNow()
                 Log.d("SpeechRecognizer", "AudioRecord stopped and released.")
             } catch (e: IllegalStateException) {
                 Log.e("SpeechRecognizer", "Failed to stop AudioRecord: ${e.message}")
@@ -236,6 +236,7 @@ class StreamingSpeechRecognition(
             Log.w("SpeechRecognizer", "AudioRecord is not initialized or already stopped.")
         }
     }
+
 
 
 
@@ -278,7 +279,7 @@ class StreamingSpeechRecognition(
 
             Handler(Looper.getMainLooper()).postDelayed({
                 closeDialogAndStopListening()
-            }, 500)  // Delay before closing the dialog (adjust time as needed)
+            }, 2000)  // Delay before closing the dialog (adjust time as needed)
         }
 
 

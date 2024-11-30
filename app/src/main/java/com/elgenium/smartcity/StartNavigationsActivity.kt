@@ -210,20 +210,20 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
 
 
     private fun initializeSpeechRecognizerAndTextSpeech() {
-        speechRecognitionHelper = SpeechRecognitionHelper(
-            activity = this,
-            onResult = { transcription ->
-                // Handle the recognized speech text
-                processUserQuery(transcription)
-                displayMessage("Recognized Speech: $transcription")
-                Toast.makeText(this, "You said: $transcription", Toast.LENGTH_SHORT).show()
-            },
-            onError = { error ->
-                // Handle any errors
-               displayMessage("Speech Recognition Error: $error")
-                Toast.makeText(this, "Error: $error", Toast.LENGTH_SHORT).show()
-            }
-        )
+//        speechRecognitionHelper = SpeechRecognitionHelper(
+//            activity = this,
+//            onResult = { transcription ->
+//                // Handle the recognized speech text
+//                processUserQuery(transcription)
+//                displayMessage("Recognized Speech: $transcription")
+//                Toast.makeText(this, "You said: $transcription", Toast.LENGTH_SHORT).show()
+//            },
+//            onError = { error ->
+//                // Handle any errors
+//               displayMessage("Speech Recognition Error: $error")
+//                Toast.makeText(this, "Error: $error", Toast.LENGTH_SHORT).show()
+//            }
+//        )
 
         textToSpeech = TextToSpeechHelper()
         textToSpeech.initializeTTS(this)
@@ -249,12 +249,15 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
                     // Add all LatLngs from the current segment to the list
                     allLatLngs.addAll(segment.latLngs)
                 }
-                Log.e("StartNavigationsActivity", "SEARCH STOP LATLNGS: $allLatLngs")
-                Log.e("StartNavigationsActivity", "SEARCH STOP LATLNG SIZE: ${allLatLngs.size}")
+                Log.e("MARKERS", "MARKER LIST: ${markersList.size}")
+                Log.e("MARKERS", "MARKER PLACE ID MAP: ${markerPlaceIdMap.size}")
+
+                Log.e("MARKERS", "SEARCH STOP LATLNGS: $allLatLngs")
+                Log.e("MARKERS", "SEARCH STOP LATLNG SIZE: ${allLatLngs.size}")
                 aiProcessor.intentClassification(aiProcessor.parseUserQuery(result), allLatLngs)
 
                 val placesInfo = aiProcessor.extractPlaceInfo()
-                Log.e("StartNavigationsActivity", "PLACE INFO SIZE: ${placesInfo.size}")
+                Log.e("MARKERS", "PLACE INFO SIZE: ${placesInfo.size}")
 
 
                 if (aiProcessor.hasPlaceIdAndIsValidPlace()) {
@@ -576,7 +579,7 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
 
         // Set up click listeners for the actions
         binding.assistantButton.setOnClickListener {
-//            speechRecognitionHelper.startListening()
+            showLoadingDialog(true)
             val streamingSpeechRecognition = StreamingSpeechRecognition(
                 languageCode = "en-US",
                 activity = this,
@@ -584,9 +587,11 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
                     if (transcription.isNotEmpty()){
                         processUserQuery(transcription)
                         Log.d("SpeechRecognizer", "Transcription received at START NAVIGATIONS: $transcription")
+                        showLoadingDialog(false)
                     } else {
                         textToSpeech.speakResponse("Unfortunately, I did not get your query. Please try again.")
                         displayMessage("Query is empty.")
+                        showLoadingDialog(false)
                     }
                 }
             )
@@ -641,6 +646,18 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
             navFragment.showRouteOverview()
         }
     }
+
+    private fun showLoadingDialog(isShown: Boolean) {
+        val bottomSheetDialog = BottomSheetDialog(this)
+        val bottomSheetView = layoutInflater.inflate(R.layout.bottom_sheet_loading_interface, null)
+        bottomSheetDialog.setContentView(bottomSheetView)
+
+        if(isShown)
+          bottomSheetDialog.show()
+        else
+            bottomSheetDialog.dismiss()
+    }
+
 
     private fun stopConfig(placeId: String) {
         placeIds.add(0, placeId)
@@ -820,13 +837,29 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
     }
 
     private fun clearMarkers() {
-        // Remove markers from the map
+        // Remove markers from the map and clear the markerPlaceIdMap
         binding.assistantButton.visibility = View.GONE
         binding.clearMarkers.visibility = View.VISIBLE
-        markersList.forEach { it.remove() }
-        // Clear the list
+
+        // Log to confirm clearing
+        Log.e("MARKERS", "Clearing markers")
+
+        // Remove all markers and clear the map
+        markersList.forEach {
+            it.remove()  // This will remove the marker from the map
+            Log.e("MARKERS", "Removed marker: ${it.title}")
+        }
         markersList.clear()
+
+        // Clear the markerPlaceIdMap by removing all entries
+        markerPlaceIdMap.clear()
+
+        aiProcessor.clearPreviousData()
+
+        // Log to confirm clearing
+        Log.e("MARKERS", "Markers and Place ID map cleared")
     }
+
 
     private fun initializeNavigationSdk(routeToken: String, placeIds: ArrayList<String>, travelMode: String) {
         // Request location permission.

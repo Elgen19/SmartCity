@@ -37,7 +37,11 @@ class AIProcessor(context: Context) {
         private const val INTENT_GET_DIRECTIONS = "Get directions"
     }
 
-
+    fun clearPreviousData() {
+        placesList?.clear()  // Clear the places list
+        filteredList?.clear()  // Clear the filtered list
+        Log.e("AIProcessor", "Cleared places and filtered lists")
+    }
 
     private val model = GenerativeModel(
         "tunedModels/textsearchclassifier-pqmymlb1jlbp",
