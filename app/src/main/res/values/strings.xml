@@ -114,6 +114,10 @@
     <string name="no_data_available">No data available</string>
     <string name="your_location">Your location</string>
     <string name="no_places_found_please_try_again">No places found. Please try again.</string>
+    <string name="set_start_time">Set Start Time</string>
+    <string name="set_end_time">Set End Time</string>
+    <string name="nearest_place_found">Nearest place found</string>
+    <string name="here_s_the_nearest_place_found_within_your_location">Here\'s the nearest place found within your location.</string>
 
     <string-array name="feedback_type_options">
         <item>Select feedback type</item>

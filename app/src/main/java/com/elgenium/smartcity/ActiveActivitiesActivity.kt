@@ -48,7 +48,9 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -153,7 +155,7 @@ class ActiveActivitiesActivity : AppCompatActivity() {
             adapter = finishedActivitiesAdapter
         }
 
-        binding.finishedLabel.visibility = View.VISIBLE
+        binding.finishedLabel.visibility = if (finishedActivitiesList.isNotEmpty()) View.VISIBLE else View.GONE
         binding.btnCancel.visibility = if (containerStatus == "Scheduled") View.VISIBLE else View.GONE
         binding.activeLabel.visibility = if (containerStatus == "Scheduled") View.VISIBLE else View.GONE
         binding.addAndConfirmButtonRows.visibility = if (containerStatus == "Unscheduled" || containerStatus == "None") View.VISIBLE else View.GONE
@@ -330,39 +332,38 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                 val userQuery = bottomSheetBinding.etActivity.text.toString().trim()
 
 
-                if (!isLocationBasedRecommendationDisabled) {
-                    if (userQuery.isNotEmpty()) {
-                        bottomSheetBinding.lottieAnimation.visibility = View.VISIBLE
-                        bottomSheetBinding.emptyDataLabel.visibility = View.VISIBLE
-                        // Call the function to process the query asynchronously
-                        lifecycleScope.launch {
-                            val result = ActivityPlaceProcessor().processUserQuery(userQuery)
-                            placeTypes = result.toString()
+                if (userQuery.isNotEmpty()) {
+                    bottomSheetBinding.lottieAnimation.visibility = View.VISIBLE
+                    bottomSheetBinding.emptyDataLabel.visibility = View.VISIBLE
 
+                    // Process the user query asynchronously
+                    lifecycleScope.launch {
+                        val result = ActivityPlaceProcessor().processUserQuery(userQuery)
 
+                        withContext(Dispatchers.Main){
                             if (result != null) {
                                 Log.d("ActivityPlaceProcessor", "Place: $result")
                                 showToast("Displaying results")
 
-                                // Assuming that you now need to get places related to this activity:
-                                fetchPlacesBasedOnActivity(result)
+                                // Check if location-based recommendations are disabled
+                                if (isLocationBasedRecommendationDisabled) {
+                                    // Fetch and display the list of recommendations
+                                    fetchPlacesBasedOnActivity(bottomSheetDialog, userQuery, result)
+                                } else {
+                                    // Fetch and display only the nearest place
+                                    fetchNearestPlace(bottomSheetDialog, userQuery, result)
+                                }
                             } else {
                                 Log.e("ActivityPlaceProcessor", "No valid result received")
+                                showToast("No valid result found.")
                             }
                         }
-                    } else {
-                        Log.e("ActivityPlaceProcessor", "User query is empty")
-                        showToast("Please enter an activity.")
                     }
                 } else {
-                    bottomSheetDialog.dismiss()
-                    val intent = Intent(this, SearchActivity::class.java)
-                    intent.putExtra("FROM_ACTIVE_ACTIVITIES", true)
-                    intent.putExtra("ACTIVITY", userQuery)
-                    Log.e("ActivityPlaceProcessor", "Activity: ${bottomSheetBinding.etActivity.text}")
-
-                    searchActivityLauncher.launch(intent)
+                    Log.e("ActivityPlaceProcessor", "User query is empty")
+                    showToast("Please enter an activity.")
                 }
+
             } else {
                 showToast("Please enter an activity")
             }
@@ -401,8 +402,8 @@ class ActiveActivitiesActivity : AppCompatActivity() {
             if (selectedPriority == "Low") {
                 startTime = null
                 endTime = null
-                bottomSheetBinding.btnStartTime.text = "Set Start Time"
-                bottomSheetBinding.btnEndTime.text = "Set End Time"
+                bottomSheetBinding.btnStartTime.text = getString(R.string.set_start_time)
+                bottomSheetBinding.btnEndTime.text = getString(R.string.set_end_time)
                 bottomSheetBinding.timeContraints.visibility = View.GONE // Optionally hide time constraints UI
             }
         }
@@ -559,6 +560,39 @@ class ActiveActivitiesActivity : AppCompatActivity() {
         bottomSheetDialog.show()
     }
 
+    private fun fetchNearestPlace(bottomSheetDialog: BottomSheetDialog, userQuery: String, places: List<String>) {
+        Log.d("ActiveActivitiesActivity", "Fetching nearest place for: '$places'")
+        bottomSheetBinding.tvPlaceRecomLabel.text = getString(R.string.nearest_place_found)
+        bottomSheetBinding.tvDescriptionRecommendation.text =
+            getString(R.string.here_s_the_nearest_place_found_within_your_location)
+
+
+        bottomSheetBinding.chipGroupFilters.visibility = View.GONE
+        ActivityPlaceRecommendation(this).performTextSearch(placesClient, places, activityList, this) { placeItems ->
+            if (placeItems.isNotEmpty()) {
+                // Find the nearest place by converting distance to numeric
+                val nearestPlace = placeItems.minByOrNull {
+                    it.distance.toIntOrNull() ?: Int.MAX_VALUE
+                }
+
+                if (nearestPlace != null) {
+                    Log.d("ActiveActivitiesActivity", "Nearest place: ${nearestPlace.name}")
+
+                    // Update RecyclerView to show only the nearest place
+                    setupRecyclerView(bottomSheetDialog, userQuery, listOf(nearestPlace))
+                } else {
+                    Log.e("ActiveActivitiesActivity", "No valid nearest place found.")
+                    showToast("No nearby places found.")
+                }
+            } else {
+                Log.e("ActiveActivitiesActivity", "No place recommendations available.")
+                showToast("No place recommendations found.")
+            }
+        }
+    }
+
+
+
     private fun showActivityDetailsBottomSheet(clickedActivity: ActivityDetails, position: Int) {
         // Inflate the bottom sheet layout using ViewBinding
         val bottomSheetBinding = BottomSheetViewActivityDetailBinding.inflate(layoutInflater)
@@ -654,13 +688,13 @@ class ActiveActivitiesActivity : AppCompatActivity() {
         bottomSheetDialog.show()
     }
 
-    private fun fetchPlacesBasedOnActivity(places: List<String>) {
+    private fun fetchPlacesBasedOnActivity(bottomSheetDialog: BottomSheetDialog,userQuery: String, places: List<String>) {
         Log.d("ActiveActivitiesActivity", "Fetching places for: '$places'")
-        ActivityPlaceRecommendation(this).performTextSearch(placesClient, places) { placeItems ->
+        ActivityPlaceRecommendation(this).performTextSearch(placesClient, places, activityList, this) { placeItems ->
             Log.d("ActiveActivitiesActivity", "Fetched ${placeItems.size} place recommendations")
 
             // Initialize the RecyclerView with default visibility
-            setupRecyclerView(placeItems)
+            setupRecyclerView(bottomSheetDialog, userQuery, placeItems)
 
             // Store the original list for filters
             val originalPlaceItems = placeItems
@@ -672,10 +706,20 @@ class ActiveActivitiesActivity : AppCompatActivity() {
     }
 
 
-    private fun setupRecyclerView(placeItems: List<LocationBasedPlaceRecommendationItems>) {
+    private fun setupRecyclerView(bottomSheetDialog: BottomSheetDialog,userQuery: String, placeItems: List<LocationBasedPlaceRecommendationItems>) {
         bottomSheetBinding.recyclerViewRecommendations.layoutManager = LinearLayoutManager(this)
         bottomSheetBinding.tvPlaceRecomLabel.visibility = View.VISIBLE
         bottomSheetBinding.recommendationPlaceLayout.visibility = View.VISIBLE
+        bottomSheetBinding.btnReselect.visibility = View.VISIBLE
+        bottomSheetBinding.btnReselect.setOnClickListener {
+            bottomSheetDialog.dismiss()
+            val intent = Intent(this@ActiveActivitiesActivity, SearchActivity::class.java)
+            intent.putExtra("FROM_ACTIVE_ACTIVITIES", true)
+            intent.putExtra("ACTIVITY", userQuery)
+            Log.e("ActivityPlaceProcessor", "Activity: ${bottomSheetBinding.etActivity.text}")
+
+            searchActivityLauncher.launch(intent)
+        }
 
         updateRecyclerViewAdapter(placeItems)
     }
@@ -767,6 +811,7 @@ class ActiveActivitiesActivity : AppCompatActivity() {
         bottomSheetBinding.tvActivityName.text = bottomSheetBinding.etActivity.text
         bottomSheetBinding.tvPlaceLabel.text = selectedPlace.name
         bottomSheetBinding.tvAddressLabel.text = selectedPlace.address
+        bottomSheetBinding.btnReselect.visibility = View.GONE
         bottomSheetBinding.mainContainer.visibility = View.VISIBLE
         bottomSheetBinding.btnConfirm.visibility = View.VISIBLE
         bottomSheetBinding.recommendationPlaceLayout.visibility = View.GONE
@@ -1182,8 +1227,6 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                 if (snapshot.exists()) {
                     val activeActivityList = mutableListOf<ActivityDetails>()
                     val finishedActivityList = mutableListOf<ActivityDetails>()
-                    val tempLatLngList = mutableListOf<String>()
-                    val tempPlaceIdsList = mutableListOf<String>()
 
                     // Clear finished activities list before adding new ones
                     finishedActivitiesList.clear()
@@ -1223,9 +1266,6 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                                     }
                                 }
 
-                            tempLatLngList.add(activity.placeLatlng)
-                            tempPlaceIdsList.add(activity.placeId)
-
                             // Add finished activities to finishedActivityList
                             if (activity.status == "Finished") {
                                 finishedActivityList.add(activity)
@@ -1245,24 +1285,35 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                     activityList.addAll(activeActivityList)
                     activityAdapter.notifyDataSetChanged()
 
-                    // Update latLng and placeIds lists
-                    latLngList.clear()
-                    latLngList.addAll(tempLatLngList)
-                    placeIdsList.clear()
-                    placeIdsList.addAll(tempPlaceIdsList)
-                    updateLatLngListFromActivities()
-                    updatePlaceIdsListFromActivities()
+
 
                     // Prioritize active activities if containerStatus is "Scheduled" or "Unscheduled"
                     if (activeActivityList.isNotEmpty()) {
                         prioritizationOptimizer.prioritizeActivities(activeActivityList) { prioritizedList ->
+                            // Update activityList with the prioritized activities
                             activityList.clear()
                             activityList.addAll(prioritizedList)
                             activityAdapter.notifyDataSetChanged()
-                        }
 
-                        proximityCalculator.prioritizeAndRecalculate(activityList)
+                            // Clear and update latLngList and placeIdsList from the prioritized activities
+                            latLngList.clear()
+                            placeIdsList.clear()
+
+                            for (activity in activityList) {
+                                if (activity.placeLatlng.isNotEmpty()) {
+                                    latLngList.add(activity.placeLatlng)
+                                }
+                                if (activity.placeId.isNotEmpty()) {
+                                    placeIdsList.add(activity.placeId)
+                                }
+                            }
+
+                            // Optionally update other lists or perform further processing
+                            updateLatLngListFromActivities()
+                            updatePlaceIdsListFromActivities()
+                        }
                     }
+
 
                     // Set visibility for finished activities RecyclerView (after the active RecyclerView is updated)
                     if (finishedActivityList.isNotEmpty()) {
@@ -1306,7 +1357,6 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                     }
                 }
             }
-            latLngList.reverse()
             if (currentLatLng != null) {
                 // Add current location to the beginning of the list
                 latLngList.add(0, currentLatLng)  // Add at index 0 to make it the first element
@@ -1316,7 +1366,6 @@ class ActiveActivitiesActivity : AppCompatActivity() {
             Log.e("ActiveActivitiesActivity", "LATLNG LIST: $latLngList")
         }
     }
-
 
     private fun updatePlaceIdsListFromActivities() {
         placeIdsList.clear()
@@ -1330,7 +1379,6 @@ class ActiveActivitiesActivity : AppCompatActivity() {
             }
         }
         Log.e("ActiveActivitiesActivity", "PLACE IDS BEFORE: $placeIdsList")
-        placeIdsList.reverse()
         Log.e("ActiveActivitiesActivity", "PLACE IDS AFTER: $placeIdsList")
     }
 
@@ -1380,7 +1428,7 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                     scheduleNotificationsForActivity(activityList, containerId)
                 }
                 binding.activeLabel.visibility = View.VISIBLE
-                binding.finishedLabel.visibility = View.VISIBLE
+                binding.finishedLabel.visibility = if (finishedActivitiesList.isNotEmpty()) View.VISIBLE else View.GONE
                 binding.btnCancel.visibility = View.VISIBLE
                 binding.addAndConfirmButtonRows.visibility = View.GONE
                 showToast("Starting scheduled activities in background.")

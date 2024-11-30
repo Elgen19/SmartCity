@@ -68,7 +68,7 @@
                 android:id="@+id/switchDisableLocation"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Disable location-based recommendations"
+                android:text="Location-Based Place Selection Options"
                 android:textSize="14sp"
                 android:textColor="@color/gray"
                 android:buttonTint="@color/secondary_color"
@@ -81,7 +81,7 @@
                 android:id="@+id/tvSwitchHelperText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Disabling will turn off recommendations based on user location, and you will be redirected to the Search screen to search for a specified place."
+                android:text="Enabling this option allows the user to select from a list of nearby places. When disabled, the system automatically selects the single nearest place by default."
                 android:textSize="12sp"
                 android:textColor="@color/dark_gray"
                 android:layout_marginBottom="16dp" />
@@ -402,6 +402,21 @@
                 app:cornerRadius="8dp"
                 android:backgroundTint="@color/secondary_color" />
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnReselect"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Select Manually"
+                android:textColor="@color/gray"
+                android:paddingTop="16dp"
+                android:paddingBottom="16dp"
+                android:visibility="gone"
+                app:strokeWidth="1dp"
+                app:rippleColor="@color/primary_color"
+                android:textAllCaps="false"
+                app:cornerRadius="8dp"
+                android:backgroundTint="@color/primary_color" />
+
             <!-- Cancel Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnCancel"
@@ -409,13 +424,12 @@
                 android:layout_height="wrap_content"
                 android:text="Cancel"
                 app:rippleColor="@color/red"
-                app:strokeColor="@color/gray"
-                app:strokeWidth="1dp"
                 android:paddingTop="16dp"
+                android:backgroundTint="@color/red"
                 android:paddingBottom="16dp"
                 android:textAllCaps="false"
                 app:cornerRadius="8dp"
-                android:textColor="@color/gray"
+                android:textColor="@color/primary_color"
                 style="@style/Widget.MaterialComponents.Button.TextButton" />
 
 

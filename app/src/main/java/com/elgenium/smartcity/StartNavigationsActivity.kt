@@ -162,7 +162,8 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
 
         initializer()
 
-
+        if (DEFAULT_STOPS != 0)
+            NUM_STOPS = DEFAULT_STOPS
 
         Log.e("StartNavigationsActivity", "audio guidance at oncreate: $isAudioGuidanceEnabled" )
         Log.e("StartNavigationsActivity", "traffic overlay at oncreate: $isTrafficOverlayEnabled" )
