@@ -17,6 +17,14 @@
         android:textAppearance="?attr/textAppearanceHeadline6"
         android:paddingBottom="8dp"/>
 
+    <ImageView
+        android:id="@+id/placePhoto"
+        android:layout_width="match_parent"
+        android:scaleType="centerCrop"
+        android:src="@drawable/placeholder_viewpager_photos"
+        android:layout_height="100dp"/>
+
+
     <!-- Place Name TextView -->
     <TextView
         android:id="@+id/textViewPlaceName"
@@ -24,6 +32,7 @@
         android:layout_height="wrap_content"
         android:textColor="@color/gray"
         android:text="Place Name"
+        android:layout_marginTop="8dp"
         android:textAppearance="?attr/textAppearanceBody1"
         android:paddingBottom="4dp"/>
 

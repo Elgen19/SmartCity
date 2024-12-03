@@ -1415,6 +1415,7 @@ class ActiveActivitiesActivity : AppCompatActivity() {
                     putExtra("IS_SIMULATED", false)
                     putExtra("TRAVEL_MODE", "DRIVE")
                     putStringArrayListExtra("PLACE_IDS", ArrayList(placeIdsList))
+                    putExtra("ACTIVITY_LIST", ArrayList(activityList))
                 }
                 // Log the intent before starting the activity
                 Log.e("ActiveActivitiesActivity", intent.extras.toString())

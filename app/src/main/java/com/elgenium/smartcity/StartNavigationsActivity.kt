@@ -16,6 +16,8 @@ import android.os.Vibrator
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import android.view.WindowManager
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
@@ -23,16 +25,24 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.bumptech.glide.Glide
 import com.elgenium.smartcity.contextuals.FuelStopsRecommendation
 import com.elgenium.smartcity.contextuals.MealContextuals
 import com.elgenium.smartcity.contextuals.PlaceOpeningHoursContextuals
 import com.elgenium.smartcity.contextuals.RainLikelihoodCalculator
 import com.elgenium.smartcity.databinding.ActivityStartNavigationsBinding
 import com.elgenium.smartcity.databinding.BottomSheetAddStopBinding
+import com.elgenium.smartcity.databinding.BottomSheetPlaceRecommendationListBinding
+import com.elgenium.smartcity.databinding.BottomSheetSinglePlaceRecommendationBinding
 import com.elgenium.smartcity.databinding.DialogRecomputeStopsBinding
 import com.elgenium.smartcity.databinding.DialogTerminateNavigationBinding
 import com.elgenium.smartcity.databinding.DialogTripRecapBinding
 import com.elgenium.smartcity.intelligence.AIProcessor
+import com.elgenium.smartcity.models.ActivityDetails
+import com.elgenium.smartcity.network.PlaceDistanceService
+import com.elgenium.smartcity.network_reponses.PlaceDistanceResponse
+import com.elgenium.smartcity.recyclerview_adapter.PlaceRecommendationsAdapter
 import com.elgenium.smartcity.routes_network_request.LatLngMatrix
 import com.elgenium.smartcity.routes_network_request.LocationMatrix
 import com.elgenium.smartcity.routes_network_request.RouteMatrixDestination
@@ -43,18 +53,15 @@ import com.elgenium.smartcity.shared_preferences_keys.SettingsKeys
 import com.elgenium.smartcity.singletons.ActivityNavigationUtils
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
 import com.elgenium.smartcity.singletons.RoutesMatrixClientSingleton
-import com.elgenium.smartcity.speech.SpeechRecognitionHelper
 import com.elgenium.smartcity.speech.StreamingSpeechRecognition
 import com.elgenium.smartcity.speech.TextToSpeechHelper
 import com.google.ai.client.generativeai.type.ResponseStoppedException
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
-import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.GoogleMap.CameraPerspective
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.PointOfInterest
@@ -75,7 +82,9 @@ import com.google.android.libraries.navigation.SimulationOptions
 import com.google.android.libraries.navigation.StylingOptions
 import com.google.android.libraries.navigation.SupportNavigationFragment
 import com.google.android.libraries.navigation.Waypoint
+import com.google.android.libraries.places.api.model.PhotoMetadata
 import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.net.FetchPhotoRequest
 import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -83,6 +92,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -106,7 +120,6 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
     private lateinit var travelMode: String
     private lateinit var placeIds: ArrayList<String>
     private var isSimulated = false
-    private lateinit var speechRecognitionHelper: SpeechRecognitionHelper
     private lateinit var textToSpeech: TextToSpeechHelper
     private lateinit var binding: ActivityStartNavigationsBinding
     private lateinit var aiProcessor: AIProcessor
@@ -117,6 +130,7 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
     private var NUM_STOPS = 1
     private lateinit var sharedPreferences: SharedPreferences
     private var isAudioGuidanceEnabled = true
+    private var isMultiplePlaceEnabled = false
     private var isTrafficOverlayEnabled = false
     private var hasAlreadyArrivedAtFinalDestination = false
     private var isNeedOptimization = false
@@ -132,6 +146,9 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
     private var isPlaceOpenNowClassifierFinished = false
     private var hasMealDialogDisplayed = false
     private var hasFuelStopDisplayed = false
+    private lateinit var activityList: ArrayList<ActivityDetails>
+    private var bottomSheetDialog: BottomSheetDialog? = null
+    private var placesInfo: List<Map<String, Any>> = listOf()
 
 
 
@@ -144,6 +161,7 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
 
         sharedPreferences = getSharedPreferences(SettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
         isAudioGuidanceEnabled = sharedPreferences.getBoolean("set_audio", true)
+        isMultiplePlaceEnabled = sharedPreferences.getBoolean("multiple_place", false)
         isTrafficOverlayEnabled = sharedPreferences.getBoolean("map_overlay", false)
         placeDetailsRelatedContextuals = PlaceOpeningHoursContextuals(this)
         mealPlaceRecommender = MealContextuals(this)
@@ -158,6 +176,8 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         routeToken = intent.getStringExtra("ROUTE_TOKEN") ?: "NO ROUTE TOKEN"
         placeIds = intent.getStringArrayListExtra("PLACE_IDS") ?: ArrayList()
         isSimulated = intent.getBooleanExtra("IS_SIMULATED", false)
+        activityList = intent.getSerializableExtra("ACTIVITY_LIST") as? ArrayList<ActivityDetails>
+            ?: arrayListOf()
         DEFAULT_STOPS = placeIds.size
 
         initializer()
@@ -165,12 +185,12 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         if (DEFAULT_STOPS != 0)
             NUM_STOPS = DEFAULT_STOPS
 
-        Log.e("StartNavigationsActivity", "audio guidance at oncreate: $isAudioGuidanceEnabled" )
-        Log.e("StartNavigationsActivity", "traffic overlay at oncreate: $isTrafficOverlayEnabled" )
+        Log.e("StartNavigationsActivity", "audio guidance at oncreate: $isAudioGuidanceEnabled")
+        Log.e("StartNavigationsActivity", "traffic overlay at oncreate: $isTrafficOverlayEnabled")
         Log.e("StartNavigationsActivity", "Default stops is: $DEFAULT_STOPS")
         Log.e("StartNavigationsActivity", "Placeids size is: ${placeIds.size}")
-        Log.e("StartNavigationsActivity", "TRAVEL MODE AT NAVIGATION: $travelMode" )
-        Log.e("StartNavigationsActivity", "ROUTE TOKEN AT NAVIGATION: $routeToken" )
+        Log.e("StartNavigationsActivity", "TRAVEL MODE AT NAVIGATION: $travelMode")
+        Log.e("StartNavigationsActivity", "ROUTE TOKEN AT NAVIGATION: $routeToken")
 
 
         showNavigationOptionsBottomSheet()
@@ -178,7 +198,7 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
             routeToken = "NO ROUTE TOKEN"
 
         requestLocationPermissions(routeToken!!, placeIds, travelMode)
-        Log.e("WaypointOrder", "PLACEID AT ONCREATE AFTER CHANGES: $placeIds" )
+        Log.e("WaypointOrder", "PLACEID AT ONCREATE AFTER CHANGES: $placeIds")
 
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -186,8 +206,6 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
                 showNavigationTerminationDialog()
             }
         })
-
-
 
         binding.clearMarkers.setOnClickListener {
             clearMarkers()
@@ -210,21 +228,6 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
 
 
     private fun initializeSpeechRecognizerAndTextSpeech() {
-//        speechRecognitionHelper = SpeechRecognitionHelper(
-//            activity = this,
-//            onResult = { transcription ->
-//                // Handle the recognized speech text
-//                processUserQuery(transcription)
-//                displayMessage("Recognized Speech: $transcription")
-//                Toast.makeText(this, "You said: $transcription", Toast.LENGTH_SHORT).show()
-//            },
-//            onError = { error ->
-//                // Handle any errors
-//               displayMessage("Speech Recognition Error: $error")
-//                Toast.makeText(this, "Error: $error", Toast.LENGTH_SHORT).show()
-//            }
-//        )
-
         textToSpeech = TextToSpeechHelper()
         textToSpeech.initializeTTS(this)
 
@@ -242,43 +245,198 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
             try {
                 // Call the processUserQuery method of AIProcessor
                 textToSpeech.speakResponse("Searching, please wait.")
-                val result = aiProcessor.processUserQuery(query)
-                displayMessage("RESULT VALUE: $result")
+                withContext(Dispatchers.Main) {
+                    showLoadingDialog(true)
+                }
                 allLatLngs.clear()
                 navigator.routeSegments.forEach { segment ->
-                    // Add all LatLngs from the current segment to the list
                     allLatLngs.addAll(segment.latLngs)
                 }
-                Log.e("MARKERS", "MARKER LIST: ${markersList.size}")
-                Log.e("MARKERS", "MARKER PLACE ID MAP: ${markerPlaceIdMap.size}")
 
-                Log.e("MARKERS", "SEARCH STOP LATLNGS: $allLatLngs")
-                Log.e("MARKERS", "SEARCH STOP LATLNG SIZE: ${allLatLngs.size}")
-                aiProcessor.intentClassification(aiProcessor.parseUserQuery(result), allLatLngs)
-
-                val placesInfo = aiProcessor.extractPlaceInfo()
-                Log.e("MARKERS", "PLACE INFO SIZE: ${placesInfo.size}")
+                aiProcessor.performSearch(query, allLatLngs)
+                placesInfo = aiProcessor.extractPlaceInfo()
+                Log.e("PLACE_INFO", "$placesInfo")
 
 
                 if (aiProcessor.hasPlaceIdAndIsValidPlace()) {
                     textToSpeech.speakResponse("Here's what I've got.")
-                    plotMarkers(placesInfo)
+                    withContext(Dispatchers.Main) {
+                        showLoadingDialog(false)
+                    }
+
+                   if (isMultiplePlaceEnabled)
+                       showPlaceRecommendationsBottomSheet(
+                           "Nearby places found",
+                           "Here's what I've found within your route")
+                    else
+                        showSinglePlaceRecommendation()
+
                 } else {
-                    displayMessage("No match for query: $query")
+                    withContext(Dispatchers.Main) {
+                        showLoadingDialog(false)
+                    }
+
+                    aiProcessor.setOnPlaceSelectedCallback { selectedPlaceId ->
+                        addStopDirectly(false, selectedPlaceId)
+                        Log.e("OFF ROUTE PLACE", "PLACE ID IS: $selectedPlaceId")
+                    }
+
+
                     textToSpeech.speakResponse("Unfortunately, I couldn't find any information related to your query, '$query.' Please consider trying alternative keywords for your search.")
                 }
-
-                // Log the result
-                Log.e("AIProcessor", result)
             } catch (e: ResponseStoppedException) {
                 Log.e("AIProcessor", "Response generation stopped due to safety concerns: ${e.message}")
                 textToSpeech.speakResponse("Unfortunately, I cannot find what you are looking for.")
+                withContext(Dispatchers.Main) {
+                    showLoadingDialog(false)
+                }
             } catch (e: Exception) {
                 Log.e("AIProcessor", "Error processing query: ${e.message}", e)
                 textToSpeech.speakResponse("Unfortunately, I cannot find what you are looking for right now.")
+                withContext(Dispatchers.Main) {
+                    showLoadingDialog(false)
+                }
             }
         }
     }
+
+    private fun showPlaceRecommendationsBottomSheet(
+        title: String,
+        body: String
+    ) {
+        // Create a BottomSheetDialog
+        val dialog = BottomSheetDialog(this)
+        val sheetBinding = BottomSheetPlaceRecommendationListBinding.inflate(LayoutInflater.from(this))
+
+        sheetBinding.titleLabel.text = title
+        sheetBinding.supportingLabel.text = body
+
+        // Original unfiltered list
+        val originalPlacesInfo = placesInfo.toMutableList()
+
+        Log.e("ORIGINAL_LIST", "Displaying places and their ratings:")
+        originalPlacesInfo.forEach { place ->
+            Log.e("PLACE_INFO", "$place")}
+
+
+        // Function to apply filters and update the RecyclerView
+        fun applyFilter(filterType: String) {
+            val filteredList = when (filterType) {
+                "ShowAll" -> originalPlacesInfo
+                "Nearest" -> {
+                    // Find the single place with the lowest distance
+                    listOfNotNull(originalPlacesInfo.minByOrNull {
+                        (it["distanceValue"] as? Double) ?: Double.MAX_VALUE
+                    })
+                }
+                "Popular" -> {
+                    val filteredPlaces = originalPlacesInfo.filter {
+                        // Only consider places with non-null ratings
+                        val rating = it["rating"] as? Double
+                        rating != null && rating >= 4.0 // Include only places with ratings >= 4.0
+                    }
+
+                    Log.e("FILTERED_LIST", "Filtered places with rating >= 4.0: $filteredPlaces")
+                    filteredPlaces
+                }
+
+
+
+
+                else -> originalPlacesInfo
+            }
+
+            Log.e("FILTERED_LIST", "Filtered places: $filteredList")
+
+            val adapter = PlaceRecommendationsAdapter(filteredList) { selectedPlace ->
+                val name = selectedPlace["name"] as? String ?: "Unknown"
+                val placeId = selectedPlace["placeId"] as? String ?: "No ID"
+                Log.e("TAG", "Place clicked: Name=$name, PlaceId=$placeId")
+
+                plotSingleMarker(title, body, selectedPlace)
+                dialog.dismiss()
+            }
+
+            sheetBinding.placeRecommendationsRecyclerview.layoutManager = LinearLayoutManager(this)
+            sheetBinding.placeRecommendationsRecyclerview.adapter = adapter
+        }
+
+
+        // Set up individual click listeners for each chip
+        sheetBinding.chipShowAll.setOnClickListener {
+            applyFilter("ShowAll")
+        }
+
+        sheetBinding.chipNearest.setOnClickListener {
+            applyFilter("Nearest")
+        }
+
+        sheetBinding.chipPopular.setOnClickListener {
+            applyFilter("Popular")
+        }
+
+        // Initialize the RecyclerView with the full list
+        applyFilter("ShowAll")
+
+        // Close button listener
+        sheetBinding.btnClose.setOnClickListener {
+            dialog.dismiss()
+            placesInfo = emptyList()
+            clearMarkers()
+            binding.clearMarkers.visibility = View.GONE
+            binding.assistantButton.visibility = View.VISIBLE
+        }
+
+        // Bottom sheet behavior customization
+        dialog.setOnShowListener { dialogInterface ->
+            val bottomSheet = (dialogInterface as BottomSheetDialog).findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+            bottomSheet?.let {
+                val behavior = BottomSheetBehavior.from(it)
+                behavior.isHideable = false // Prevent hiding when swiped down
+                behavior.peekHeight = (resources.displayMetrics.heightPixels * 0.40).toInt() // Set peek height to 40% of screen height
+            }
+        }
+
+        // Calculate distances and ratings if needed before showing the list
+        getCurrentLocation { currentLocation ->
+            if (currentLocation != null) {
+                val placesWithDistances = placesInfo.toMutableList()
+                var distancesCalculated = 0
+
+                placesWithDistances.forEachIndexed { index, placeInfo ->
+                    val placeLatLng = placeInfo["latLng"] as? LatLng
+                    if (placeLatLng != null) {
+                        checkPlaceDistance(currentLocation, placeLatLng) { distance ->
+                            val distanceValue = distance.replace(" km", "").toDoubleOrNull() ?: Double.MAX_VALUE
+                            val rating = (placeInfo["rating"] as? Double)?.toDouble() ?: 0.0
+
+                            placesWithDistances[index] = placeInfo.toMutableMap().apply {
+                                this["distanceValue"] = distanceValue
+                                this["rating"] = rating
+                                this["distance"] = distance
+                            }
+
+                            distancesCalculated++
+
+                            // Once all distances are calculated, update the original list
+                            if (distancesCalculated == placesInfo.size) {
+                                originalPlacesInfo.clear()
+                                originalPlacesInfo.addAll(placesWithDistances)
+                                applyFilter("ShowAll")
+                            }
+                        }
+                    }
+                }
+            } else {
+                Log.e("TAG", "Unable to get current location")
+            }
+        }
+
+        // Set the bottom sheet content and show the dialog
+        dialog.setContentView(sheetBinding.root)
+        dialog.show()
+    }
+
 
     private fun displayFuelStops(){
         allLatLngs.clear()
@@ -316,7 +474,12 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
             Log.e(TAG, "PlaceInfo: $placesInfo")
 
             // Step 5: Plot markers on the map using the `plotMarkers` function
-            plotMarkers(placesInfo)
+            if (isMultiplePlaceEnabled)
+                showPlaceRecommendationsBottomSheet(
+                    "Fuel stops found",
+                    "Check out these fuel stops within your route.")
+            else
+                showSinglePlaceRecommendation()
         }
     }
 
@@ -345,130 +508,205 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
             }
 
             // Step 4: Transform places into map-compatible format for markers
-            val placesInfo = places.mapNotNull { place ->
+             placesInfo = places.mapNotNull { place ->
                 place.latLng?.let {
                     mapOf(
                         "latLng" to it,
                         "name" to place.name.orEmpty(),
                         "address" to place.address.orEmpty(),
-                        "placeId" to place.id.orEmpty()
+                        "placeId" to place.id.orEmpty(),
+                        "rating" to place.rating
                     )
                 }
             }
             Log.e(TAG, "PlaceInfo: $placesInfo")
 
             // Step 5: Plot markers on the map using the `plotMarkers` function
-            plotMarkers(placesInfo)
+            if (isMultiplePlaceEnabled)
+                showPlaceRecommendationsBottomSheet(
+                    "Meal places found",
+                    "Here are the meal places within the set route.")
+            else
+                showSinglePlaceRecommendation()
         }
     }
 
     @SuppressLint("PotentialBehaviorOverride")
-    private fun plotMarkers(placesInfo: List<Map<String, Any>>) {
+    private fun plotSingleMarker(title: String, message: String, placeInfo: Map<String, Any>) {
         // Clear existing markers from the map
         clearMarkers()
 
-        // Initialize LatLngBounds.Builder to calculate bounds for all markers
-        val boundsBuilder = LatLngBounds.Builder()
+        // Extract the latLng of the selected place
+        val latLng = placeInfo["latLng"] as LatLng
+        val name = placeInfo["name"] as String
+        val placeId = placeInfo["placeId"] as String
 
-        Log.e(TAG, "it worked here")
+        // Add a marker for the selected place
+        val markerOptions = MarkerOptions()
+            .position(latLng)
+            .title(name)
+            .snippet(name)
+            .alpha(1f)
+            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)) // Visible color
 
-        // Log the size of placesInfo
-        Log.e(TAG, "Number of places info: ${placesInfo.size}")
-
-        // Iterate through the places info and add markers to the map
-        placesInfo.forEach { placeInfo ->
-            // Extracting values from the map
-            val latLng = placeInfo["latLng"] as LatLng
-            val name = placeInfo["name"] as String
-            val address = placeInfo["address"] as String
-            val placeId = placeInfo["placeId"] as String
-
-            // Add a marker with a visible icon
-            val markerOptions = MarkerOptions()
-                .position(latLng)
-                .title(name) // Set the title to show in the info window
-                .snippet(address) // Optional: show address in the info window
-                .alpha(1f)
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)) // Use a visible color
-
-            // Add the visible marker to the map and store it in the markers list
-            val marker = mMap?.addMarker(markerOptions)
-            if (marker != null) {
-                markersList.add(marker) // Keep track of the marker
-                // Include this marker's position in the bounds
-                boundsBuilder.include(marker.position)
-
-                // Store the marker and placeId mapping
-                markerPlaceIdMap[marker] = placeId
-
-                marker.showInfoWindow()
-            }
-
-            mMap?.setOnMarkerClickListener { marker2 ->
-                // Retrieve the placeId using the marker
-                val clickedPlaceId = markerPlaceIdMap[marker2] ?: "NO PLACE ID"
-                Log.e(TAG, "Marker clicked: ${marker2.title}, PlaceId: $clickedPlaceId")
-
-                // When a marker is clicked, show the bottom sheet
-                showAddStopBottomSheet(marker2,clickedPlaceId)
-
-                true // Return true to indicate the click was handled
-            }
-
-            // Log the place information for debugging
-            Log.e(TAG, "Added marker for: Name: $name, Address: $address, LatLng: $latLng, PlaceId: $placeId")
+        // Add the marker to the map
+        val marker = mMap?.addMarker(markerOptions)
+        if (marker != null) {
+            markersList.add(marker) // Keep track of the marker
+            marker.showInfoWindow()
+            markerPlaceIdMap[marker] = placeId
         }
 
-        // After adding all markers, move and zoom the camera to show all markers
-        if (markersList.isNotEmpty()) {
-            val bounds = boundsBuilder.build()
-            val padding = 100 // Padding around the bounds (in pixels)
+        // Display the route overview
+       navFragment.showRouteOverview()
 
-            // Animate the camera to fit the bounds with padding
-            mMap?.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, padding))
+        // Handle marker click event
+        mMap?.setOnMarkerClickListener { marker2 ->
+            val clickedPlaceId = markerPlaceIdMap[marker2] ?: "NO PLACE ID"
+            Log.e(TAG, "Marker clicked: ${marker2.title}, PlaceId: $clickedPlaceId")
+            // Show the bottom sheet for the selected place
+            showAddStopBottomSheet(clickedPlaceId, title, message, placeInfo)
+            true // Return true to indicate the click was handled
         }
     }
 
-    private fun showAddStopBottomSheet(marker: Marker?, placeId: String) {
+    private fun showAddStopBottomSheet(
+        placeId: String,
+        title: String?,
+        body: String?,
+        placeInfo: Map<String, Any>?
+    ) {
         val bottomSheetView = BottomSheetAddStopBinding.inflate(layoutInflater)
-
         val bottomSheetDialog = BottomSheetDialog(this)
+
+        // Set the content view for the bottom sheet
         bottomSheetDialog.setContentView(bottomSheetView.root)
 
-        if (marker != null){
-            // Set the marker's title and snippet (name and address) in the text views
-            bottomSheetView.textViewPlaceName.text = marker.title
-            bottomSheetView.textViewPlaceAddress.text = marker.snippet
-        } else {
-            fetchPlaceDetailsFromAPI(placeId) { place ->
-                if (place != null) {
-                    bottomSheetView.textViewPlaceName.text = place.name
-                    bottomSheetView.textViewPlaceAddress.text = place.address
+        // Remove the dim overlay
+        bottomSheetDialog.window?.setDimAmount(0f)
+
+        // Prevent the dialog from closing when swiping down
+        bottomSheetDialog.setOnShowListener { dialogInterface ->
+            val bottomSheet = (dialogInterface as BottomSheetDialog).findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+            bottomSheet?.let {
+                val behavior = BottomSheetBehavior.from(it)
+                behavior.isHideable = false // Prevent hiding on swipe down
+                behavior.state = BottomSheetBehavior.STATE_EXPANDED // Ensure it's fully expanded
+            }
+        }
+
+        // Make the dialog non-modal to allow interaction with the parent layout
+        bottomSheetDialog.window?.apply {
+            setFlags(
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+            )
+            clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+        }
+
+        // Prevent the dialog from closing when touching outside
+        bottomSheetDialog.setCancelable(false)
+        bottomSheetDialog.setCanceledOnTouchOutside(false)
+
+
+        fetchPlaceDetailsFromAPI(placeId) { place ->
+            if (place != null) {
+                bottomSheetView.placePhoto.visibility = View.VISIBLE
+                bottomSheetView.textViewPlaceName.text = place.name
+                bottomSheetView.textViewPlaceAddress.text = place.address
+                val photoMetadata = place.photoMetadatas?.firstOrNull()
+
+                // Only call fetchPhoto if photoMetadata is available
+                photoMetadata?.let {
+                    fetchPhoto(it, bottomSheetView.placePhoto)
+                } ?: run {
+                    bottomSheetView.placePhoto.visibility = View.GONE
                 }
             }
         }
 
         // Handle Add Stop button click
         bottomSheetView.buttonAddStop.setOnClickListener {
-            // Add the placeId at the first index of placeIds
-            if (hasAlreadyArrivedAtFinalDestination) {
-                NUM_STOPS = 0
-                placeIds.removeAt(0)
+            addStopDirectly(true, placeId)
+            placesInfo = emptyList()
+
+            bottomSheetDialog.dismiss()
+        }
+
+        // Handle Cancel button click
+        bottomSheetView.buttonCancel.setOnClickListener {
+            bottomSheetDialog.dismiss()
+            clearMarkers()
+            if (title != null && body != null && placeInfo != null){
+                if (isMultiplePlaceEnabled)
+                    showPlaceRecommendationsBottomSheet(
+                        "Fuel stops found",
+                        "Check out these fuel stops within your route.")
+                else
+                    showSinglePlaceRecommendation()
             }
 
-            if (DEFAULT_STOPS > 0) {
-                NUM_STOPS = DEFAULT_STOPS
-                DEFAULT_STOPS = 0
+        }
+
+        // Show the BottomSheetDialog
+        bottomSheetDialog.show()
+    }
+
+    private fun fetchPhoto(photoMetadata: PhotoMetadata, image: ImageView) {
+        val photoRequest = FetchPhotoRequest.builder(photoMetadata)
+            .setMaxWidth(800)
+            .setMaxHeight(800)
+            .build()
+
+        placesClient.fetchPhoto(photoRequest)
+            .addOnSuccessListener { response ->
+                val bitmap = response.bitmap
+                // Check if the activity is still valid
+                if (!isDestroyed) {
+                    Log.d("YourActivity", "Successfully fetched photo for place")
+                    Glide.with(this)
+                        .load(bitmap)
+                        .placeholder(R.drawable.placeholder_viewpager_photos)
+                        .error(R.drawable.error_image)
+                        .into(image)
+                }
             }
-            stopConfig(placeId)
+            .addOnFailureListener { exception ->
+                Log.e("YourActivity", "Error fetching photo", exception)
+                // Check if the activity is still valid
+                if (!isDestroyed) {
+                    Glide.with(this)
+                        .load(R.drawable.error_image)
+                        .into(image)
+                }
+            }
+    }
 
-            binding.assistantButton.visibility = View.VISIBLE
-            binding.clearMarkers.visibility = View.GONE
+    private fun addStopDirectly(recalculateStops: Boolean, placeId: String) {
+        if (hasAlreadyArrivedAtFinalDestination) {
+            NUM_STOPS = 0
+            placeIds.removeAt(0)
+            activityList.removeAt(0)
+            if (activityList.isNotEmpty())
+                activityList.removeAt(0)
+        }
 
-            // Call recalculateWaypointOrder and handle completion
+        if (DEFAULT_STOPS > 0) {
+            NUM_STOPS = DEFAULT_STOPS
+            DEFAULT_STOPS = 0
+        }
+        stopConfig(placeId)
+        Log.e("OFF ROUTE PLACE", "RECALCULATE STOPS: $recalculateStops")
+
+
+        binding.assistantButton.visibility = View.VISIBLE
+        binding.clearMarkers.visibility = View.GONE
+
+        // Call recalculateWaypointOrder and handle completion
+        if (recalculateStops){
             recalculateWaypointOrder {
                 Log.e("StartNavigationsActivity", "Rearranged list: $rearrangedDestinations")
-                Log.e("StartNavigationsActivity", "Placeids: $placeIds")
+                Log.e("StartNavigationsActivity", "PlaceIds: $placeIds")
                 Log.e("StartNavigationsActivity", "Is need of optimization: ${(rearrangedDestinations != placeIds)}")
 
                 if (placeIds != rearrangedDestinations) {
@@ -479,18 +717,8 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
                     Log.e("StartNavigationsActivity", "Is need optimization should be false")
                 }
             }
-
-            // Dismiss the bottom sheet
-            bottomSheetDialog.dismiss()
-        }
-
-        // Handle Cancel button click
-        bottomSheetView.buttonCancel.setOnClickListener {
-            bottomSheetDialog.dismiss()
-        }
-
-        // Show the BottomSheetDialog
-        bottomSheetDialog.show()
+        } else
+            navigationConfig()
     }
 
     private fun showRecomputeStopsDialog() {
@@ -554,6 +782,85 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         dialog.show()
     }
 
+    private fun showSinglePlaceRecommendation() {
+        val dialog = BottomSheetDialog(this)
+        val sheetBinding = BottomSheetSinglePlaceRecommendationBinding.inflate(LayoutInflater.from(this))
+
+        dialog.setOnShowListener { dialogInterface ->
+            val bottomSheet = (dialogInterface as BottomSheetDialog).findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+            bottomSheet?.let {
+                val behavior = BottomSheetBehavior.from(it)
+                behavior.isHideable = false // Prevent hiding when swiped down
+                behavior.peekHeight = (resources.displayMetrics.heightPixels * 0.40).toInt() // Set peek height to 40% of the screen height
+            }
+        }
+
+        sheetBinding.btnClose.setOnClickListener {
+            dialog.dismiss()
+            placesInfo = emptyList()
+            clearMarkers()
+            binding.clearMarkers.visibility = View.GONE
+            binding.assistantButton.visibility = View.VISIBLE
+        }
+
+        // Get the user's current location
+        getCurrentLocation { currentLocation ->
+            if (currentLocation != null) {
+                var nearestPlace: Map<String, Any>? = null
+                var shortestDistance = Double.MAX_VALUE
+                var shortestDistanceFormatted = ""
+
+                val remainingPlaces = placesInfo.size
+                var processedPlaces = 0
+
+                placesInfo.forEach { placeInfo ->
+                    val placeLatLng = placeInfo["latLng"] as? LatLng
+                    if (placeLatLng != null) {
+                        checkPlaceDistance(currentLocation, placeLatLng) { distance ->
+                            val distanceValue = distance.replace(" km", "").toDoubleOrNull() ?: Double.MAX_VALUE
+
+                            // Update if this place is the nearest so far
+                            if (distanceValue < shortestDistance) {
+                                shortestDistance = distanceValue
+                                shortestDistanceFormatted = distance
+                                nearestPlace = placeInfo
+                            }
+
+                            processedPlaces++
+                            if (processedPlaces == remainingPlaces) {
+                                // Display the nearest place in the CardView
+                                nearestPlace?.let { place ->
+                                    sheetBinding.tvPlaceName.text = place["name"] as? String ?: "Unknown"
+                                    sheetBinding.tvPlaceAddress.text = place["address"] as? String ?: "No address available"
+                                    sheetBinding.tvDistance.text = shortestDistanceFormatted
+                                    sheetBinding.tvRatings.text = place["rating"]?.toString() ?: "No rating available"
+
+
+                                    sheetBinding.nearestPlaceCard.setOnClickListener{
+                                        dialog.dismiss()
+                                        plotSingleMarker("", "", place)
+                                    }
+
+                                }
+                            }
+                        }
+                    }
+
+
+
+                }
+
+
+            } else {
+                Log.e("TAG", "Unable to get current location")
+            }
+        }
+
+        // Set the bottom sheet content and show the dialog
+        dialog.setContentView(sheetBinding.root)
+        dialog.show()
+    }
+
     private fun showNavigationOptionsBottomSheet() {
         // Inflate the bottom sheet layout using view binding
         val bottomSheet = binding.bottomSheet
@@ -576,10 +883,10 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         binding.continueToNextDestinationLayout.visibility = if (NUM_STOPS == 1) View.GONE else View.VISIBLE
         binding.spacer1.visibility = if (NUM_STOPS == 1 ) View.GONE else View.VISIBLE
         binding.voiceGuidanceSwitch.isChecked = isAudioGuidanceEnabled
+        binding.multiplePlaceSwitch.isChecked = isMultiplePlaceEnabled
 
         // Set up click listeners for the actions
         binding.assistantButton.setOnClickListener {
-            showLoadingDialog(true)
             val streamingSpeechRecognition = StreamingSpeechRecognition(
                 languageCode = "en-US",
                 activity = this,
@@ -587,11 +894,9 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
                     if (transcription.isNotEmpty()){
                         processUserQuery(transcription)
                         Log.d("SpeechRecognizer", "Transcription received at START NAVIGATIONS: $transcription")
-                        showLoadingDialog(false)
                     } else {
                         textToSpeech.speakResponse("Unfortunately, I did not get your query. Please try again.")
                         displayMessage("Query is empty.")
-                        showLoadingDialog(false)
                     }
                 }
             )
@@ -628,13 +933,32 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
             }
         }
 
+        binding.multiplePlaceSwitch.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                with(sharedPreferences.edit()) {
+                    putBoolean(SettingsKeys.KEY_MULTIPLE_PLACE, true)
+                    apply()
+                }
+                isMultiplePlaceEnabled = true
+                displayMessage("Setting multiple place recommendations")
+            } else {
+                with(sharedPreferences.edit()) {
+                    putBoolean(SettingsKeys.KEY_MULTIPLE_PLACE, false)
+                    apply()
+                }
+                isMultiplePlaceEnabled = false
+                displayMessage("Setting single place recommendation")
+            }
+        }
+
 
         binding.continueToNextDestinationLayout.setOnClickListener {
            if (NUM_STOPS != 1) {
                handleNextStop()
                NUM_STOPS -= 1
                placeIds.removeAt(0)
-               displayMessage("NUM STOPS VALUE: $NUM_STOPS")
+               if (activityList.isNotEmpty())
+                   activityList.removeAt(0)
                Log.e("StartNavigationsActivity", "PlaceIDs size at confirm: ${placeIds.size}" )
                fetchPlaceDetailsForCard(NUM_STOPS)
            }
@@ -645,19 +969,26 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         binding.viewZoomedOutLayout.setOnClickListener {
             navFragment.showRouteOverview()
         }
+
+
     }
 
     private fun showLoadingDialog(isShown: Boolean) {
-        val bottomSheetDialog = BottomSheetDialog(this)
-        val bottomSheetView = layoutInflater.inflate(R.layout.bottom_sheet_loading_interface, null)
-        bottomSheetDialog.setContentView(bottomSheetView)
+        // Ensure you are using a persistent dialog object
+        if (bottomSheetDialog == null) {
+            // Create the dialog only if it's null (i.e., if it's the first time)
+            bottomSheetDialog = BottomSheetDialog(this)
+            val bottomSheetView = layoutInflater.inflate(R.layout.bottom_sheet_loading_interface, null)
+            bottomSheetDialog?.setContentView(bottomSheetView)
+        }
 
-        if(isShown)
-          bottomSheetDialog.show()
-        else
-            bottomSheetDialog.dismiss()
+        // Show or dismiss the dialog based on the isShown argument
+        if (isShown) {
+            bottomSheetDialog?.show()
+        } else {
+            bottomSheetDialog?.dismiss()
+        }
     }
-
 
     private fun stopConfig(placeId: String) {
         placeIds.add(0, placeId)
@@ -825,15 +1156,18 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         }
     }
 
-    private fun fetchPlaceDetailsForCard(stop: Int){
+    private fun fetchPlaceDetailsForCard(stop: Int) {
         fetchPlaceDetailsFromAPI(placeIds[0]) { place ->
-            if (place != null) {
-                binding.tvPlaceName.text = place.name
-                binding.tvPlaceAddress.text = place.address
-                binding.tvRemainingStop.text = "Remaining destination(s): ${stop}"
+            place?.let {
+                binding.tvPlaceName.text = it.name
+                binding.tvPlaceAddress.text = it.address
+                binding.tvRemainingStop.text = "Remaining destination(s): $stop"
             }
-
         }
+
+        binding.tvActivityName.text = if (activityList.isNotEmpty()) activityList[0].activityName else "No activity available"
+        binding.tvActivityName.visibility = if (binding.tvActivityName.text == "No activity available") View.GONE else View.VISIBLE
+
     }
 
     private fun clearMarkers() {
@@ -860,7 +1194,6 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         Log.e("MARKERS", "Markers and Place ID map cleared")
     }
 
-
     private fun initializeNavigationSdk(routeToken: String, placeIds: ArrayList<String>, travelMode: String) {
         // Request location permission.
         if (ContextCompat.checkSelfPermission(
@@ -885,7 +1218,6 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
             this,
             object : NavigationApi.NavigatorListener {
                 override fun onNavigatorReady(navigator: Navigator) {
-                    displayMessage("Navigator ready.")
                     this@StartNavigationsActivity.navigator = navigator
                     navFragment = supportFragmentManager.findFragmentById(R.id.navigation_fragment) as SupportNavigationFragment
                     navFragment.setTripProgressBarEnabled(true)
@@ -1063,19 +1395,16 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
                             },
                             onProceed = {
                                 isPlaceOpenNowClassifierFinished = true
-                                displayMessage("Route successfully calculated with multiple stops!")
                                 if (isAudioGuidanceEnabled) {
                                     navigator.setAudioGuidance(AudioGuidance.VOICE_ALERTS_AND_GUIDANCE)
-                                    displayMessage("AUDIO GUIDANCE: $isAudioGuidanceEnabled")
-                                } else
-                                    displayMessage("AUDIO GUIDANCE: $isAudioGuidanceEnabled")
+                                }
 
-
-                                Log.e(TAG, "isPlaceOpenNowClassifierFinished: $isPlaceOpenNowClassifierFinished")
-                                if (isPlaceOpenNowClassifierFinished) {
-                                    displayRainCheckBottomSheet()
-                                    Log.e(TAG, "THE RAIN CHECK WAS EXECUTED")
-                                    hasExecutedSuggestions = true
+                                if (isPlaceOpenNowClassifierFinished ) {
+                                    if (!hasExecutedSuggestions){
+                                        displayRainCheckBottomSheet()
+                                        Log.e(TAG, "THE RAIN CHECK WAS EXECUTED")
+                                        hasExecutedSuggestions = true
+                                    }
                                 }
 
                                 registerNavigationListeners()
@@ -1103,7 +1432,6 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         mArrivalListener = ArrivalListener { arrivalEvent ->
 
             if (arrivalEvent.isFinalDestination) {
-                displayMessage("onArrival: You've arrived at the final destination.")
                 val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
                 vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
                 showTripSummaryDialog(computeTotalDistance(), computeTotalTime(), computeArrivalTime(), computeAverageSpeed(),getTrafficConditions())
@@ -1124,6 +1452,8 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
                         DEFAULT_STOPS -= 1
                     }
                     placeIds.removeAt(0)
+                    if (activityList.isNotEmpty())
+                        activityList.removeAt(0)
                     fetchPlaceDetailsForCard(stopsCount - 1)
                 }
 
@@ -1143,8 +1473,7 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         // Listener for remaining time or distance changes
         val totalRouteDistanceInMeters = navigator.currentTimeAndDistance.meters // Assume you retrieve this on route setup
         val fuelStopTriggerDistance = 1000
-
-        val mealStopTriggerDistance = 500
+        val mealStopTriggerDistance = 300
 
         mRemainingTimeOrDistanceChangedListener = RemainingTimeOrDistanceChangedListener {
             val remainingDistanceInMeters = navigator.currentTimeAndDistance.meters
@@ -1164,7 +1493,7 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
                 }
             }
 
-            if (!hasMealDialogDisplayed && totalRouteDistanceInMeters >= 5000 && traveledDistance >= mealStopTriggerDistance) {
+            if (!hasMealDialogDisplayed  && traveledDistance >= mealStopTriggerDistance) {
                 // Silence the navigation audio guidance
                 navigator.setAudioGuidance(AudioGuidance.SILENT)
 
@@ -1341,7 +1670,9 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         val fields = listOf(
             Place.Field.ID,
             Place.Field.NAME,
-            Place.Field.ADDRESS
+            Place.Field.ADDRESS,
+            Place.Field.PHOTO_METADATAS,
+            Place.Field.RATING,
         )
         val request = FetchPlaceRequest.builder(placeId, fields).build()
 
@@ -1357,8 +1688,7 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
     }
 
     private fun cleanup() {
-        if (::speechRecognitionHelper.isInitialized || ::textToSpeech.isInitialized) {
-            speechRecognitionHelper.stopListening()
+        if (::textToSpeech.isInitialized) {
             textToSpeech.stopResponse()
         }
 
@@ -1380,7 +1710,7 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
             mRemainingTimeOrDistanceChangedListener?.let { navigator.removeRemainingTimeOrDistanceChangedListener(it) }
             mRoadSnappedLocationProvider?.removeLocationListener(mLocationListener)
             navigator.simulator.unsetUserLocation()
-            displayMessage("OnDestroy: Released navigation listeners.")
+            displayMessage("Navigation terminated")
         }
 
         // Clear destinations and perform cleanup, ensuring navigator is initialized
@@ -1397,9 +1727,202 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
 
     override fun onPoiClick(p0: PointOfInterest?) {
         if (p0 != null) {
-            showAddStopBottomSheet(null, p0.placeId)
+            showAddStopBottomSheet(p0.placeId, null, null, null)
         }
     }
+
+
+    private fun checkPlaceDistance(
+        currentLocation: LatLng?, // User's current location
+        placeLatLng: LatLng?, // LatLng of the place
+        distanceCallback: (String) -> Unit // Callback to return the distance or an error
+    ) {
+        if (currentLocation != null && placeLatLng != null) {
+            // Build the API request URL parameters.
+            val apiKey = BuildConfig.MAPS_API_KEY
+            val origin = "${currentLocation.latitude},${currentLocation.longitude}"
+            val destination = "${placeLatLng.latitude},${placeLatLng.longitude}"
+
+            // Create a Retrofit instance for API requests.
+            val retrofit = Retrofit.Builder()
+                .baseUrl("https://maps.googleapis.com/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+
+            val api = retrofit.create(PlaceDistanceService::class.java)
+
+            // Enqueue the API request to get directions and distance.
+            api.getDirections(origin, destination, apiKey)
+                .enqueue(object : Callback<PlaceDistanceResponse> {
+                    override fun onResponse(
+                        call: Call<PlaceDistanceResponse>,
+                        response: Response<PlaceDistanceResponse>
+                    ) {
+                        // Handle the response from the API.
+                        if (response.isSuccessful && response.body() != null) {
+                            val directionsResponse = response.body()
+                            if (directionsResponse?.routes?.isNotEmpty() == true) {
+                                // Extract the distance from the response.
+                                val distance = directionsResponse.routes[0].legs[0].distance.text
+
+                                // Return distance through the callback
+                                distanceCallback(distance)
+                            } else {
+                                // Return "Distance not available" if no routes are found.
+                                distanceCallback("Distance not available")
+                            }
+                        } else {
+                            // Return "Error calculating distance" if the API response fails.
+                            distanceCallback("Error calculating distance")
+                        }
+                    }
+
+                    override fun onFailure(call: Call<PlaceDistanceResponse>, t: Throwable) {
+                        // Log the error and return "Error calculating distance"
+                        Log.e("RetrofitError", "Error fetching directions: ${t.message}")
+                        distanceCallback("Error calculating distance")
+                    }
+                })
+        } else {
+            // Return "Invalid locations" if either currentLocation or placeLatLng is null.
+            distanceCallback("Invalid locations")
+        }
+    }
+
+
+//    @SuppressLint("PotentialBehaviorOverride")
+//    private fun plotMarkers(placesInfo: List<Map<String, Any>>) {
+//        // Clear existing markers from the map
+//        clearMarkers()
+//
+//        // Initialize LatLngBounds.Builder to calculate bounds for all markers
+//        val boundsBuilder = LatLngBounds.Builder()
+//
+//        Log.e(TAG, "it worked here")
+//
+//        // Log the size of placesInfo
+//        Log.e(TAG, "Number of places info: ${placesInfo.size}")
+//
+//        // Iterate through the places info and add markers to the map
+//        placesInfo.forEach { placeInfo ->
+//            // Extracting values from the map
+//            val latLng = placeInfo["latLng"] as LatLng
+//            val name = placeInfo["name"] as String
+//            val address = placeInfo["address"] as String
+//            val placeId = placeInfo["placeId"] as String
+//
+//            // Add a marker with a visible icon
+//            val markerOptions = MarkerOptions()
+//                .position(latLng)
+//                .title(name) // Set the title to show in the info window
+//                .snippet(address) // Optional: show address in the info window
+//                .alpha(1f)
+//                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)) // Use a visible color
+//
+//            // Add the visible marker to the map and store it in the markers list
+//            val marker = mMap?.addMarker(markerOptions)
+//            if (marker != null) {
+//                markersList.add(marker) // Keep track of the marker
+//                // Include this marker's position in the bounds
+//                boundsBuilder.include(marker.position)
+//
+//                // Store the marker and placeId mapping
+//                markerPlaceIdMap[marker] = placeId
+//
+//                marker.showInfoWindow()
+//            }
+//
+//            mMap?.setOnMarkerClickListener { marker2 ->
+//                // Retrieve the placeId using the marker
+//                val clickedPlaceId = markerPlaceIdMap[marker2] ?: "NO PLACE ID"
+//                Log.e(TAG, "Marker clicked: ${marker2.title}, PlaceId: $clickedPlaceId")
+//
+//                // When a marker is clicked, show the bottom sheet
+//                showAddStopBottomSheet(marker2,clickedPlaceId)
+//
+//                true // Return true to indicate the click was handled
+//            }
+//
+//            // Log the place information for debugging
+//            Log.e(TAG, "Added marker for: Name: $name, Address: $address, LatLng: $latLng, PlaceId: $placeId")
+//        }
+//
+//        // After adding all markers, move and zoom the camera to show all markers
+//        if (markersList.isNotEmpty()) {
+//            val bounds = boundsBuilder.build()
+//            val padding = 100 // Padding around the bounds (in pixels)
+//
+//            // Animate the camera to fit the bounds with padding
+//            mMap?.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, padding))
+//        }
+//    }
+
+
+
+
+
+//    private fun processUserQuery(query: String) {
+//        // Launch a coroutine in the lifecycleScope
+//        lifecycleScope.launch {
+//            try {
+//                // Call the processUserQuery method of AIProcessor
+//                textToSpeech.speakResponse("Searching, please wait.")
+//                withContext(Dispatchers.Main) {
+//                    showLoadingDialog(true)
+//                }
+//                val result = aiProcessor.processUserQuery(query)
+//                allLatLngs.clear()
+//                navigator.routeSegments.forEach { segment ->
+//                    // Add all LatLngs from the current segment to the list
+//                    allLatLngs.addAll(segment.latLngs)
+//                }
+//                Log.e("MARKERS", "MARKER LIST: ${markersList.size}")
+//                Log.e("MARKERS", "MARKER PLACE ID MAP: ${markerPlaceIdMap.size}")
+//
+//                Log.e("MARKERS", "SEARCH STOP LATLNGS: $allLatLngs")
+//                Log.e("MARKERS", "SEARCH STOP LATLNG SIZE: ${allLatLngs.size}")
+//                aiProcessor.intentClassification(aiProcessor.parseUserQuery(result), allLatLngs)
+//
+//                placesInfo = aiProcessor.extractPlaceInfo()
+//                Log.e("MARKERS", "PLACE INFO SIZE: ${placesInfo.size}")
+//
+//                if (aiProcessor.hasPlaceIdAndIsValidPlace()) {
+//                    textToSpeech.speakResponse("Here's what I've got.")
+//                    withContext(Dispatchers.Main) {
+//                        showLoadingDialog(false)
+//                    }
+//                    showPlaceRecommendationsBottomSheet(
+//                        "Nearby places found",
+//                        "Here's what I've found within your route")
+//                } else {
+//                    withContext(Dispatchers.Main) {
+//                        showLoadingDialog(false)
+//                    }
+//
+//                    aiProcessor.setOnPlaceSelectedCallback { selectedPlaceId ->
+//                        addStopDirectly(false, selectedPlaceId)
+//                        Log.e("OFF ROUTE PLACE", "PLACE ID IS: $selectedPlaceId")
+//                    }
+//
+//
+//                    textToSpeech.speakResponse("Unfortunately, I couldn't find any information related to your query, '$query.' Please consider trying alternative keywords for your search.")
+//                }
+//            } catch (e: ResponseStoppedException) {
+//                Log.e("AIProcessor", "Response generation stopped due to safety concerns: ${e.message}")
+//                textToSpeech.speakResponse("Unfortunately, I cannot find what you are looking for.")
+//                withContext(Dispatchers.Main) {
+//                    showLoadingDialog(false)
+//                }
+//            } catch (e: Exception) {
+//                Log.e("AIProcessor", "Error processing query: ${e.message}", e)
+//                textToSpeech.speakResponse("Unfortunately, I cannot find what you are looking for right now.")
+//                withContext(Dispatchers.Main) {
+//                    showLoadingDialog(false)
+//                }
+//            }
+//        }
+//    }
+
 
 
 }

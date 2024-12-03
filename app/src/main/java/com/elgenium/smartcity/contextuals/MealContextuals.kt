@@ -24,6 +24,7 @@ import com.google.android.libraries.places.api.model.CircularBounds
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.android.libraries.places.api.net.SearchByTextRequest
+import com.google.maps.android.PolyUtil
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -47,12 +48,9 @@ class MealContextuals(private val context: Context) {
         "breakfast" to listOf(
             "bakery",
             "breakfast_restaurant",
-            "brunch_restaurant",
-            "cafe",
             "coffee_shop"
         ),
         "lunch" to listOf(
-            "cafe",
             "coffee_shop",
             "convenience store",
             "fast_food_restaurant",
@@ -62,11 +60,8 @@ class MealContextuals(private val context: Context) {
         "snack" to listOf(
             "bakery",
             "cafe",
-            "coffee_shop",
-            "ice_cream_shop",
             "meal_takeaway",
             "convenience store",
-            "meal_delivery"
         ),
         "dinner" to listOf(
             "american restaurant",
@@ -75,7 +70,6 @@ class MealContextuals(private val context: Context) {
             "restaurant",
             "barbecue",
             "fast food",
-            "meal_delivery",
         ),
         "late-night" to listOf(
             "bar",
@@ -192,20 +186,18 @@ class MealContextuals(private val context: Context) {
         return currentDate
     }
 
+
     fun performTextSearch(
         placesClient: PlacesClient,
         currentPlaceTypes: List<String>,
-        allLatLngs: List<LatLng>, // New parameter
+        allLatLngs: List<LatLng>, // Path points
         context: Context,
         callback: (List<Place>) -> Unit
     ) {
-        // Get the current location first
         getCurrentLocation(context) { currentLocation ->
-            // Ensure current location is available
             currentLocation?.let {
                 Log.e("MealContextuals", "Current location: $currentLocation")
                 val currentLatLng = LatLng(currentLocation.latitude, currentLocation.longitude)
-                val locationBias = CircularBounds.newInstance(currentLatLng, 500.0) // 500 meters radius
 
                 val placeFields = listOf(
                     Place.Field.ID,
@@ -219,48 +211,62 @@ class MealContextuals(private val context: Context) {
                 )
 
                 val placesList = mutableListOf<Place>()
+                val offRoutePlaces = mutableListOf<Place>() // Track off-route places
                 val searchCount = currentPlaceTypes.size
                 var completedSearches = 0
 
-                Log.e("MealContextuals", "PLACE TYPE COUNT: $searchCount")
+                val toleranceMeters = 100.0 // Adjust as needed
 
                 // Sample every 5th point from allLatLngs to optimize searches
                 var sampledLatLngs = allLatLngs.filterIndexed { index, _ -> index % 5 == 0 }
-
-                // If no latlngs are sampled, fall back to current location search
                 if (sampledLatLngs.isEmpty()) {
                     sampledLatLngs = listOf(currentLatLng)
                 }
 
-                sampledLatLngs.forEachIndexed { index, latLng ->
+                sampledLatLngs.forEach { latLng ->
                     currentPlaceTypes.forEach { placeType ->
                         val query = "$placeType near me"
                         Log.e("MealContextuals", "Search query for places: $query")
 
-                        val locationBias = CircularBounds.newInstance(latLng, 3000.0) // 3 km radius per sampled point
+                        val locationBias = CircularBounds.newInstance(latLng, 3000.0) // 3 km radius per point
 
                         val searchByTextRequest = SearchByTextRequest.builder(query, placeFields)
-                            .setMaxResultCount(1)
+                            .setMaxResultCount(3)
                             .setLocationBias(locationBias)
-                            .setOpenNow(true)
                             .setRankPreference(SearchByTextRequest.RankPreference.DISTANCE)
                             .build()
 
-                        // Perform the search using the PlacesClient
                         placesClient.searchByText(searchByTextRequest)
                             .addOnSuccessListener { response ->
-                                val places = response.places
-                                Log.e("MealContextuals", "NUMBER OF PLACES: ${places.size}")
-                                places.forEach { place ->
-                                    Log.e("MealContextuals", "NAME OF PLACE: ${place.name}")
-                                    placesList.add(place)
+                                response.places.forEach { place ->
+                                    val placeLatLng = place.latLng
+
+                                    // Use PolyUtil to check if the place is on the path
+                                    val isOnRoute = PolyUtil.isLocationOnPath(
+                                        placeLatLng,
+                                        allLatLngs,
+                                        true, // Treat the path as geodesic
+                                        toleranceMeters
+                                    )
+
+                                    if (isOnRoute) {
+                                        placesList.add(place)
+                                    } else {
+                                        offRoutePlaces.add(place)
+                                        Log.e("MealContextuals", "Filtered out off-route place: ${place.name}")
+                                    }
                                 }
                             }
                             .addOnCompleteListener {
                                 completedSearches++
                                 if (completedSearches == sampledLatLngs.size * searchCount) {
-                                    // All searches are complete, invoke the callback with the results
-                                    callback(placesList)
+                                    // Deduplicate and return results
+                                    val filteredList = placesList.distinctBy { it.id }
+                                    callback(filteredList)
+
+                                    // Log for debugging purposes
+                                    Log.i("MealContextuals", "On-route places: ${filteredList.size}")
+                                    Log.i("MealContextuals", "Off-route places: ${offRoutePlaces.size}")
                                 }
                             }
                             .addOnFailureListener { exception ->
@@ -273,17 +279,17 @@ class MealContextuals(private val context: Context) {
                     }
                 }
 
-                // If there are no place types to search, call the callback immediately
                 if (searchCount == 0) {
                     callback(placesList)
                 }
-
             } ?: run {
                 Log.e("MealContextuals", "Current location is not available.")
-                callback(emptyList()) // Return an empty list if the location is not available
+                callback(emptyList())
             }
         }
     }
+
+
 
 
 

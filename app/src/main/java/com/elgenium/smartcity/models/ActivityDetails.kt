@@ -1,5 +1,7 @@
 package com.elgenium.smartcity.models
 
+import java.io.Serializable
+
 data class ActivityDetails(
     val activityId: String? = "",
     val activityName: String = "",
@@ -13,4 +15,4 @@ data class ActivityDetails(
     var status: String = "Upcoming",
     var containerStatus: String = "Unscheduled",
     val placeTypes: String = ""
-)
+): Serializable

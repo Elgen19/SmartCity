@@ -143,6 +143,17 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
+                    <!-- Activity Name -->
+                    <TextView
+                        android:id="@+id/tvActivityName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:text="Activity Name"
+                        android:textColor="@color/secondary_color"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
                     <!-- Place Name -->
                     <TextView
                         android:id="@+id/tvPlaceName"
@@ -150,9 +161,8 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="4dp"
                         android:text="Place Name"
-                        android:textColor="@color/gray"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        android:textColor="@color/gray" />
 
                     <!-- Address -->
                     <TextView
@@ -161,8 +171,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="8dp"
                         android:text="Place Address"
-                        android:textColor="@color/dark_gray"
-                        android:textSize="14sp" />
+                        android:textColor="@color/dark_gray" />
 
                     <!-- Remaining stop/destination -->
                     <TextView
@@ -293,6 +302,42 @@
 
                         <com.google.android.material.switchmaterial.SwitchMaterial
                             android:id="@+id/voiceGuidanceSwitch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            app:thumbTint="@color/switch_thumb_color_state_list"
+                            app:trackTint="@color/switch_track_color_state_list"
+                            tools:ignore="TouchTargetSizeCheck" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/multipleRecommendationLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp"
+                        tools:ignore="UseCompoundDrawables">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/multiple_place"
+                            app:tint="@color/secondary_color" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
+                            android:layout_weight="1"
+                            android:gravity="center_vertical"
+                            android:text="Enable/disable multiple place recommendations"
+                            android:textColor="@color/gray" />
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/multiplePlaceSwitch"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             app:thumbTint="@color/switch_thumb_color_state_list"
