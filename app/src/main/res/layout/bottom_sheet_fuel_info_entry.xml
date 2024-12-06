@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@color/primary_color">
+
+    <!-- Header -->
+    <TextView
+        android:id="@+id/bsheet_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Vehicle Information"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="@color/brand_color" />
+
+    <TextView
+        android:id="@+id/bsheet_subheader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Provide details about your vehicle to help us recommend fuel stops and optimize your trip."
+        android:textSize="14sp"
+        android:layout_marginBottom="16dp"
+        android:textColor="@color/dark_gray" />
+
+
+    <!-- Dropdown for Vehicle Type -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select Vehicle Type"
+        android:textSize="16sp"
+        android:paddingBottom="8dp"
+        android:textColor="@color/black" />
+
+    <Spinner
+        android:id="@+id/vehicleTypeSpinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:popupBackground="@color/white"
+        android:spinnerMode="dropdown"
+        android:entries="@array/vehicle_type"
+        android:background="@drawable/spinner_with_arrow" />
+
+
+    <!-- Fuel Tank Capacity -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Fuel Tank Capacity (liters)"
+        android:textSize="16sp"
+        android:paddingTop="16dp"
+        android:paddingBottom="8dp"
+        android:textColor="@color/black" />
+
+    <EditText
+        android:id="@+id/tank_capacity_input"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter capacity (e.g., 50)"
+        android:inputType="numberDecimal"
+        android:textSize="14sp"
+        android:background="@drawable/rounded_background_white"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:textColorHint="@color/dark_gray"
+        android:textColor="@color/gray"
+        android:paddingBottom="16dp"
+        android:paddingTop="16dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginEnd="8dp"
+            android:src="@drawable/info"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tip: This is the total fuel your vehicle's tank can hold."
+            android:textSize="12sp"
+            android:layout_gravity="center_vertical"
+            android:textColor="@color/sub_support_text" />
+    </LinearLayout>
+
+    <!-- Fuel Efficiency -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Fuel Efficiency (km/l)"
+        android:textSize="16sp"
+        android:paddingTop="16dp"
+        android:paddingBottom="8dp"
+        android:textColor="@color/black" />
+
+    <EditText
+        android:id="@+id/fuel_efficiency_input"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter efficiency (e.g., 15)"
+        android:inputType="numberDecimal"
+        android:textSize="14sp"
+        android:textColorHint="@color/dark_gray"
+        android:textColor="@color/gray"
+        android:background="@drawable/rounded_background_white"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="16dp"
+        android:paddingTop="16dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginEnd="8dp"
+            android:src="@drawable/info"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tip: This is how far your vehicle can travel per liter of fuel."
+            android:textSize="12sp"
+            android:layout_gravity="center_vertical"
+            android:textColor="@color/sub_support_text" />
+    </LinearLayout>
+
+    <!-- Save Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/save_vehicle_info_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Save"
+        android:layout_marginTop="24dp"
+        android:paddingBottom="16dp"
+        android:paddingTop="16dp"
+        android:backgroundTint="@color/secondary_color"
+        app:cornerRadius="8dp"
+        android:textColor="@color/white" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_cancel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Cancel"
+        android:paddingBottom="16dp"
+        android:paddingTop="16dp"
+        android:backgroundTint="@color/primary_color"
+        app:strokeWidth="1dp"
+        app:strokeColor="@color/red"
+        app:cornerRadius="8dp"
+        android:textColor="@color/red" />
+</LinearLayout>

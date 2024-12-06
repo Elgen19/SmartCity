@@ -6,6 +6,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.location.Location
 import android.os.Build
 import android.os.Bundle
@@ -13,11 +14,12 @@ import android.os.Handler
 import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.text.Html
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
-import android.widget.ImageView
+import android.widget.SeekBar
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
@@ -26,19 +28,22 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.bumptech.glide.Glide
 import com.elgenium.smartcity.contextuals.FuelStopsRecommendation
 import com.elgenium.smartcity.contextuals.MealContextuals
 import com.elgenium.smartcity.contextuals.PlaceOpeningHoursContextuals
 import com.elgenium.smartcity.contextuals.RainLikelihoodCalculator
 import com.elgenium.smartcity.databinding.ActivityStartNavigationsBinding
 import com.elgenium.smartcity.databinding.BottomSheetAddStopBinding
+import com.elgenium.smartcity.databinding.BottomSheetEditFuelLevelBinding
 import com.elgenium.smartcity.databinding.BottomSheetPlaceRecommendationListBinding
 import com.elgenium.smartcity.databinding.BottomSheetSinglePlaceRecommendationBinding
+import com.elgenium.smartcity.databinding.DialogActivitySuggestionsBinding
 import com.elgenium.smartcity.databinding.DialogRecomputeStopsBinding
 import com.elgenium.smartcity.databinding.DialogTerminateNavigationBinding
 import com.elgenium.smartcity.databinding.DialogTripRecapBinding
+import com.elgenium.smartcity.geofences.GeofenceManager
 import com.elgenium.smartcity.intelligence.AIProcessor
+import com.elgenium.smartcity.intelligence.FuelSetupManager
 import com.elgenium.smartcity.models.ActivityDetails
 import com.elgenium.smartcity.network.PlaceDistanceService
 import com.elgenium.smartcity.network_reponses.PlaceDistanceResponse
@@ -49,6 +54,7 @@ import com.elgenium.smartcity.routes_network_request.RouteMatrixDestination
 import com.elgenium.smartcity.routes_network_request.RouteMatrixOrigin
 import com.elgenium.smartcity.routes_network_request.RouteMatrixRequest
 import com.elgenium.smartcity.routes_network_request.WaypointMatrix
+import com.elgenium.smartcity.routing.RouteFetcher
 import com.elgenium.smartcity.shared_preferences_keys.SettingsKeys
 import com.elgenium.smartcity.singletons.ActivityNavigationUtils
 import com.elgenium.smartcity.singletons.NavigationBarColorCustomizerHelper
@@ -82,12 +88,11 @@ import com.google.android.libraries.navigation.SimulationOptions
 import com.google.android.libraries.navigation.StylingOptions
 import com.google.android.libraries.navigation.SupportNavigationFragment
 import com.google.android.libraries.navigation.Waypoint
-import com.google.android.libraries.places.api.model.PhotoMetadata
 import com.google.android.libraries.places.api.model.Place
-import com.google.android.libraries.places.api.net.FetchPhotoRequest
 import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.chip.Chip
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -98,12 +103,16 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.text.SimpleDateFormat
+import java.time.Duration
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
 
 
 class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListener{
 
+    private var totalRouteDistanceInMeters = 0
     private val TAG = "StartNavigationsActivity"
     private lateinit var navigator: Navigator
     private lateinit var navFragment: SupportNavigationFragment
@@ -128,6 +137,7 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
     private val markerPlaceIdMap = HashMap<Marker, String>()
     private var IS_ADDING_STOP = false
     private var NUM_STOPS = 1
+    private var hasMealPlaceInDestination = false
     private lateinit var sharedPreferences: SharedPreferences
     private var isAudioGuidanceEnabled = true
     private var isMultiplePlaceEnabled = false
@@ -149,6 +159,7 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
     private lateinit var activityList: ArrayList<ActivityDetails>
     private var bottomSheetDialog: BottomSheetDialog? = null
     private var placesInfo: List<Map<String, Any>> = listOf()
+    private lateinit var geofenceManager: GeofenceManager
 
 
 
@@ -213,6 +224,8 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
             binding.clearMarkers.visibility = View.GONE
         }
 
+        checkPlaceTypes()
+
     }
 
     private fun displayRainCheckBottomSheet() {
@@ -225,6 +238,8 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
 
         }
     }
+
+
 
 
     private fun initializeSpeechRecognizerAndTextSpeech() {
@@ -308,6 +323,8 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         val dialog = BottomSheetDialog(this)
         val sheetBinding = BottomSheetPlaceRecommendationListBinding.inflate(LayoutInflater.from(this))
 
+        showLoadingDialog(false)
+
         sheetBinding.titleLabel.text = title
         sheetBinding.supportingLabel.text = body
 
@@ -361,18 +378,29 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
             sheetBinding.placeRecommendationsRecyclerview.adapter = adapter
         }
 
+        sheetBinding.chipShowAll.chipBackgroundColor =
+            ColorStateList.valueOf(ContextCompat.getColor(this, R.color.brand_color))
 
         // Set up individual click listeners for each chip
         sheetBinding.chipShowAll.setOnClickListener {
             applyFilter("ShowAll")
+            sheetBinding.chipShowAll.chipBackgroundColor =
+                ColorStateList.valueOf(ContextCompat.getColor(this, R.color.brand_color))
+            resetChipBackground(sheetBinding.chipNearest, sheetBinding.chipPopular)
         }
 
         sheetBinding.chipNearest.setOnClickListener {
             applyFilter("Nearest")
+            sheetBinding.chipNearest.chipBackgroundColor =
+                ColorStateList.valueOf(ContextCompat.getColor(this, R.color.brand_color))
+            resetChipBackground(sheetBinding.chipShowAll, sheetBinding.chipPopular)
         }
 
         sheetBinding.chipPopular.setOnClickListener {
             applyFilter("Popular")
+            sheetBinding.chipPopular.chipBackgroundColor =
+                ColorStateList.valueOf(ContextCompat.getColor(this, R.color.brand_color))
+            resetChipBackground(sheetBinding.chipShowAll, sheetBinding.chipNearest)
         }
 
         // Initialize the RecyclerView with the full list
@@ -437,6 +465,12 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         dialog.show()
     }
 
+    private fun resetChipBackground(vararg chips: Chip) {
+        chips.forEach { chip ->
+            chip.chipBackgroundColor =
+                ColorStateList.valueOf(ContextCompat.getColor(this, R.color.primary_color))
+        }
+    }
 
     private fun displayFuelStops(){
         allLatLngs.clear()
@@ -473,7 +507,7 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
             }
             Log.e(TAG, "PlaceInfo: $placesInfo")
 
-            // Step 5: Plot markers on the map using the `plotMarkers` function
+            // Step 5: Plot markers on the map using the plotMarkers function
             if (isMultiplePlaceEnabled)
                 showPlaceRecommendationsBottomSheet(
                     "Fuel stops found",
@@ -484,6 +518,8 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
     }
 
     private fun onDialogProceed() {
+        showLoadingDialog(true)
+
         // Step 1: Determine the current meal time
         val mealTime = mealPlaceRecommender.getMealTime()
 
@@ -545,7 +581,6 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         val markerOptions = MarkerOptions()
             .position(latLng)
             .title(name)
-            .snippet(name)
             .alpha(1f)
             .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)) // Visible color
 
@@ -608,30 +643,63 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         bottomSheetDialog.setCancelable(false)
         bottomSheetDialog.setCanceledOnTouchOutside(false)
 
-
         fetchPlaceDetailsFromAPI(placeId) { place ->
             if (place != null) {
-                bottomSheetView.placePhoto.visibility = View.VISIBLE
                 bottomSheetView.textViewPlaceName.text = place.name
                 bottomSheetView.textViewPlaceAddress.text = place.address
-                val photoMetadata = place.photoMetadatas?.firstOrNull()
+            }
+        }
 
-                // Only call fetchPhoto if photoMetadata is available
-                photoMetadata?.let {
-                    fetchPhoto(it, bottomSheetView.placePhoto)
-                } ?: run {
-                    bottomSheetView.placePhoto.visibility = View.GONE
+
+        // Handle Add Stop button click
+        // Handle Add Stop button click
+        bottomSheetView.buttonAddStop.setOnClickListener {
+
+            // Disable the button to prevent multiple clicks while processing
+            bottomSheetView.buttonAddStop.isEnabled = false
+
+            // Fetch the place details and handle stop location asynchronously
+            fetchPlaceDetailsFromAPI(placeId) { place ->
+                if (place != null) {
+                    place.latLng?.let { stopLatLng ->
+
+                        // Call the delay calculation and handle logic
+                        calculateAdHocTaskDelay(stopLatLng, placeId) { hasDelay ->
+                            if (hasDelay) {
+                                // Handle delay
+                                Log.d("AdHocTaskDelay", "There is a delay!")
+                            } else {
+                                // Handle no delay
+                                if (activityList.isEmpty())
+                                    addStopDirectly(true, placeId)
+                                else
+                                    addStopDirectly(false, placeId)
+
+                                placesInfo = emptyList()
+                                Log.d("AdHocTaskDelay", "No delay detected.")
+                            }
+
+                            // Dismiss the bottom sheet after processing is complete
+                            bottomSheetDialog.dismiss()
+
+                            // Re-enable the button after the task is done
+                            bottomSheetView.buttonAddStop.isEnabled = true
+                        }
+                    } ?: run {
+                        // Handle the case where latLng is null
+                        Log.e("AdHocTaskDelay", "Failed to retrieve latLng from place")
+                        bottomSheetDialog.dismiss() // Dismiss the dialog
+                        bottomSheetView.buttonAddStop.isEnabled = true // Re-enable button if no latLng
+                    }
+                } else {
+                    Log.e("AdHocTaskDelay", "Failed to fetch place details.")
+                    bottomSheetDialog.dismiss() // Dismiss the dialog
+                    bottomSheetView.buttonAddStop.isEnabled = true // Re-enable button if place is null
                 }
             }
         }
 
-        // Handle Add Stop button click
-        bottomSheetView.buttonAddStop.setOnClickListener {
-            addStopDirectly(true, placeId)
-            placesInfo = emptyList()
 
-            bottomSheetDialog.dismiss()
-        }
 
         // Handle Cancel button click
         bottomSheetView.buttonCancel.setOnClickListener {
@@ -652,41 +720,11 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         bottomSheetDialog.show()
     }
 
-    private fun fetchPhoto(photoMetadata: PhotoMetadata, image: ImageView) {
-        val photoRequest = FetchPhotoRequest.builder(photoMetadata)
-            .setMaxWidth(800)
-            .setMaxHeight(800)
-            .build()
-
-        placesClient.fetchPhoto(photoRequest)
-            .addOnSuccessListener { response ->
-                val bitmap = response.bitmap
-                // Check if the activity is still valid
-                if (!isDestroyed) {
-                    Log.d("YourActivity", "Successfully fetched photo for place")
-                    Glide.with(this)
-                        .load(bitmap)
-                        .placeholder(R.drawable.placeholder_viewpager_photos)
-                        .error(R.drawable.error_image)
-                        .into(image)
-                }
-            }
-            .addOnFailureListener { exception ->
-                Log.e("YourActivity", "Error fetching photo", exception)
-                // Check if the activity is still valid
-                if (!isDestroyed) {
-                    Glide.with(this)
-                        .load(R.drawable.error_image)
-                        .into(image)
-                }
-            }
-    }
 
     private fun addStopDirectly(recalculateStops: Boolean, placeId: String) {
         if (hasAlreadyArrivedAtFinalDestination) {
             NUM_STOPS = 0
             placeIds.removeAt(0)
-            activityList.removeAt(0)
             if (activityList.isNotEmpty())
                 activityList.removeAt(0)
         }
@@ -786,6 +824,8 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         val dialog = BottomSheetDialog(this)
         val sheetBinding = BottomSheetSinglePlaceRecommendationBinding.inflate(LayoutInflater.from(this))
 
+        showLoadingDialog(false)
+
         dialog.setOnShowListener { dialogInterface ->
             val bottomSheet = (dialogInterface as BottomSheetDialog).findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
             bottomSheet?.let {
@@ -884,6 +924,10 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         binding.spacer1.visibility = if (NUM_STOPS == 1 ) View.GONE else View.VISIBLE
         binding.voiceGuidanceSwitch.isChecked = isAudioGuidanceEnabled
         binding.multiplePlaceSwitch.isChecked = isMultiplePlaceEnabled
+
+        binding.editFuelInfo.setOnClickListener {
+            showEditFuelLevelBottomSheet()
+        }
 
         // Set up click listeners for the actions
         binding.assistantButton.setOnClickListener {
@@ -1004,6 +1048,7 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
     }
 
     private fun navigationConfig(){
+        checkPlaceTypes()
         navigator.stopGuidance()
         navigator.removeArrivalListener(mArrivalListener)
         navigator.removeRemainingTimeOrDistanceChangedListener(mRemainingTimeOrDistanceChangedListener)
@@ -1156,7 +1201,39 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
         }
     }
 
+    private fun checkPlaceTypes() {
+        hasMealPlaceInDestination = false
+        var pendingRequests = placeIds.size
+
+        for (placeId in placeIds) {
+            fetchPlaceDetailsFromAPI(placeId) { place ->
+                place?.let {
+                    val foodRelatedKeywords = listOf(
+                        "food", "food_store", "restaurant", "cafe", "bar",
+                        "convenience_store", "shopping_mall"
+                    )
+
+                    if (it.placeTypes?.any { type ->
+                            foodRelatedKeywords.any { keyword -> type.contains(keyword, ignoreCase = true) }
+                        } == true) {
+                        hasMealPlaceInDestination = true
+                        Log.e("MEAL_PLACE_CHECK", "Meal place found: ${it.name}")
+                    }
+
+                    Log.e("MEAL_PLACE_CHECK", "Checked place: ${it.name}, Result: $hasMealPlaceInDestination")
+                }
+
+                // Decrement the counter and log final result if all requests are complete
+                pendingRequests--
+                if (pendingRequests == 0) {
+                    Log.e("MEAL_PLACE_CHECK", "hasMealPlaceInDestination is: $hasMealPlaceInDestination")
+                }
+            }
+        }
+    }
+
     private fun fetchPlaceDetailsForCard(stop: Int) {
+        // Fetch place details from the API
         fetchPlaceDetailsFromAPI(placeIds[0]) { place ->
             place?.let {
                 binding.tvPlaceName.text = it.name
@@ -1165,9 +1242,80 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
             }
         }
 
-        binding.tvActivityName.text = if (activityList.isNotEmpty()) activityList[0].activityName else "No activity available"
-        binding.tvActivityName.visibility = if (binding.tvActivityName.text == "No activity available") View.GONE else View.VISIBLE
 
+
+        // Handle activity details
+        if (activityList.isNotEmpty()) {
+            val currentActivity = activityList[0]
+
+            binding.headerActivityLabel.visibility = View.VISIBLE
+            binding.activityCard.visibility = View.VISIBLE
+
+            // Set activity name
+            binding.tvActivityName.text = currentActivity.activityName
+            binding.tvActivityName.visibility =
+                if (currentActivity.activityName.isEmpty()) View.GONE else View.VISIBLE
+
+            // Handle priority level and time constraint for tvPriority
+            when (currentActivity.priorityLevel) {
+                "Low" -> {
+                    // Hide tvPriority
+                    binding.tvPriority.text = "Activity at Low priority. No time constraint."
+                    binding.tvActivityName.setTextColor(resources.getColor(R.color.green))
+                }
+                "High" -> {
+                    // Set tvPriority for High priority
+                    binding.tvPriority.visibility = View.VISIBLE
+                    binding.tvPriority.text =
+                        formatTimeRange(currentActivity.startTime, currentActivity.endTime)
+                    binding.tvActivityName.setTextColor(resources.getColor(R.color.red))
+
+                }
+                "Medium" -> {
+                    // Set tvPriority for Medium priority
+                    binding.tvPriority.visibility = View.VISIBLE
+                    binding.tvPriority.text =
+                        formatTimeRange(currentActivity.startTime, currentActivity.endTime)
+                    binding.tvActivityName.setTextColor(resources.getColor(R.color.bronze))
+                }
+                else -> {
+                    // Default case: hide tvPriority
+                    binding.tvPriority.visibility = View.GONE
+                }
+            }
+        } else {
+            // No activity available, hide the priority and set default text
+            binding.tvActivityName.text = "No activity available"
+            binding.tvActivityName.visibility = View.GONE
+            binding.tvPriority.visibility = View.GONE
+            binding.headerActivityLabel.visibility = View.GONE
+            binding.activityCard.visibility = View.GONE
+        }
+    }
+
+    private fun formatTimeRange(startTime: String?, endTime: String?): String {
+        if (startTime.isNullOrEmpty() || endTime.isNullOrEmpty()) {
+            Log.e("TIME_FORMAT", "Invalid startTime or endTime: startTime=$startTime, endTime=$endTime")
+            return ""
+        }
+
+        try {
+            // Adjust input format to include the date
+            val inputFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+            val outputFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+
+            val start = inputFormat.parse(startTime)
+            val end = inputFormat.parse(endTime)
+
+            return if (start != null && end != null) {
+                "${outputFormat.format(start)} - ${outputFormat.format(end)}"
+            } else {
+                ""
+            }
+        } catch (e: Exception) {
+            Log.e("TIME_FORMAT", "Error formatting time: ${e.message}")
+            return ""
+        }
     }
 
     private fun clearMarkers() {
@@ -1380,53 +1528,208 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
     }
 
     private fun handleRouteResult(pendingRoute: ListenableResultFuture<Navigator.RouteStatus>) {
-        pendingRoute.setOnResultListener { code ->
-            when (code) {
+        pendingRoute.setOnResultListener { routeStatus ->
+            when (routeStatus) {
                 Navigator.RouteStatus.OK -> {
+                    // Initialize the FuelSetupManager (new fused class)
+                    val fuelSetupManager = FuelSetupManager(this, travelMode)
 
-                    placeDetailsRelatedContextuals.isPlaceOpenNow(placeIds[0]) {
-                        placeDetailsRelatedContextuals.showClosedPlaceDialog(
-                            onCancel = {
-                                Toast.makeText(this, "Navigation terminated", Toast.LENGTH_SHORT).show()
-                                cleanup()
-                                Handler(Looper.getMainLooper()).postDelayed({
-                                    ActivityNavigationUtils.navigateToActivity(this, PlacesActivity::class.java, true)
-                                }, 500)
-                            },
-                            onProceed = {
-                                isPlaceOpenNowClassifierFinished = true
-                                if (isAudioGuidanceEnabled) {
-                                    navigator.setAudioGuidance(AudioGuidance.VOICE_ALERTS_AND_GUIDANCE)
-                                }
+                    // Check if fuel preferences are already set
+                    if (fuelSetupManager.hasSetFuelPreferences()) {
+                        proceedWithNavigation()
+                    } else {
+                        // Show fuel setup prompt and proceed once preferences are set
+                        fuelSetupManager.showFuelSetupPrompt(){
+                            proceedWithNavigation()
+                        }
 
-                                if (isPlaceOpenNowClassifierFinished ) {
-                                    if (!hasExecutedSuggestions){
-                                        displayRainCheckBottomSheet()
-                                        Log.e(TAG, "THE RAIN CHECK WAS EXECUTED")
-                                        hasExecutedSuggestions = true
-                                    }
-                                }
 
-                                registerNavigationListeners()
+                    }
 
-                                if (isSimulated) {
-                                    navigator.simulator.simulateLocationsAlongExistingRoute(
-                                        SimulationOptions().speedMultiplier(5F))
-                                }
-
-                                navigator.startGuidance()
-                                startTrip()
-                            }
-                        )
+                    navigator.routeSegments.forEach { segment ->
+                        allLatLngs.addAll(segment.latLngs)
                     }
                 }
                 Navigator.RouteStatus.NO_ROUTE_FOUND -> displayMessage("Error starting navigation: No route found.")
                 Navigator.RouteStatus.NETWORK_ERROR -> displayMessage("Error starting navigation: Network error.")
                 Navigator.RouteStatus.ROUTE_CANCELED -> displayMessage("Error starting navigation: Route canceled.")
-                else -> displayMessage("Error starting navigation: $code")
+                else -> displayMessage("Error starting navigation: $routeStatus")
             }
         }
     }
+
+    private fun proceedWithNavigation() {
+        placeDetailsRelatedContextuals.isPlaceOpenNow(placeIds[0]) {
+            placeDetailsRelatedContextuals.showClosedPlaceDialog(
+                onCancel = {
+                    Toast.makeText(this, "Navigation terminated", Toast.LENGTH_SHORT).show()
+                    cleanup()
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        ActivityNavigationUtils.navigateToActivity(this, PlacesActivity::class.java, true)
+                    }, 500)
+                },
+                onProceed = {
+                    isPlaceOpenNowClassifierFinished = true
+
+                    // Enable audio guidance if needed
+                    if (isAudioGuidanceEnabled) {
+                        navigator.setAudioGuidance(AudioGuidance.VOICE_ALERTS_AND_GUIDANCE)
+                    }
+
+                    // Check for rain check logic
+                    if (isPlaceOpenNowClassifierFinished && !hasExecutedSuggestions) {
+                        displayRainCheckBottomSheet()
+                        Log.e(TAG, "THE RAIN CHECK WAS EXECUTED")
+                        hasExecutedSuggestions = true
+                    }
+
+                    // Register navigation listeners
+                    registerNavigationListeners()
+
+                    // If simulation is enabled, simulate the route
+                    if (isSimulated) {
+                        navigator.simulator.simulateLocationsAlongExistingRoute(SimulationOptions().speedMultiplier(5F))
+                    }
+
+                    // Start guidance
+                    navigator.startGuidance()
+                    startTrip()
+                }
+            )
+        }
+    }
+
+    private fun calculateAdHocTaskDelay(
+        stopLatLng: LatLng,
+        stopPlaceId: String,
+        callback: (Boolean) -> Unit // Callback to notify if there is a delay
+    ) {
+        if (activityList.isEmpty()) {
+            callback(false) // Return false if there are no activities
+            return
+        }
+
+        // Step 1: Retrieve the first activity in the list and check its priority
+        val activity = activityList.firstOrNull()
+        val activityPriority = activity?.priorityLevel ?: "Low"  // Default to "Low" if null
+
+        // Check if the activity priority is high or medium
+        if (activityPriority !in listOf("High", "Medium")) {
+            Log.e("AdHocTaskDelay", "Activity priority is not high or medium. Skipping delay calculation.")
+            callback(false) // Return false if no delay
+            return
+        }
+
+        // Step 2: Get the current location
+        getCurrentLocation { currentLocation ->
+            // Check if currentLocation is null
+            if (currentLocation == null) {
+                Log.e("AdHocTaskDelay", "Current location is null")
+                callback(false) // Return false if location is unavailable
+                return@getCurrentLocation
+            }
+
+            // Step 3: Retrieve the destination latLng from the first activity in the list
+            val destinationLatLng = if (activity != null && activity.placeLatlng.isNotEmpty()) {
+                val latLngParts = activity.placeLatlng.split(",")
+                LatLng(latLngParts[0].toDouble(), latLngParts[1].toDouble())
+            } else {
+                Log.e("AdHocTaskDelay", "Activity or destination latLng is missing.")
+                callback(false) // Return false if destination is missing
+                return@getCurrentLocation
+            }
+
+            // Step 4: Use RouteFetcher to calculate the duration (including travel time)
+            val latLngList = listOf(
+                "${currentLocation.latitude},${currentLocation.longitude}", // Current location
+                "${stopLatLng.latitude},${stopLatLng.longitude}", // Stop location
+                "${destinationLatLng.latitude},${destinationLatLng.longitude}" // Destination location
+            )
+
+            val routeFetcher = RouteFetcher(
+                context = this,
+                travelMode = travelMode, // Assuming travel by car, adjust as necessary
+                latLngList = latLngList
+            )
+
+            // Step 5: Fetch the route and calculate the total duration
+            routeFetcher.fetchRoute {
+                // Get the total travel duration
+                val totalDuration = routeFetcher.getTotalDuration()
+
+                // Log or process the total duration
+                Log.d("AdHocTaskDelay", "Total travel duration (including stop): $totalDuration")
+
+                // Step 6: Calculate the delay in minutes
+                val estimatedTaskDuration = 30 // Replace with actual task duration (in minutes)
+                val totalDurationInMinutes = totalDuration.split(" ").first().toInt() // Extract hours or minutes
+
+                val delayInMinutes = totalDurationInMinutes + estimatedTaskDuration // Add task duration to total travel time
+
+                // Log the delay
+                Log.d("AdHocTaskDelay", "Estimated delay: $delayInMinutes minutes")
+
+                // Step 7: Parse the activity's start and end times
+                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+                val activityStartTime = LocalDateTime.parse(activity.startTime, formatter)
+                val activityEndTime = LocalDateTime.parse(activity.endTime, formatter)
+
+                // Step 8: Add the delay to the start time to calculate the new end time
+                val delayDuration = Duration.ofMinutes(delayInMinutes.toLong())
+                val delayEndTime = activityStartTime.plus(delayDuration)
+
+                // Step 9: Check if the delay causes overlap with the current activity's time
+                if (delayEndTime.isAfter(activityEndTime)) {
+                    // There is overlap, show a dialog
+                    val delayDurationFormatted = Duration.between(activityEndTime, delayEndTime).toMinutes()
+                    showActivityConflictDialog(
+                        "Activity Schedule Conflict",
+                        "An estimated delay of $delayDurationFormatted minutes will cause an overlap with the scheduled end time of the next activity. Would you like to adjust the schedule or proceed with the current plan?",
+                        stopPlaceId
+                    )
+                    callback(true) // Return true if there is a delay
+                } else {
+                    // No overlap, show toast with time left
+                    val remainingTime = Duration.between(delayEndTime, activityEndTime).toMinutes()
+                    displayMessage("Everything on schedule. Time left before next activity is $remainingTime minutes")
+                    callback(false) // Return false if no delay
+                }
+            }
+        }
+    }
+
+
+
+
+    private fun showActivityConflictDialog( title: String, message: String, stopPlaceId: String) {
+        // Inflate the layout using data binding
+        val dialogBinding = DialogActivitySuggestionsBinding.inflate(LayoutInflater.from(this))
+
+        // Set the title and message dynamically
+        dialogBinding.dialogTitle.text = title
+        dialogBinding.dialogMessage.text = message
+
+        // Create and set up the dialog
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogBinding.root)
+            .create()
+
+        dialogBinding.btnDismiss.text = "Cancel"
+        dialogBinding.btnDismiss.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogBinding.btnAction.text = "Proceed"
+        dialogBinding.btnAction.visibility = View.VISIBLE
+        dialogBinding.btnAction.setOnClickListener {
+            addStopDirectly(false, stopPlaceId)
+            dialog.dismiss()
+        }
+
+        // Show the dialog
+        dialog.show()
+    }
+
 
     private fun registerNavigationListeners() {
         mArrivalListener = ArrivalListener { arrivalEvent ->
@@ -1471,9 +1774,20 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
 
 
         // Listener for remaining time or distance changes
-        val totalRouteDistanceInMeters = navigator.currentTimeAndDistance.meters // Assume you retrieve this on route setup
-        val fuelStopTriggerDistance = 1000
+        totalRouteDistanceInMeters = navigator.currentTimeAndDistance.meters // Assume you retrieve this on route setup
         val mealStopTriggerDistance = 300
+
+        // Display the fuel stop recommendation check
+        if (travelMode != "WALK"){
+            fuelStopRecommendationCheck()
+            binding.gasLabelHeader.visibility = View.VISIBLE
+            binding.gasInfoCard.visibility = View.VISIBLE
+        } else {
+            binding.gasLabelHeader.visibility = View.GONE
+            binding.gasInfoCard.visibility = View.GONE
+        }
+
+
 
         mRemainingTimeOrDistanceChangedListener = RemainingTimeOrDistanceChangedListener {
             val remainingDistanceInMeters = navigator.currentTimeAndDistance.meters
@@ -1482,29 +1796,21 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
             Log.e("Contextuals", "REMAINING DISTANCE: $remainingDistanceInMeters")
             Log.e("Contextuals", "TRAVELED DISTANCE: $traveledDistance")
 
-            if (totalRouteDistanceInMeters > 8000){
-                if (!hasFuelStopDisplayed && traveledDistance >= fuelStopTriggerDistance) {
-                    Log.e("Contextuals", "fuel stop executed")
 
-                    hasFuelStopDisplayed = true
-                    fuelStopsRecommendation.showPlaceDialog {
-                        displayFuelStops()
-                    }
+            if (!hasMealPlaceInDestination){
+                if (!hasMealDialogDisplayed  && traveledDistance >= mealStopTriggerDistance && totalRouteDistanceInMeters > 5000) {
+                    // Silence the navigation audio guidance
+                    navigator.setAudioGuidance(AudioGuidance.SILENT)
+
+                    // Display the meal place recommendation dialog
+                    mealPlaceRecommender.showPlaceDialogIfNeeded(
+                        onProceedClicked = {
+                            onDialogProceed()
+                        }
+                    )
+                    navigator.setAudioGuidance(AudioGuidance.VOICE_ALERTS_AND_GUIDANCE)
+                    hasMealDialogDisplayed = true
                 }
-            }
-
-            if (!hasMealDialogDisplayed  && traveledDistance >= mealStopTriggerDistance) {
-                // Silence the navigation audio guidance
-                navigator.setAudioGuidance(AudioGuidance.SILENT)
-
-                // Display the meal place recommendation dialog
-                mealPlaceRecommender.showPlaceDialogIfNeeded(
-                    onProceedClicked = {
-                        onDialogProceed()
-                    }
-                )
-                navigator.setAudioGuidance(AudioGuidance.VOICE_ALERTS_AND_GUIDANCE)
-                hasMealDialogDisplayed = true
             }
 
 
@@ -1518,6 +1824,219 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
 
         // Register the remaining time or distance changed listener
         navigator.addRemainingTimeOrDistanceChangedListener(5, 10, mRemainingTimeOrDistanceChangedListener) // Change thresholds as needed
+    }
+
+    private fun fuelStopRecommendationCheck() {
+        val fuelSetupManager = FuelSetupManager(this, travelMode)
+        fuelSetupManager.fetchVehicleDataAndCalculateFuel(
+            context = this,
+            totalRouteDistance = totalRouteDistanceInMeters / 1000.0,  // Convert meters to kilometers
+            onCalculationCompleted = { remainingRange, isRefuelRequired, requiredFuel, vehicleType, fuelEfficiencyOfVehicle, vehicleTankCapacity, refuelingThreshold, refuelingThresholdVolume, fuelLevel ->
+
+                // Populate TextViews with vehicle details
+                binding.tvVehicle.text = vehicleType
+                binding.tvFuelEffieciency.text = "$fuelEfficiencyOfVehicle km/L"
+                binding.tvFuelLevel.text = "$fuelLevel liters"
+                binding.tvCapacity.text = "$vehicleTankCapacity liters"
+                binding.tvThreshold.text = "${String.format("%.2f", refuelingThresholdVolume)} liters"
+
+                // Flag to prevent multiple dialogs
+                var dialogShown = false
+
+                if (isRefuelRequired) {
+                    // Display fuel required and remaining range
+                    binding.tvDistance.text = Html.fromHtml(
+                        "You do not have enough fuel to continue this route. You need <font color='#FF0000'>${"%.2f".format(requiredFuel)} liters</font> of fuel to cover the ${remainingRange} km distance left.",
+                        Html.FROM_HTML_MODE_LEGACY
+                    )
+                    fuelStopsRecommendation.showPlaceDialog(
+                        "Fuel Insufficiency Alert",
+                        "Your current fuel level is insufficient to complete the plotted route. We recommend refueling to ensure a smooth and uninterrupted journey. Please consider stopping at a nearby fuel station."
+                    ) {
+                        displayFuelStops()
+                    }
+                    dialogShown = true // Set flag to true after showing the dialog
+                }
+
+                // Check if the user has reached the refueling threshold
+                if (refuelingThreshold && !dialogShown) {
+                    fuelStopsRecommendation.showPlaceDialog(
+                        "Fuel Threshold Alert",
+                        "Your fuel level has reached the recommended refueling threshold. To ensure a smooth and uninterrupted journey, we advise refueling at your earliest convenience. Please consider stopping at a nearby fuel station."
+                    ) {
+                        displayFuelStops()
+                    }
+                    dialogShown = true // Set flag to true after showing the dialog
+                }
+
+
+                // If the fuel level is sufficient, but no nearby gas stations are found at the destination
+                if (!isRefuelRequired && !dialogShown) {
+                    binding.tvDistance.text = "You have enough fuel for the route."
+                    fuelStopsRecommendation.checkForNearbyGasStationsAtDestination(
+                        placesClient,
+                        allLatLngs.last()
+                    ) { shouldRecommendRefueling ->
+                        if (shouldRecommendRefueling && !dialogShown) {
+                            // Show refueling recommendation if there are no fuel stations at the destination
+                            fuelStopsRecommendation.showPlaceDialog(
+                                "Refueling Advisory",
+                                "Although you have enough fuel for the current route, there are no nearby fuel stations at your destination. To avoid potential inconvenience, we recommend refueling at a nearby station before you reach your destination."
+                            ) {
+                                displayFuelStops()
+                            }
+                            dialogShown = true // Set flag to true after showing the dialog
+                        }
+
+                        Log.i("FUEL_STOPS", "LATLNG AT LAST: ${allLatLngs.last()}")
+                    }
+                }
+            }
+        )
+    }
+
+    private fun showEditFuelLevelBottomSheet() {
+        // Inflate the layout using View Binding
+        val sheetBinding = BottomSheetEditFuelLevelBinding.inflate(LayoutInflater.from(this))
+
+        // Create the BottomSheetDialog
+        val bottomSheetDialog = BottomSheetDialog(this)
+        bottomSheetDialog.setContentView(sheetBinding.root)
+
+        // Get tank capacity from the TextView (strip "L" and convert to Double)
+        val tankCapacityStr = binding.tvCapacity.text.toString().replace("L", "").trim()
+        val tankCapacity = tankCapacityStr.toDoubleOrNull() ?: 50.0  // Default to 50L if invalid
+
+        // Set SeekBar max value to 100 (percentage)
+        sheetBinding.fuelLevelSlider.max = 100
+
+        val currentFuelLevel = binding.tvFuelLevel.text.toString().replace("liters", "").trim().toDoubleOrNull()
+
+        Log.i("EDIT_FUEL_STOPS", "current fuel is: $currentFuelLevel")
+        if (currentFuelLevel != null) {
+            // Calculate the progress as a percentage of the tank capacity
+            val fuelLevelPercentage = (currentFuelLevel / tankCapacity) * 100
+
+            // Set the progress of the SeekBar based on the percentage
+            sheetBinding.fuelLevelSlider.progress = fuelLevelPercentage.toInt()
+            Log.i("EDIT_FUEL_STOPS", "current fuel is not null: $fuelLevelPercentage")
+
+            // Update the TextView to display the fuel level in liters
+            sheetBinding.tvFuelLevelValue.text = "${currentFuelLevel.toInt()}L"
+        }
+
+        //Initially set the refueling threshold
+        val stringedFuelThresholdInLiters = binding.tvThreshold.text.toString().replace("liters", "").trim()
+        val currentThresholdPercentage = ((stringedFuelThresholdInLiters.toDouble() * 100  ) / tankCapacity).toInt()
+        sheetBinding.etRefuelingPercentage.setText(currentThresholdPercentage.toString())
+
+        // Listen for SeekBar value changes and update the TextView
+        sheetBinding.fuelLevelSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                // Calculate the fuel level in liters from the percentage progress
+                val fuelLevelInLiters = (progress.toDouble() / 100) * tankCapacity
+                // Update the TextView with the new fuel level in liters
+                sheetBinding.tvFuelLevelValue.text = "${fuelLevelInLiters.toInt()}L"
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {
+                // Optionally handle touch start
+            }
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                // Optionally handle touch stop
+            }
+        })
+
+
+        val colorStateList = ColorStateList(
+            arrayOf(
+                intArrayOf(android.R.attr.state_checked),  // Checked state
+                intArrayOf(-android.R.attr.state_checked) // Unchecked state
+            ),
+            intArrayOf(
+                ContextCompat.getColor(this, R.color.brand_color), // Checked color
+                ContextCompat.getColor(this, R.color.gray)         // Unchecked color
+            )
+        )
+
+        sheetBinding.rbAnalog.buttonTintList = colorStateList
+
+
+        // Toggle between Analog and Liters input fields
+        sheetBinding.radioGroupFuelLevel.setOnCheckedChangeListener { _, checkedId ->
+            when (checkedId) {
+                R.id.rbAnalog -> {
+                    // Show analog slider, hide liters input
+                    sheetBinding.tvFuelLevelValue.visibility = View.VISIBLE
+                    sheetBinding.rbAnalog.buttonTintList = colorStateList
+                    sheetBinding.analogLayout.visibility = View.VISIBLE
+                    sheetBinding.litersLayout.visibility = View.GONE
+                }
+                R.id.rbLiters -> {
+                    // Show liters input, hide analog slider
+                    sheetBinding.tvFuelLevelValue.visibility = View.GONE
+                    sheetBinding.rbLiters.buttonTintList = colorStateList
+                    sheetBinding.analogLayout.visibility = View.GONE
+                    sheetBinding.litersLayout.visibility = View.VISIBLE
+                }
+            }
+        }
+
+        // Handle Save Button Click
+        sheetBinding.btnSaveFuelLevel.setOnClickListener {
+            // Get fuel level value (either from analog slider or liters input)
+            val fuelLevel: Double = if (sheetBinding.rbAnalog.isChecked) {
+                // Get value from slider (percentage)
+                val percentage = sheetBinding.fuelLevelSlider.progress.toDouble() / 100
+                percentage * tankCapacity
+            } else {
+                // Get value from liters input field
+                val litersStr = sheetBinding.etFuelLiters.text.toString()
+                val enteredLiters = litersStr.toDoubleOrNull() ?: 0.0
+
+                // Validate if the entered liters exceeds tank capacity
+                if (enteredLiters > tankCapacity) {
+                    // If it exceeds, show a validation error (example: Toast or Error message)
+                    Toast.makeText(this, "Fuel level cannot exceed tank capacity of $tankCapacity L.", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener // Prevent saving
+                }
+                enteredLiters
+            }
+            val roundedFuelLevel = String.format("%.2f", fuelLevel).toDouble()
+            val refuelPercentageStr = sheetBinding.etRefuelingPercentage.text.toString()
+
+            // Default refuel percentage to 0 if not specified
+            val refuelPercentage = if (refuelPercentageStr.isEmpty()) {
+                0
+            } else {
+                refuelPercentageStr.toInt()
+            }
+
+            // Validate the refuel percentage if it's not empty
+            if (refuelPercentage < 0 || refuelPercentage > 95) {
+                // If the percentage is not valid, show a Toast message and return
+                Toast.makeText(this, "Please enter a valid refuel percentage (0 - 95%).", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val fuelSetupManager = FuelSetupManager(this, travelMode)
+            fuelSetupManager.updateFuelLevelAndRefuelingThreshold(this, roundedFuelLevel, refuelPercentage)
+            binding.tvFuelLevel.text = "${roundedFuelLevel} liters"
+            binding.tvThreshold.text = "${(refuelPercentageStr.toDouble() / 100) * tankCapacity} liters"
+
+            // Dismiss bottom sheet after saving
+            bottomSheetDialog.dismiss()
+        }
+
+        // Handle Cancel Button Click
+        sheetBinding.btnCancel.setOnClickListener {
+            // Close the bottom sheet without saving
+            bottomSheetDialog.dismiss()
+        }
+
+        // Show the bottom sheet
+        bottomSheetDialog.show()
     }
 
     private fun handleNextStop() {
@@ -1624,14 +2143,14 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
 
     private fun showTripSummaryDialog(totalDistance: String, totalTime: String, arrivalTime: String, averageSpeed: String, trafficConditions: String) {
         // Inflate the custom layout using View Binding
-        val binding = DialogTripRecapBinding.inflate(layoutInflater)
+        val sheetBinding = DialogTripRecapBinding.inflate(layoutInflater)
 
         // Populate the TextViews in the binding object
-        binding.totalDistanceTextView.text = "Total Distance: $totalDistance"
-        binding.totalTimeTextView.text = "Total Time: $totalTime"
-        binding.arrivalTimeTextView.text = "Arrival Time: $arrivalTime"
-        binding.averageSpeedTextView.text = "Average Speed: $averageSpeed"
-        binding.trafficConditionsTextView.text = "Traffic: $trafficConditions"
+        sheetBinding.totalDistanceTextView.text = "Total Distance: $totalDistance"
+        sheetBinding.totalTimeTextView.text = "Total Time: $totalTime"
+        sheetBinding.arrivalTimeTextView.text = "Arrival Time: $arrivalTime"
+        sheetBinding.averageSpeedTextView.text = "Average Speed: $averageSpeed"
+        sheetBinding.trafficConditionsTextView.text = "Traffic: $trafficConditions"
         // Regular expression to extract place name and address
         val fullText = navigator.currentRouteSegment.destinationWaypoint.title
         val regex = Regex("""^(.*?)(?:,\s*(.*))?$""") // Match everything before the first comma and everything after
@@ -1641,22 +2160,33 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
             val placeName = matchResult.groups[1]?.value?.trim() ?: ""
             val address = matchResult.groups[2]?.value?.trim() ?: ""
 
-            binding.placeNameTextView.text = placeName // Set only the place name
-            binding.addressTextView.text = address // If you have an address TextView
+            sheetBinding.placeNameTextView.text = placeName // Set only the place name
+            sheetBinding.addressTextView.text = address // If you have an address TextView
         } else {
             // Handle unexpected format
-            binding.placeNameTextView.text = fullText // Fallback
+            sheetBinding.placeNameTextView.text = fullText // Fallback
         }
 
-
+        val fuelSetupManager = FuelSetupManager(this, travelMode)
+        fuelSetupManager.updateFuelLevelViaDistanceCovered(
+            context = this,
+            traveledDistanceInMeters = calculateTotalDistanceCovered().toDouble(),
+            onUpdateCompleted = { success, message ->
+                if (success) {
+                    binding.tvFuelLevel.text = message
+                } else {
+                    Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+                }
+            }
+        )
         // Create the AlertDialog
         val alertDialog = AlertDialog.Builder(this)
-            .setView(binding.root) // Use the root view from the binding
+            .setView(sheetBinding.root) // Use the root view from the binding
             .setCancelable(true)
             .create()
 
         // Handle Done button
-        binding.doneButton.setOnClickListener {
+        sheetBinding.doneButton.setOnClickListener {
             alertDialog.dismiss() // Close the dialog
             finish()
         }
@@ -1672,7 +2202,10 @@ class StartNavigationsActivity : AppCompatActivity(), GoogleMap.OnPoiClickListen
             Place.Field.NAME,
             Place.Field.ADDRESS,
             Place.Field.PHOTO_METADATAS,
+            Place.Field.LAT_LNG,
             Place.Field.RATING,
+            Place.Field.TYPES,
+            Place.Field.PRIMARY_TYPE
         )
         val request = FetchPlaceRequest.builder(placeId, fields).build()
 

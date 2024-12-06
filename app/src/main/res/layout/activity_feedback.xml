@@ -65,6 +65,8 @@
         android:layout_height="wrap_content"
         android:popupBackground="@color/white"
         android:background="@drawable/spinner_border"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
         android:entries="@array/feedback_type_options"
         android:layout_below="@id/tv_feedback_type_label"
         android:layout_marginBottom="16dp"/>

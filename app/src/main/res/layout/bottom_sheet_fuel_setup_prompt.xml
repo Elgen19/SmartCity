@@ -1,0 +1,92 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/white"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Title TextView -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/textViewTitle"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Fuel Information Setup"
+            android:layout_gravity="center_vertical"
+            android:textColor="@color/brand_color"
+            android:textAppearance="?attr/textAppearanceHeadline6"
+            android:paddingBottom="8dp"/>
+
+        <ImageButton
+            android:id="@+id/btnClose"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/baseline_close_24"
+            android:background="@color/white"
+            app:tint="@color/red" />
+    </LinearLayout>
+
+
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/lottieAnimationView"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_gravity="center"
+        app:lottie_cacheComposition="true"
+        app:lottie_autoPlay="true"
+        app:lottie_rawRes="@raw/gas"
+        app:lottie_loop="true" />
+
+    <!-- Prompt TextView for Setup or Use Presets -->
+    <TextView
+        android:id="@+id/textViewPrompt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="To provide accurate fuel recommendations, we need your vehicle's fuel information. Please set up your vehicle details or use preset values."
+        android:textColor="@color/gray"
+        android:textAppearance="?attr/textAppearanceBody1"
+        android:paddingTop="16dp"
+        android:paddingBottom="8dp" />
+
+
+    <!-- Button to Setup Vehicle Fuel Info -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSetupFuelInfo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Setup Fuel Info"
+        app:iconTint="@color/primary_color"
+        app:cornerRadius="8dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        android:layout_marginTop="16dp"
+        app:rippleColor="@color/brand_color"
+        android:textColor="@color/primary_color"
+        android:backgroundTint="@color/secondary_color"
+        app:iconGravity="textStart" />
+
+    <!-- Button to Use Presets -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnUsePresets"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Use Presets"
+        android:backgroundTint="@color/white"
+        android:textColor="@color/gray2"
+        app:rippleColor="@color/red"
+        app:strokeColor="@color/gray"
+        app:strokeWidth="1dp"
+        app:cornerRadius="8dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        app:iconGravity="textStart" />
+
+</LinearLayout>

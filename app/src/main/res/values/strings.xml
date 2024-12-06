@@ -127,4 +127,10 @@
     </string-array>
 
 
+    <string-array name="vehicle_type">
+        <item>Car</item>
+        <item>Motorcycle</item>
+    </string-array>
+
+
 </resources>

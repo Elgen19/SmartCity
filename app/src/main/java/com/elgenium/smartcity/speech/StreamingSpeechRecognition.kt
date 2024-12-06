@@ -279,7 +279,7 @@ class StreamingSpeechRecognition(
 
             Handler(Looper.getMainLooper()).postDelayed({
                 closeDialogAndStopListening()
-            }, 2000)  // Delay before closing the dialog (adjust time as needed)
+            }, 1000)  // Delay before closing the dialog (adjust time as needed)
         }
 
 

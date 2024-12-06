@@ -51,8 +51,6 @@ class MealContextuals(private val context: Context) {
             "coffee_shop"
         ),
         "lunch" to listOf(
-            "coffee_shop",
-            "convenience store",
             "fast_food_restaurant",
             "restaurant",
             "meal_takeaway"
@@ -60,12 +58,9 @@ class MealContextuals(private val context: Context) {
         "snack" to listOf(
             "bakery",
             "cafe",
-            "meal_takeaway",
             "convenience store",
         ),
         "dinner" to listOf(
-            "american restaurant",
-            "korean restaurant",
             "outdoor dining",
             "restaurant",
             "barbecue",
@@ -121,9 +116,9 @@ class MealContextuals(private val context: Context) {
         Handler(Looper.getMainLooper()).postDelayed({
             if (dialog.isShowing) {
                 dialog.dismiss()
-                Log.d("MealContextuals", "Dialog dismissed automatically after 5 seconds.")
+                Log.d("MealContextuals", "Dialog dismissed automatically after 8 seconds.")
             }
-        }, 5000)
+        }, 8000)
     }
 
     private fun showPlaceDialog(onProceedClicked: () -> Unit): AlertDialog {

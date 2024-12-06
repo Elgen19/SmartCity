@@ -4,6 +4,13 @@
         <item name="android:color">@color/primary_color</item>
     </style>
 
+    <style name="CustomRadioButton" parent="Widget.MaterialComponents.CompoundButton.RadioButton">
+        <!-- Change the checked state circle color -->
+        <item name="colorControlActivated">@color/brand_color</item>
+        <!-- Change the unchecked state circle color -->
+        <item name="colorControlNormal">@color/gray</item>
+    </style>
+
 
 
 

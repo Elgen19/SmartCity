@@ -22,7 +22,7 @@
           android:id="@+id/dialog_message"
           android:layout_width="wrap_content"
           android:layout_height="wrap_content"
-          android:text="An optimized route has been found. Do you want to reorder the destinations?"
+          android:text="The current route order may lead to inefficiencies, resulting in longer travel distances. Would you like to reorder the destinations for a more optimized route?"
           android:textSize="16sp"
           android:textColor="@color/gray"
           android:layout_gravity="center"
@@ -32,6 +32,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
         android:orientation="horizontal"
         android:gravity="end">
 

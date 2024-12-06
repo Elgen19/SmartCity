@@ -3,8 +3,6 @@ package com.elgenium.smartcity.contextuals
 import android.animation.ValueAnimator
 import android.app.AlertDialog
 import android.content.Context
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import com.elgenium.smartcity.R
@@ -25,7 +23,7 @@ class FuelStopsRecommendation(contextInActivity: Context) {
         textToSpeechHelper.initializeTTS(context)
     }
 
-    fun showPlaceDialog(onProceedClicked: () -> Unit): AlertDialog {
+    fun showPlaceDialog(title: String, message: String, onProceedClicked: () -> Unit): AlertDialog {
         val binding = BottomSheetPlaceOpennowBinding.inflate(LayoutInflater.from(context))
         val dialog = AlertDialog.Builder(context)
             .setView(binding.root)
@@ -33,15 +31,15 @@ class FuelStopsRecommendation(contextInActivity: Context) {
             .create()
 
         val progressAnimator = ValueAnimator.ofInt(0, 100)
-        progressAnimator.duration = 5000 // 5 seconds
+        progressAnimator.duration = 8000 // 8 seconds
         progressAnimator.addUpdateListener { animator ->
             binding.progressBar.progress = animator.animatedValue as Int
         }
         progressAnimator.start()
 
         binding.lottieAnimation.setAnimation(R.raw.gas)
-        binding.textViewTitle.text = "Fuel check!"
-        binding.textViewBody.text = "Here are some fuel stations along your route to help you refuel."
+        binding.textViewTitle.text = title
+        binding.textViewBody.text = message
         textToSpeechHelper.speakResponse("Would you like to make a fuel stop? Here are some fuel stations along your route that you can check out.")
 
         Log.d("FuelStopsRecommendation", "Displaying place dialog with binding.")
@@ -58,13 +56,13 @@ class FuelStopsRecommendation(contextInActivity: Context) {
             onProceedClicked()  // Execute the callback function
         }
 
-        // Auto dismiss after 5 seconds
-        Handler(Looper.getMainLooper()).postDelayed({
-            if (dialog.isShowing) {
-                Log.d("FuelStopsRecommendation", "Auto-dismissing the dialog after 5 seconds.")
-                dialog.dismiss()
-            }
-        }, 5000) // 5 seconds delay
+//        // Auto dismiss after 5 seconds
+//        Handler(Looper.getMainLooper()).postDelayed({
+//            if (dialog.isShowing) {
+//                Log.d("FuelStopsRecommendation", "Auto-dismissing the dialog after 5 seconds.")
+//                dialog.dismiss()
+//            }
+//        }, 8000) // 8 seconds delay
 
         dialog.show()
         return dialog
@@ -124,6 +122,50 @@ class FuelStopsRecommendation(contextInActivity: Context) {
                 }
         }
     }
+
+
+    fun checkForNearbyGasStationsAtDestination(
+        placesClient: PlacesClient,
+        destinationLatLng: LatLng,
+        thresholdDistance: Double = 3000.0, // Default threshold distance of 3 km
+        callback: (Boolean) -> Unit
+    ) {
+        val placeFields = listOf(
+            Place.Field.ID,
+            Place.Field.NAME,
+            Place.Field.ADDRESS,
+            Place.Field.TYPES,
+            Place.Field.RATING,
+            Place.Field.USER_RATINGS_TOTAL,
+            Place.Field.LAT_LNG
+        )
+
+        // Create a circular location bias around the destination
+        val locationBias = CircularBounds.newInstance(destinationLatLng, thresholdDistance)
+
+        val searchByTextRequest = SearchByTextRequest.builder("gas station", placeFields)
+            .setMaxResultCount(5)  // Request up to 5 results
+            .setLocationBias(locationBias)
+            .setOpenNow(true)
+            .setRankPreference(SearchByTextRequest.RankPreference.DISTANCE)
+            .build()
+
+        placesClient.searchByText(searchByTextRequest)
+            .addOnSuccessListener { response ->
+                if (response.places.isEmpty()) {
+                    Log.d("FuelStopsRecommendation", "No gas stations found within threshold distance.")
+                    callback(true) // No gas stations found, recommend refueling
+                } else {
+                    Log.d("FuelStopsRecommendation", "Found ${response.places.size} gas stations nearby.")
+                    callback(false) // Gas stations found within threshold distance, no need to recommend refueling
+                }
+            }
+            .addOnFailureListener { exception ->
+                Log.e("FuelStopsRecommendation", "Search failed: ${exception.message}")
+                callback(false) // Default to no recommendation on failure
+            }
+    }
+
 
 
 

@@ -9,8 +9,13 @@
 
 
 
-    </style>
 
+    </style>
+    <style name="CustomSpinnerStyle">
+        <item name="android:textColor">#000000</item>  <!-- Set text color to black -->
+        <item name="android:dropDownHeight">200dp</item> <!-- Optional: Set the dropdown height -->
+        <item name="android:dropDownVerticalOffset">10dp</item> <!-- Optional: Offset the dropdown -->
+    </style>
     <style name="CustomTabLayout" parent="Widget.Design.TabLayout">
         <item name="tabIconTint">@color/tab_icon_color_selector</item> <!-- Reference your color state list -->
     </style>

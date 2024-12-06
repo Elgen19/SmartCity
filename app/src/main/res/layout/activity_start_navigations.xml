@@ -100,6 +100,8 @@
 
             <!-- Row for stop icon and heading text -->
             <LinearLayout
+                android:visibility="gone"
+                android:id="@+id/headerActivityLabel"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
@@ -112,12 +114,78 @@
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:layout_marginEnd="8dp"
+                    android:src="@drawable/activity"
+                    app:tint="@color/secondary_color" />
+
+                <!-- Text saying 'Currently heading to' -->
+                <TextView
+                    android:id="@+id/tvCurrentlyHeading"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Activity"
+                    android:textColor="@color/brand_color"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/activityCard"
+                android:layout_width="match_parent"
+                android:visibility="gone"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
+                android:backgroundTint="@color/white"
+                android:elevation="6dp"
+                app:cardCornerRadius="8dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvActivityName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Activity Name"
+                        android:textColor="@color/secondary_color"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+
+                    <!-- Activity Priority and Time Constraint -->
+                    <TextView
+                        android:id="@+id/tvPriority"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:text="Priority and Time Constraint"
+                        android:textColor="@color/gray" />
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+            <!-- Row for stop icon and heading text -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <!-- Icon for stop -->
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="8dp"
                     android:contentDescription="Stop Icon"
                     android:src="@drawable/distance" />
 
                 <!-- Text saying 'Currently heading to' -->
                 <TextView
-                    android:id="@+id/tvCurrentlyHeading"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Destination"
@@ -143,26 +211,15 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <!-- Activity Name -->
-                    <TextView
-                        android:id="@+id/tvActivityName"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp"
-                        android:text="Activity Name"
-                        android:textColor="@color/secondary_color"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
-
                     <!-- Place Name -->
                     <TextView
                         android:id="@+id/tvPlaceName"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="4dp"
                         android:text="Place Name"
                         android:textStyle="bold"
-                        android:textColor="@color/gray" />
+                        android:textSize="18sp"
+                        android:textColor="@color/secondary_color" />
 
                     <!-- Address -->
                     <TextView
@@ -182,6 +239,201 @@
                         android:text="Remaining stop or destination"
                         android:textColor="@color/gray2"
                         android:textSize="14sp" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+
+            <LinearLayout
+                android:id="@+id/gasLabelHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <!-- Icon for stop -->
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="8dp"
+                    android:contentDescription="Stop Icon"
+                    android:src="@drawable/gas" />
+
+                <!-- Text saying 'Currently heading to' -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Fuel"
+                    android:textColor="@color/brand_color"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/gasInfoCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
+                android:backgroundTint="@color/white"
+                android:elevation="6dp"
+                app:cardCornerRadius="8dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+
+                    <TextView
+                        android:id="@+id/tvVehicle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Car"
+                        android:textStyle="bold"
+                        android:textSize="18sp"
+                        android:textColor="@color/secondary_color" />
+
+                    <TextView
+                        android:id="@+id/tvDistance"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"
+                        android:text="The vehicle can go upto 40km before a need to refuel"
+                        android:textColor="@color/gray" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:textStyle="bold"
+                            android:text="Fuel Efficiency"
+                            android:textColor="@color/gray" />
+
+                        <TextView
+                            android:id="@+id/tvFuelEffieciency"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="10km/L"
+                            android:textColor="@color/gray" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Capacity"
+                            android:textStyle="bold"
+                            android:textColor="@color/gray" />
+
+                        <TextView
+                            android:id="@+id/tvCapacity"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="50L"
+                            android:textColor="@color/gray" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Fuel Level"
+                            android:textStyle="bold"
+                            android:textColor="@color/gray" />
+
+                        <TextView
+                            android:id="@+id/tvFuelLevel"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="18L"
+                            android:textColor="@color/gray" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Refueling Threshold"
+                            android:textStyle="bold"
+                            android:textColor="@color/gray" />
+
+                        <TextView
+                            android:id="@+id/tvThreshold"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="5L"
+                            android:textColor="@color/gray" />
+                    </LinearLayout>
+
+
+
+                    <LinearLayout
+                        android:layout_marginTop="16dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_marginEnd="8dp"
+                            android:src="@drawable/info"/>
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="You can edit the fuel level by pressing the edit button to reflect changes."
+                            android:textColor="@color/dark_gray" />
+                    </LinearLayout>
+
+                    <!-- Edit Button -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/editFuelInfo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Edit"
+                        android:layout_marginTop="8dp"
+                        android:paddingStart="0dp"
+                        android:paddingEnd="0dp"
+                        app:strokeWidth="0dp"
+                        android:textColor="@color/gray"
+                        app:backgroundTint="@color/mod_google_transparent"
+                        android:layout_gravity="end"
+                        android:theme="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+
+
+
+
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
@@ -308,6 +560,13 @@
                             app:trackTint="@color/switch_track_color_state_list"
                             tools:ignore="TouchTargetSizeCheck" />
                     </LinearLayout>
+
+                    <View
+                        android:id="@+id/spacer3"
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginBottom="8dp"
+                        android:background="@color/dark_gray" />
 
                     <LinearLayout
                         android:id="@+id/multipleRecommendationLayout"

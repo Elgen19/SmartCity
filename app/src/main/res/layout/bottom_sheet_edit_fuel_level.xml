@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/primary_color"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/tvBottomSheetTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Edit Fuel Level"
+        android:textColor="@color/brand_color"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <!-- Fuel Level Label -->
+    <TextView
+        android:id="@+id/tvFuelLevelLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:text="Set your current fuel level: choose either the analog slider or enter the value in liters."
+        android:textColor="@color/sub_support_text" />
+
+
+    <!-- Radio buttons to choose between Analog or Non-Analog (Liters) -->
+    <RadioGroup
+        android:id="@+id/radioGroupFuelLevel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:orientation="horizontal"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp">
+
+        <RadioButton
+            android:id="@+id/rbAnalog"
+            android:layout_width="0dp"
+            android:layout_height="20dp"
+            android:layout_weight="1"
+            android:buttonTint="@drawable/radio_button_state"
+            android:checked="true"
+            android:text="Analog"
+            android:textColor="@color/gray" />
+
+        <RadioButton
+            android:id="@+id/rbLiters"
+            android:layout_width="0dp"
+            android:layout_height="20dp"
+            android:layout_weight="1"
+            android:buttonTint="@drawable/radio_button_state"
+            android:text="Liters"
+            android:textColor="@color/gray" />
+    </RadioGroup>
+
+
+    <!-- Analog Fuel Level Slider -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/analogLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp">
+
+        <!-- SeekBar -->
+        <SeekBar
+            android:id="@+id/fuelLevelSlider"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:max="100"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:thumbTint="@color/brand_color"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- Indicators -->
+        <TextView
+            android:id="@+id/tvZero"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="0"
+            android:textColor="@color/red"
+            android:textSize="12sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/fuelLevelSlider" />
+
+        <TextView
+            android:id="@+id/tvOneQuarter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="1/4"
+            android:textColor="@color/red"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.25"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/fuelLevelSlider" />
+
+        <TextView
+            android:id="@+id/tvHalf"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="1/2"
+            android:textColor="@color/bronze"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/fuelLevelSlider" />
+
+        <TextView
+            android:id="@+id/tvThreeQuarter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="3/4"
+            android:textColor="@color/green"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.75"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/fuelLevelSlider" />
+
+        <TextView
+            android:id="@+id/tvFull"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:text="Full"
+            android:textColor="@color/green"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/fuelLevelSlider" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Non-Analog Fuel Level Input (Liters) -->
+    <LinearLayout
+        android:id="@+id/litersLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tvLitersLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="Enter Fuel Level in Liters"
+            android:textColor="@color/gray" />
+
+        <EditText
+            android:id="@+id/etFuelLiters"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/rounded_background_white"
+            android:hint="Enter liters"
+            android:inputType="numberDecimal"
+            android:paddingStart="8dp"
+            android:paddingTop="16dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="16dp"
+            android:textColor="@color/gray"
+            android:textColorHint="@color/dark_gray" />
+    </LinearLayout>
+
+    <!-- Display Selected Fuel Level -->
+    <TextView
+        android:id="@+id/tvFuelLevelValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="16dp"
+        android:textColor="@color/brand_color"
+        android:textSize="40sp"
+        android:textStyle="bold" />
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="16dp"
+            android:text="Remind me to refuel when \nfuel is below"
+            android:layout_marginEnd="8dp"
+            android:textColor="@color/gray" />
+
+
+        <EditText
+            android:id="@+id/etRefuelingPercentage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/rounded_background_white"
+            android:hint="e.g., 50 (refuel percentage)"
+            android:textSize="14sp"
+            android:inputType="number"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:textColor="@color/gray"
+            android:textColorHint="@color/dark_gray" />
+    </LinearLayout>
+
+    <!-- Bottom Buttons: Save and Cancel -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:orientation="vertical">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSaveFuelLevel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="16dp"
+            android:paddingBottom="16dp"
+            android:text="Save"
+            android:textColor="@color/primary_color"
+            app:backgroundTint="@color/secondary_color"
+            app:cornerRadius="8dp"
+            app:rippleColor="@color/brand_color" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCancel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="16dp"
+            android:paddingBottom="16dp"
+            android:text="Cancel"
+            android:textColor="@color/red"
+            app:backgroundTint="@color/primary_color"
+            app:cornerRadius="8dp"
+            app:rippleColor="@color/red"
+            app:strokeColor="@color/red"
+            app:strokeWidth="1dp" />
+
+
+    </LinearLayout>
+
+</LinearLayout>
